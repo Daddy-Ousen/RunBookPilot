@@ -16,8 +16,8 @@
 - Removed decoration: skeleton shimmer (gradient + endless animation).
 - Screenshots: `docs/phase5/`.
 
-## Next step (Phase 6, Sonnet 5.5 medium)
-1. `.venv` `python -m pytest -v`; `git grep -n "innerHTML" -- static`; `git diff pre-redesign -- app/safety.py`; `diff -r data/runbooks static/runbooks` (only `index.json`).
+## Next step (Phase 6, run in the master: small steps)
+1. DONE by master at `5b6db77`: pytest 105, innerHTML none, safety.py diff empty, runbook copies match. Waiting for owner OK to push `ui-redesign` to origin (GitHub `Daddy-Ousen/RunBookPilot`) for a Vercel preview.
 2. Lighthouse again (see command below) on `/#triage`; it needs a score >= 95. Optional: also run it on `/#runbooks`, `/#safety`, `/#benchmark`, `/#integrations`.
 3. 390 px check on the Vercel preview; real phone test (owner or a phone browser).
 4. Vercel preview of the branch (`vercel` CLI 54.x is installed globally; Vercel env vars `LLM_BASE_URL`, `LLM_MODEL`, `LLM_API_KEY` must exist for the project). Check `/static/css/*`, `/static/js/**`, `/static/favicon.svg`, `/static/runbooks/*.md` and `index.json` all return 200 there (`vercel.json` `includeFiles` is `static/**`), and that the page's hash routes load.

@@ -64,6 +64,11 @@ Source plan: `UI_REDESIGN_PLAN.md` (repo root). Follow it phase by phase. Stop a
   - Screenshots: `docs/phase5/` (`triage-result-1024.png`, `triage-result-390.png`, `empty-dark-1440.png`, `empty-dark-390.png`, `favicon-light-dark.png`; made with headless Edge and CDP; the result comes from a stored mock).
   - Not done or limits: Lighthouse sees the empty state only, and the dark flag is unverified there (axe covers the result state and dark). Phone test and Vercel preview are Phase 6. The built-in browser cannot show the tab strip, so the favicon proof is a mock tab strip. Keyboard users need 21 Tab stops from the ticket box to Run demo (Run demo sits after the input column in DOM order; changing DOM order would break the visual order, so it stays). At 390 the index status shows a dot only (the text is hidden). The Integrations header badge "Staged, not live" repeats the banner under it (left in).
 - [ ] Phase 6: Verify (`static/runbooks/` matches `data/runbooks/`, pytest, innerHTML grep, safety.py diff empty, Lighthouse a11y >= 95, 390 px, keyboard, Vercel preview, owner review, merge).
+  - [x] Master re-ran local checks 2026-11-03 at `5b6db77`: pytest 105 passed; no innerHTML/outerHTML/insertAdjacentHTML in `static/`; `git diff pre-redesign -- app/safety.py` empty; `diff -r data/runbooks static/runbooks` only `index.json`; no diff in `app/ data/ tests/` since `pre-redesign`.
+  - [x] Lighthouse a11y 100 on `/#triage` (Phase 5, Edge). 0 sideways scroll at 390. Keyboard-only triage run passed (Phase 5).
+  - [ ] Push `ui-redesign` to origin for a Vercel preview (needs owner OK).
+  - [ ] Owner tests the preview on a real phone.
+  - [ ] Owner reviews the preview. Then merge to main.
 
 ## Model guide (sub-sessions)
 | Phase | Model | Effort |
