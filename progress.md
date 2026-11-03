@@ -66,7 +66,7 @@ Source plan: `UI_REDESIGN_PLAN.md` (repo root). Follow it phase by phase. Stop a
 - [ ] Phase 6: Verify (`static/runbooks/` matches `data/runbooks/`, pytest, innerHTML grep, safety.py diff empty, Lighthouse a11y >= 95, 390 px, keyboard, Vercel preview, owner review, merge).
   - [x] Master re-ran local checks 2026-11-03 at `5b6db77`: pytest 105 passed; no innerHTML/outerHTML/insertAdjacentHTML in `static/`; `git diff pre-redesign -- app/safety.py` empty; `diff -r data/runbooks static/runbooks` only `index.json`; no diff in `app/ data/ tests/` since `pre-redesign`.
   - [x] Lighthouse a11y 100 on `/#triage` (Phase 5, Edge). 0 sideways scroll at 390. Keyboard-only triage run passed (Phase 5).
-  - [ ] Push `ui-redesign` to origin for a Vercel preview (needs owner OK).
+  - [x] Pushed `ui-redesign` to origin (owner OK, 2026-11-03). Vercel preview Ready: https://runbookpilot-54xmbz191-daddy-ousen-s-projects.vercel.app (Vercel login required). Master checked via `vercel curl`: `/`, CSS, JS modules, favicon, `static/runbooks/*` and `/runbooks` all 200 with correct types.
   - [ ] Owner tests the preview on a real phone.
   - [ ] Owner reviews the preview. Then merge to main.
 

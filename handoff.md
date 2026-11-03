@@ -17,7 +17,8 @@
 - Screenshots: `docs/phase5/`.
 
 ## Next step (Phase 6, run in the master: small steps)
-1. DONE by master at `5b6db77`: pytest 105, innerHTML none, safety.py diff empty, runbook copies match. Waiting for owner OK to push `ui-redesign` to origin (GitHub `Daddy-Ousen/RunBookPilot`) for a Vercel preview.
+1. DONE by master at `5b6db77`: pytest 105, innerHTML none, safety.py diff empty, runbook copies match. Branch pushed. Preview: https://runbookpilot-54xmbz191-daddy-ousen-s-projects.vercel.app (Vercel Deployment Protection: needs Vercel login or a Share link). Static files checked 200. Waiting: owner phone test + review, then merge.
+   - Gotcha: in Git Bash, `vercel curl /path` needs `MSYS_NO_PATHCONV=1`. `vercel curl` adds `.vercel` to `.gitignore`: revert it.
 2. Lighthouse again (see command below) on `/#triage`; it needs a score >= 95. Optional: also run it on `/#runbooks`, `/#safety`, `/#benchmark`, `/#integrations`.
 3. 390 px check on the Vercel preview; real phone test (owner or a phone browser).
 4. Vercel preview of the branch (`vercel` CLI 54.x is installed globally; Vercel env vars `LLM_BASE_URL`, `LLM_MODEL`, `LLM_API_KEY` must exist for the project). Check `/static/css/*`, `/static/js/**`, `/static/favicon.svg`, `/static/runbooks/*.md` and `index.json` all return 200 there (`vercel.json` `includeFiles` is `static/**`), and that the page's hash routes load.
