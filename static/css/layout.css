@@ -11,7 +11,7 @@
   align-items: center;
   gap: var(--sp-3);
   padding: 0 var(--gutter);
-  background: var(--bg);
+  background: var(--surface);
   border-bottom: 1px solid var(--line);
 }
 
@@ -21,17 +21,18 @@
   gap: var(--sp-2);
   min-height: var(--target);
   color: var(--text);
-  font-size: var(--fs-sm);
-  font-weight: 600;
+  font-size: var(--fs-md);
+  font-weight: 800;
+  letter-spacing: -0.01em;
   text-decoration: none;
   white-space: nowrap;
 }
 
 .brand-glyph {
-  width: 12px;
-  height: 12px;
-  border-radius: 3px;
-  background: var(--accent);
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: var(--accent) url("/static/favicon.svg") center / cover no-repeat;
   flex-shrink: 0;
 }
 
@@ -61,9 +62,23 @@
   display: inline-flex;
   align-items: center;
   gap: var(--sp-2);
+  min-height: 32px;
+  padding: 0 var(--sp-3);
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
   font-size: var(--fs-sm);
+  font-weight: 600;
   color: var(--text-2);
   white-space: nowrap;
+}
+
+.index-status[data-state="loaded"] {
+  background: var(--ro-bg);
+  color: var(--ro);
+}
+
+.index-status[data-state="loaded"] .status-dot {
+  background: var(--ro-solid);
 }
 
 .status-dot {
@@ -85,6 +100,7 @@
 }
 
 .index-status[data-state="error"] {
+  background: var(--esc-bg);
   color: var(--esc);
 }
 
@@ -102,8 +118,8 @@
   display: flex;
   flex-direction: column;
   gap: var(--sp-1);
-  padding: var(--sp-3) var(--sp-2);
-  border-right: 1px solid var(--line);
+  padding: var(--sp-4) var(--sp-3);
+  border-right: none;
   background: var(--bg);
 }
 
@@ -120,11 +136,11 @@
   align-items: center;
   gap: var(--sp-3);
   min-height: var(--rail-item);
-  padding: 0 var(--sp-3);
-  border-radius: var(--r-control);
+  padding: 0 var(--sp-4);
+  border-radius: var(--r-pill);
   color: var(--text-2);
   font-size: var(--fs-sm);
-  font-weight: 500;
+  font-weight: 600;
   text-decoration: none;
   transition: background var(--dur-fast), color var(--dur-fast);
 }
@@ -134,14 +150,17 @@
 }
 
 .rail-item:hover {
-  background: var(--surface-2);
-  color: var(--text);
+  background: var(--accent-tint);
+  color: var(--accent-tint-text);
 }
 
-.rail-item[aria-current="page"] {
-  background: var(--surface-2);
-  color: var(--text);
-  box-shadow: inset 3px 0 0 var(--accent);
+/* Active route: solid violet pill at every width */
+.rail-item[aria-current="page"],
+.rail-item[aria-current="page"]:hover {
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 700;
+  box-shadow: none;
 }
 
 .rail-footer {
@@ -193,6 +212,50 @@
   min-width: 0;
 }
 
+/* >= 1200: the rail becomes a row of pills centered in the top bar */
+@media (min-width: 1200px) {
+  .shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rail {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    z-index: 41;
+    transform: translateX(-50%);
+    height: var(--topbar-h);
+    flex-direction: row;
+    align-items: center;
+    padding: 0;
+    background: transparent;
+  }
+
+  .rail-list {
+    flex-direction: row;
+  }
+
+  .rail-item {
+    padding: 0 18px;
+  }
+
+  .rail-item svg {
+    display: none;
+  }
+
+  .view {
+    margin-inline: auto;
+  }
+}
+
+/* 1200 to 1599: not enough room for the model badge beside the pills.
+   The model name is still in the result Details. */
+@media (min-width: 1200px) and (max-width: 1599px) {
+  .topbar .model-badge {
+    display: none;
+  }
+}
+
 @media (max-width: 1199px) {
   :root {
     --rail-w: 64px;
@@ -231,10 +294,6 @@
     opacity: 1;
   }
 
-  .rail-item[aria-current="page"] {
-    box-shadow: inset 0 -3px 0 var(--accent);
-  }
-
   .columns {
     grid-template-columns: 380px minmax(0, 1fr);
   }
@@ -261,6 +320,24 @@
 
   .topbar-view {
     display: block;
+  }
+
+  .brand {
+    font-size: var(--fs-base);
+  }
+
+  .brand-glyph {
+    width: 28px;
+    height: 28px;
+    border-radius: 9px;
+  }
+
+  .topbar-right {
+    gap: var(--sp-2);
+  }
+
+  .index-status {
+    padding: 0 10px;
   }
 
   .index-status .status-text {
@@ -293,6 +370,8 @@
     padding: var(--sp-2) var(--gutter) var(--sp-3);
     border-right: none;
     border-bottom: 1px solid var(--line);
+    border-radius: 0 0 var(--r-card) var(--r-card);
+    background: var(--surface);
     box-shadow: var(--shadow-pop);
     display: none;
   }
@@ -318,15 +397,19 @@
     line-height: var(--lh-sm);
   }
 
-  .rail-item[aria-current="page"] {
-    box-shadow: inset 3px 0 0 var(--accent);
-  }
-
   .rail-footer {
     display: block;
   }
 
   .view {
     padding-top: var(--sp-4);
+  }
+}
+
+/* Small phones: the view name in the bar does not fit beside the brand.
+   The open menu sheet still marks the current view. */
+@media (max-width: 439px) {
+  .topbar-view {
+    display: none;
   }
 }

@@ -4,7 +4,7 @@ import { load, save } from "./store.js";
 
 const KEY = "rbp_theme";
 const root = document.documentElement;
-const BAR_COLOR = { light: "#f5f6f8", dark: "#0e1014" };
+const BAR_COLOR = { light: "#f4f2ff", dark: "#120f24" };
 const media = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
 
 function effective() {

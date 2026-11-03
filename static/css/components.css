@@ -8,13 +8,13 @@
   gap: var(--sp-2);
   min-height: var(--target);
   padding: 0 var(--sp-4);
-  border: 1px solid transparent;
-  border-radius: var(--r-control);
+  border: 2px solid transparent;
+  border-radius: var(--r-pill);
   background: transparent;
   color: var(--text);
   font-size: var(--fs-sm);
   line-height: var(--lh-sm);
-  font-weight: 500;
+  font-weight: 700;
   text-decoration: none;
   white-space: nowrap;
   cursor: pointer;
@@ -38,13 +38,18 @@
   border-color: var(--accent-hover);
 }
 
+.btn-primary:not(.btn-sm) {
+  padding: 0 var(--sp-5);
+}
+
 .btn-secondary {
   background: var(--surface);
-  border-color: var(--line-strong);
+  border-color: var(--line-2);
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: var(--surface-2);
+  background: var(--accent-tint);
+  border-color: var(--accent-tint);
 }
 
 .btn-quiet {
@@ -69,8 +74,9 @@
 }
 
 .btn[aria-pressed="true"] {
-  background: var(--surface-2);
-  border-color: var(--text-2);
+  background: var(--accent-tint);
+  border-color: var(--accent-text);
+  color: var(--accent-tint-text);
 }
 
 .btn-row {
@@ -86,20 +92,20 @@
   align-items: center;
   gap: var(--sp-1);
   min-height: 24px;
-  padding: 0 var(--sp-2);
-  border: 1px solid var(--line);
+  padding: 0 10px;
+  border: 1px solid transparent;
   border-radius: var(--r-badge);
-  background: var(--surface);
+  background: var(--surface-2);
   color: var(--text-2);
   font-size: var(--fs-xs);
   line-height: var(--lh-xs);
-  font-weight: 500;
+  font-weight: 700;
   white-space: nowrap;
 }
 
 .badge-strong {
   color: var(--text);
-  font-weight: 600;
+  font-weight: 800;
 }
 
 .badge-ro {
@@ -145,7 +151,7 @@
 .field-label {
   font-size: var(--fs-sm);
   line-height: var(--lh-sm);
-  font-weight: 500;
+  font-weight: 700;
   color: var(--text);
 }
 
@@ -160,21 +166,21 @@
 .textarea {
   width: 100%;
   min-height: var(--target);
-  padding: var(--sp-2) var(--sp-3);
-  border: 1px solid var(--line-strong);
-  border-radius: var(--r-control);
-  background: var(--surface);
+  padding: var(--sp-2) var(--sp-4);
+  border: 1.5px solid var(--line-strong);
+  border-radius: var(--r-input);
+  background: var(--surface-3);
   color: var(--text);
   font-size: var(--fs-base);
   line-height: var(--lh-base);
 }
 
 .select {
-  padding-right: var(--sp-6);
+  padding-right: var(--sp-7);
   appearance: none;
   background-image: linear-gradient(45deg, transparent 50%, var(--text-2) 50%),
     linear-gradient(135deg, var(--text-2) 50%, transparent 50%);
-  background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%;
+  background-position: calc(100% - 24px) 50%, calc(100% - 19px) 50%;
   background-size: 5px 5px, 5px 5px;
   background-repeat: no-repeat;
 }
@@ -236,11 +242,11 @@
 .segmented {
   display: inline-flex;
   align-self: flex-start;
-  border: 1px solid var(--line-strong);
-  border-radius: var(--r-control);
-  background: var(--surface);
-  padding: 2px;
-  gap: 2px;
+  border: none;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  padding: 4px;
+  gap: 4px;
 }
 
 .segmented input {
@@ -254,17 +260,18 @@
   align-items: center;
   min-height: var(--target);
   padding: 0 var(--sp-4);
-  border-radius: 4px;
+  border-radius: var(--r-pill);
   font-size: var(--fs-sm);
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-2);
   cursor: pointer;
 }
 
 .segmented input:checked + label {
-  background: var(--surface-2);
-  color: var(--text);
-  box-shadow: inset 0 0 0 1px var(--line-strong);
+  background: var(--surface);
+  color: var(--accent-text);
+  font-weight: 800;
+  box-shadow: var(--shadow-knob), inset 0 0 0 2px var(--accent-text);
 }
 
 .segmented input:focus-visible + label {
@@ -275,9 +282,10 @@
 /* Panel / section: hairline block with heading, no shadow */
 .panel {
   border: 1px solid var(--line);
-  border-radius: var(--r-panel);
+  border-radius: var(--r-card);
   background: var(--surface);
-  padding: var(--sp-4);
+  padding: var(--sp-5);
+  box-shadow: var(--shadow-card);
 }
 
 .section {
@@ -311,9 +319,8 @@
   flex-direction: column;
   gap: var(--sp-1);
   padding: var(--sp-3) var(--sp-4);
-  border: 1px solid var(--line);
-  border-left: 4px solid var(--text-2);
-  border-radius: var(--r-control);
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-input);
   background: var(--surface);
   font-size: var(--fs-sm);
   line-height: var(--lh-sm);
@@ -321,31 +328,35 @@
 }
 
 .notice-title {
-  font-weight: 600;
+  font-weight: 800;
 }
 
 .notice-warning {
-  border-color: transparent;
-  border-left-color: var(--na);
+  border-color: var(--na-line);
   background: var(--na-bg);
+}
+
+.notice-warning .notice-title {
+  color: var(--na-ink);
 }
 
 .notice-danger {
   border-color: transparent;
-  border-left-color: var(--esc);
   background: var(--esc-bg);
+}
+
+.notice-danger .notice-title {
+  color: var(--esc-ink);
 }
 
 .notice-ok {
   border-color: transparent;
-  border-left-color: var(--ro);
   background: var(--ro-bg);
 }
 
 .notice-staged {
   border-style: dashed;
-  border-left-style: solid;
-  border-left-color: var(--line-strong);
+  border-color: var(--line-strong);
   background: transparent;
   color: var(--text-2);
 }
@@ -367,7 +378,7 @@
   cursor: pointer;
   list-style: none;
   font-size: var(--fs-sm);
-  font-weight: 500;
+  font-weight: 700;
   color: var(--text);
 }
 
@@ -404,6 +415,7 @@
   border: 1px solid var(--line);
   border-radius: var(--r-panel);
   background: var(--surface);
+  box-shadow: var(--shadow-soft);
   overflow: hidden;
 }
 
@@ -433,8 +445,18 @@
 
 .list-row[aria-pressed="true"],
 .list-row[aria-current="true"] {
-  background: var(--surface-2);
-  box-shadow: inset 3px 0 0 var(--accent);
+  background: var(--accent-tint);
+  box-shadow: inset 4px 0 0 var(--accent);
+}
+
+.list-row[aria-pressed="true"] .list-row-title,
+.list-row[aria-current="true"] .list-row-title {
+  color: var(--accent-tint-text);
+}
+
+.list-row[aria-pressed="true"] .list-row-meta,
+.list-row[aria-current="true"] .list-row-meta {
+  color: var(--text-2);
 }
 
 .list-row:focus-visible {
@@ -452,7 +474,7 @@
 .list-row-title {
   font-size: var(--fs-sm);
   line-height: var(--lh-sm);
-  font-weight: 500;
+  font-weight: 700;
   overflow-wrap: anywhere;
 }
 
@@ -491,10 +513,11 @@
 
 .toast {
   max-width: 360px;
-  padding: var(--sp-3) var(--sp-4);
-  border-radius: var(--r-control);
+  padding: var(--sp-3) var(--sp-5);
+  border-radius: var(--r-input);
   background: var(--text);
   color: var(--bg);
+  font-weight: 600;
   font-size: var(--fs-sm);
   line-height: var(--lh-sm);
   box-shadow: var(--shadow-pop);
@@ -529,7 +552,7 @@
 /* Code surface (plain; Phase 3 builds the full command block on this) */
 .code {
   padding: var(--sp-3) var(--sp-4);
-  border-radius: var(--r-control);
+  border-radius: var(--r-input);
   background: var(--ink);
   color: var(--ink-text);
   font-size: var(--fs-code);
@@ -560,7 +583,7 @@
 }
 
 .table th {
-  font-weight: 500;
+  font-weight: 700;
   color: var(--text-2);
 }
 

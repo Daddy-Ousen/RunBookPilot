@@ -3,6 +3,7 @@
 import { el, byId, clear, setText, show, icon, ICONS, notice } from "../dom.js";
 import { post } from "../api.js";
 import { risk, plainRisk } from "../copy.js";
+import { highlightPs } from "../ps-highlight.js";
 
 const PRESETS = [
   { label: "Get-ADUser", note: "Safe read", cmd: "Get-ADUser -Identity user01 -Properties LockedOut, BadPwdCount, LastBadPasswordAttempt" },
@@ -63,7 +64,7 @@ async function inspect(command) {
   setText(ui.tabWord, r.word);
   setText(ui.verdict, r.long);
   setText(ui.reason, plainRisk(d.reason) || (isRo ? "No rule found a change in this command." : "A rule found a change, or could not rule one out."));
-  setText(ui.checked, command);
+  highlightPs(ui.checked, command);
   show(ui.block, true);
 
   // Raw terms stay in the collapsed Technical details.

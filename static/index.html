@@ -9,8 +9,8 @@
   <meta property="og:site_name" content="RunbookPilot" />
   <meta property="og:title" content="RunbookPilot: fix plans for Windows and M365 tickets" />
   <meta property="og:description" content="Paste a ticket. Get steps and PowerShell commands from your runbooks, each marked read-only or needs approval. RunbookPilot never runs a command." />
-  <meta name="theme-color" id="theme-color-light" media="(prefers-color-scheme: light)" content="#f5f6f8" />
-  <meta name="theme-color" id="theme-color-dark" media="(prefers-color-scheme: dark)" content="#0e1014" />
+  <meta name="theme-color" id="theme-color-light" media="(prefers-color-scheme: light)" content="#f4f2ff" />
+  <meta name="theme-color" id="theme-color-dark" media="(prefers-color-scheme: dark)" content="#120f24" />
   <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
   <script>
     /* Apply a saved theme before first paint. No saved theme: follow the system. */
@@ -24,7 +24,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
-    href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap"
     rel="stylesheet"
   />
   <link rel="stylesheet" href="/static/css/tokens.css" />
@@ -109,6 +109,10 @@
         <div class="columns">
           <div class="triage-input">
             <form id="triage-form" class="stack triage-form" novalidate>
+              <div class="hero">
+                <span class="hero-kicker">Ticket triage</span>
+                <p class="hero-title">Paste a ticket. Get a safe fix plan in seconds.</p>
+              </div>
               <div class="field">
                 <label for="ticket-input" class="field-label">Ticket</label>
                 <div class="ticket-box">

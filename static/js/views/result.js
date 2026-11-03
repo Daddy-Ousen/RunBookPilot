@@ -12,6 +12,7 @@ import { copyButton } from "../clipboard.js";
 import { runbookText, failedMessage } from "../runbook-text.js";
 import { parseFrontMatter, renderMarkdown } from "../markdown.js";
 import { toast } from "../toast.js";
+import { highlightPs } from "../ps-highlight.js";
 
 const TICKS_PREFIX = "rbp_ticks_";
 
@@ -407,7 +408,7 @@ async function dispatchRmm(cmd, approved, note, out, trigger, addOutput) {
 function commandBlock(cmd, addOutput) {
   const r = risk(cmd.risk);
   const isRo = cmd.risk === "read_only";
-  const code = el("code", { text: cmd.command || "" });
+  const code = highlightPs(el("code"), cmd.command || "");
   const pre = el("pre", { class: "cmd-code" }, el("span", { class: "cmd-prompt", "aria-hidden": "true", text: "PS> " }), code);
   const live = el("span", { class: "sr-only", "aria-live": "polite" });
   let block = null;

@@ -1,47 +1,79 @@
-/* Design tokens (docs/design-plan.md sections 2 to 4).
-   Light is the base. Dark applies when the system asks for it and the user
-   has not picked light, or when the user picked dark. */
+/* Design tokens. Phase 7 mood: "Friendly Daylight" (lavender ground, violet
+   accent, round shapes, soft card shadow). Light is the base. Dark applies
+   when the system asks for it and the user has not picked light, or when the
+   user picked dark. Every text pair passes AA in both themes (Phase 7 check). */
 
 :root {
   color-scheme: light;
 
-  --bg: #f5f6f8;
+  --bg: #f4f2ff;
   --surface: #ffffff;
-  --surface-2: #eef0f3;
-  --line: #dde1e7;
-  --line-strong: #7c8592;
-  --text: #12161c;
-  --text-2: #4b5563;
-  --text-3: #5c6573;
+  --surface-2: #f1eefe;
+  --surface-3: #faf9ff;
+  --line: #e6e2fb;
+  --line-2: #e1dcfb;
+  --line-strong: #8a82b3;
+  --text: #1b1640;
+  --text-2: #575079;
+  --text-3: #5f5884;
 
-  --accent: #2b4acb;
-  --accent-text: #2b4acb;
+  --accent: #5b3df5;
+  --accent-text: #4a2fe0;
   --on-accent: #ffffff;
-  --accent-hover: #233da8;
+  --accent-hover: #4a2fe0;
+  --accent-tint: #ece8ff;
+  --accent-tint-text: #3a2a8c;
 
-  --ink: #10141a;
-  --ink-text: #e6e9ee;
-  --ink-muted: #9aa3b0;
+  --ink: #1b1640;
+  --ink-text: #f1effc;
+  --ink-muted: #a7a1cf;
+  --ink-btn: #1b1640;
+  --on-ink-btn: #ffffff;
+  --code-cmdlet: #8be9fd;
+  --code-param: #d6bcfa;
+  --code-str: #ffd580;
+  --code-var: #9ef0c8;
 
-  --ro: #0b6b5d;
-  --ro-bg: #e3f4f0;
-  --ro-on: #ffffff;
+  --ro: #0b6b4b;
+  --ro-bg: #e3f8ef;
+  --ro-row: #f3fbf7;
+  --ro-solid: #12b886;
+  --ro-on: #062a1d;
 
-  --na: #8a4b00;
-  --na-bg: #fdf1dc;
-  --na-solid: #f2b530;
+  --na: #7a4100;
+  --na-bg: #fff4d6;
+  --na-ink: #5c3600;
+  --na-sub: #6b4a14;
+  --na-line: #ffd27a;
+  --na-solid: #ffb020;
   --na-on: #2a1a00;
 
   --esc: #b42318;
-  --esc-bg: #fdecea;
+  --esc-bg: #ffeaea;
+  --esc-ink: #7a1209;
   --esc-on: #ffffff;
 
-  --shadow-pop: 0 4px 16px rgb(0 0 0 / 0.16);
-  --skeleton-a: #eef0f3;
+  /* Sample tints: soft fill + dark text of the same hue */
+  --tint-1-bg: #e8f6ff;
+  --tint-1: #0b5d8a;
+  --tint-2-bg: #f3ecff;
+  --tint-2: #6a2fc0;
+  --tint-3-bg: #fff2e0;
+  --tint-3: #8f4500;
+  --tint-4-bg: #ffeaea;
+  --tint-4: #b42318;
+  --tint-5-bg: #e5f8ef;
+  --tint-5: #0b6b4b;
+
+  --shadow-card: 0 1px 2px rgba(27, 22, 64, 0.06), 0 12px 32px rgba(91, 61, 245, 0.08);
+  --shadow-soft: 0 1px 2px rgba(27, 22, 64, 0.06);
+  --shadow-knob: 0 1px 3px rgba(27, 22, 64, 0.12);
+  --shadow-pop: 0 8px 28px rgba(27, 22, 64, 0.18);
+  --skeleton-a: #ebe7fd;
 
   /* Type */
-  --font-sans: "Geist", "Segoe UI", system-ui, sans-serif;
-  --font-mono: "Geist Mono", "Cascadia Mono", Consolas, monospace;
+  --font-sans: "Manrope", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
   --fs-xs: 13px;
   --lh-xs: 18px;
   --fs-sm: 14px;
@@ -52,8 +84,8 @@
   --lh-md: 26px;
   --fs-lg: 20px;
   --lh-lg: 28px;
-  --fs-xl: 24px;
-  --lh-xl: 32px;
+  --fs-xl: 28px;
+  --lh-xl: 36px;
   --fs-code: 14px;
   --lh-code: 22px;
   --fs-code-sm: 13px;
@@ -71,12 +103,16 @@
   --gutter: 24px;
 
   /* Radius */
-  --r-badge: 4px;
-  --r-control: 6px;
-  --r-panel: 8px;
+  --r-pill: 999px;
+  --r-badge: 999px;
+  --r-small: 8px;
+  --r-control: 14px;
+  --r-input: 16px;
+  --r-panel: 20px;
+  --r-card: 24px;
 
   /* Sizes */
-  --topbar-h: 56px;
+  --topbar-h: 64px;
   --rail-w: 216px;
   --target: 40px;
   --rail-item: 44px;
@@ -91,77 +127,136 @@
   :root:not([data-theme="light"]) {
     color-scheme: dark;
 
-    --bg: #0e1014;
-    --surface: #14171c;
-    --surface-2: #1b1f25;
-    --line: #272c34;
-    --line-strong: #69727f;
-    --text: #e7e9ed;
-    --text-2: #a9b0bb;
-    --text-3: #8f98a5;
+    --bg: #120f24;
+    --surface: #1a1633;
+    --surface-2: #241f45;
+    --surface-3: #161229;
+    --line: #2e2856;
+    --line-2: #383166;
+    --line-strong: #7a72ad;
+    --text: #ecebfa;
+    --text-2: #b6b1d8;
+    --text-3: #a39dc9;
 
-    --accent: #3d5ae0;
-    --accent-text: #9aabff;
+    --accent: #6a50f7;
+    --accent-text: #b5a6ff;
     --on-accent: #ffffff;
-    --accent-hover: #4d68ea;
+    --accent-hover: #5b3df5;
+    --accent-tint: #2a2257;
+    --accent-tint-text: #d4cbff;
 
-    --ink: #07090c;
+    --ink: #0b0918;
+    --ink-text: #ecebfa;
+    --ink-muted: #a7a1cf;
+    --ink-btn: #ecebfa;
+    --on-ink-btn: #1b1640;
 
-    --ro: #5fd3bd;
-    --ro-bg: #0f2723;
+    --ro: #5fd3a8;
+    --ro-bg: #10291f;
+    --ro-row: #12241e;
+    --ro-solid: #2fcf98;
     --ro-on: #04201b;
 
-    --na: #f3c262;
-    --na-bg: #2a2010;
-    --na-solid: #f3c262;
+    --na: #ffc85c;
+    --na-bg: #2b2110;
+    --na-ink: #ffd27a;
+    --na-sub: #e9c98a;
+    --na-line: #6b4f1a;
+    --na-solid: #ffb020;
     --na-on: #2a1a00;
 
     --esc: #ff8e84;
     --esc-bg: #2d1513;
+    --esc-ink: #ffb3ab;
     --esc-on: #2d0a07;
 
-    --skeleton-a: #1b1f25;
+    --tint-1-bg: #10273a;
+    --tint-1: #8fd0ff;
+    --tint-2-bg: #261a45;
+    --tint-2: #cdb2ff;
+    --tint-3-bg: #2e2010;
+    --tint-3: #ffc483;
+    --tint-4-bg: #331817;
+    --tint-4: #ffaaa2;
+    --tint-5-bg: #10291f;
+    --tint-5: #7fe0b8;
+
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 32px rgba(0, 0, 0, 0.28);
+    --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-knob: 0 1px 3px rgba(0, 0, 0, 0.5);
+    --shadow-pop: 0 8px 28px rgba(0, 0, 0, 0.5);
+    --skeleton-a: #241f45;
   }
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  --bg: #0e1014;
-  --surface: #14171c;
-  --surface-2: #1b1f25;
-  --line: #272c34;
-  --line-strong: #69727f;
-  --text: #e7e9ed;
-  --text-2: #a9b0bb;
-  --text-3: #8f98a5;
+  --bg: #120f24;
+  --surface: #1a1633;
+  --surface-2: #241f45;
+  --surface-3: #161229;
+  --line: #2e2856;
+  --line-2: #383166;
+  --line-strong: #7a72ad;
+  --text: #ecebfa;
+  --text-2: #b6b1d8;
+  --text-3: #a39dc9;
 
-  --accent: #3d5ae0;
-  --accent-text: #9aabff;
+  --accent: #6a50f7;
+  --accent-text: #b5a6ff;
   --on-accent: #ffffff;
-  --accent-hover: #4d68ea;
+  --accent-hover: #5b3df5;
+  --accent-tint: #2a2257;
+  --accent-tint-text: #d4cbff;
 
-  --ink: #07090c;
+  --ink: #0b0918;
+  --ink-text: #ecebfa;
+  --ink-muted: #a7a1cf;
+  --ink-btn: #ecebfa;
+  --on-ink-btn: #1b1640;
 
-  --ro: #5fd3bd;
-  --ro-bg: #0f2723;
+  --ro: #5fd3a8;
+  --ro-bg: #10291f;
+  --ro-row: #12241e;
+  --ro-solid: #2fcf98;
   --ro-on: #04201b;
 
-  --na: #f3c262;
-  --na-bg: #2a2010;
-  --na-solid: #f3c262;
+  --na: #ffc85c;
+  --na-bg: #2b2110;
+  --na-ink: #ffd27a;
+  --na-sub: #e9c98a;
+  --na-line: #6b4f1a;
+  --na-solid: #ffb020;
   --na-on: #2a1a00;
 
   --esc: #ff8e84;
   --esc-bg: #2d1513;
+  --esc-ink: #ffb3ab;
   --esc-on: #2d0a07;
 
-  --skeleton-a: #1b1f25;
+  --tint-1-bg: #10273a;
+  --tint-1: #8fd0ff;
+  --tint-2-bg: #261a45;
+  --tint-2: #cdb2ff;
+  --tint-3-bg: #2e2010;
+  --tint-3: #ffc483;
+  --tint-4-bg: #331817;
+  --tint-4: #ffaaa2;
+  --tint-5-bg: #10291f;
+  --tint-5: #7fe0b8;
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 32px rgba(0, 0, 0, 0.28);
+  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-knob: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --shadow-pop: 0 8px 28px rgba(0, 0, 0, 0.5);
+  --skeleton-a: #241f45;
 }
 
 @media (max-width: 767px) {
   :root {
     --gutter: 16px;
+    --topbar-h: 60px;
   }
 }
 
