@@ -63,12 +63,17 @@ Source plan: `UI_REDESIGN_PLAN.md` (repo root). Follow it phase by phase. Stop a
   - [x] Checks: pytest 105 passed; `git grep innerHTML -- static` none; `git diff pre-redesign -- app/safety.py` empty; `diff -r data/runbooks static/runbooks` only `index.json`; no diff in `app/ tests/ data/` since `5772291`. 2 live triage calls: Run demo 200 (13.5 s), Uncovered VoIP 200 (6.0 s, escalate, "No runbook covers this ticket"). Server stopped, tab closed.
   - Screenshots: `docs/phase5/` (`triage-result-1024.png`, `triage-result-390.png`, `empty-dark-1440.png`, `empty-dark-390.png`, `favicon-light-dark.png`; made with headless Edge and CDP; the result comes from a stored mock).
   - Not done or limits: Lighthouse sees the empty state only, and the dark flag is unverified there (axe covers the result state and dark). Phone test and Vercel preview are Phase 6. The built-in browser cannot show the tab strip, so the favicon proof is a mock tab strip. Keyboard users need 21 Tab stops from the ticket box to Run demo (Run demo sits after the input column in DOM order; changing DOM order would break the visual order, so it stays). At 390 the index status shows a dot only (the text is hidden). The Integrations header badge "Staged, not live" repeats the banner under it (left in).
-- [ ] Phase 6: Verify (`static/runbooks/` matches `data/runbooks/`, pytest, innerHTML grep, safety.py diff empty, Lighthouse a11y >= 95, 390 px, keyboard, Vercel preview, owner review, merge).
+- [x] Phase 6: Verify (done 2026-11-03; merged to main) (`static/runbooks/` matches `data/runbooks/`, pytest, innerHTML grep, safety.py diff empty, Lighthouse a11y >= 95, 390 px, keyboard, Vercel preview, owner review, merge).
   - [x] Master re-ran local checks 2026-11-03 at `5b6db77`: pytest 105 passed; no innerHTML/outerHTML/insertAdjacentHTML in `static/`; `git diff pre-redesign -- app/safety.py` empty; `diff -r data/runbooks static/runbooks` only `index.json`; no diff in `app/ data/ tests/` since `pre-redesign`.
   - [x] Lighthouse a11y 100 on `/#triage` (Phase 5, Edge). 0 sideways scroll at 390. Keyboard-only triage run passed (Phase 5).
   - [x] Pushed `ui-redesign` to origin (owner OK, 2026-11-03). Vercel preview Ready: https://runbookpilot-54xmbz191-daddy-ousen-s-projects.vercel.app (Vercel login required). Master checked via `vercel curl`: `/`, CSS, JS modules, favicon, `static/runbooks/*` and `/runbooks` all 200 with correct types.
-  - [ ] Owner tests the preview on a real phone.
-  - [ ] Owner reviews the preview. Then merge to main.
+  - [x] Owner approved the preview (phone test by owner).
+  - [x] Merged `ui-redesign` into main (fast-forward to `58e7b73`), pytest 105 on main, pushed. Production deploy Ready at https://runbookpilot.rhasan.online (also https://runbookpilot-phi.vercel.app): `/`, CSS, JS, favicon, runbooks all 200; title "Triage · RunbookPilot".
+
+## Next
+- UI work is finished. Record the demo video (Standard mode; stop the stale server on port 8000 first if demoing locally). Submit by Nov 5, 08:00 Dhaka.
+- Optional, owner choice: fix `Clear-RecycleBin -Confirm` at `data/runbooks/02_ad_account_locked.md:22` (and the copy in `static/runbooks/`).
+- Optional: delete the Vercel protection bypass token the CLI made (Vercel > Settings > Deployment Protection).
 
 ## Model guide (sub-sessions)
 | Phase | Model | Effort |
