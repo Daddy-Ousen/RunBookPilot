@@ -1,0 +1,176 @@
+/* Design tokens (docs/design-plan.md sections 2 to 4).
+   Light is the base. Dark applies when the system asks for it and the user
+   has not picked light, or when the user picked dark. */
+
+:root {
+  color-scheme: light;
+
+  --bg: #f5f6f8;
+  --surface: #ffffff;
+  --surface-2: #eef0f3;
+  --line: #dde1e7;
+  --line-strong: #7c8592;
+  --text: #12161c;
+  --text-2: #4b5563;
+  --text-3: #5c6573;
+
+  --accent: #2b4acb;
+  --accent-text: #2b4acb;
+  --on-accent: #ffffff;
+  --accent-hover: #233da8;
+
+  --ink: #10141a;
+  --ink-text: #e6e9ee;
+  --ink-muted: #9aa3b0;
+
+  --ro: #0b6b5d;
+  --ro-bg: #e3f4f0;
+  --ro-on: #ffffff;
+
+  --na: #8a4b00;
+  --na-bg: #fdf1dc;
+  --na-solid: #f2b530;
+  --na-on: #2a1a00;
+
+  --esc: #b42318;
+  --esc-bg: #fdecea;
+  --esc-on: #ffffff;
+
+  --shadow-pop: 0 4px 16px rgb(0 0 0 / 0.16);
+  --skeleton-a: #eef0f3;
+  --skeleton-b: #e2e5ea;
+
+  /* Type */
+  --font-sans: "Geist", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "Geist Mono", "Cascadia Mono", Consolas, monospace;
+  --fs-xs: 13px;
+  --lh-xs: 18px;
+  --fs-sm: 14px;
+  --lh-sm: 20px;
+  --fs-base: 15px;
+  --lh-base: 24px;
+  --fs-md: 17px;
+  --lh-md: 26px;
+  --fs-lg: 20px;
+  --lh-lg: 28px;
+  --fs-xl: 24px;
+  --lh-xl: 32px;
+  --fs-code: 14px;
+  --lh-code: 22px;
+  --fs-code-sm: 13px;
+  --lh-code-sm: 20px;
+  --measure: 72ch;
+
+  /* Space */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --gutter: 24px;
+
+  /* Radius */
+  --r-badge: 4px;
+  --r-control: 6px;
+  --r-panel: 8px;
+
+  /* Sizes */
+  --topbar-h: 56px;
+  --rail-w: 216px;
+  --target: 40px;
+  --rail-item: 44px;
+
+  /* Motion */
+  --dur-fast: 120ms;
+  --dur-med: 180ms;
+  --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --bg: #0e1014;
+    --surface: #14171c;
+    --surface-2: #1b1f25;
+    --line: #272c34;
+    --line-strong: #69727f;
+    --text: #e7e9ed;
+    --text-2: #a9b0bb;
+    --text-3: #8f98a5;
+
+    --accent: #3d5ae0;
+    --accent-text: #9aabff;
+    --on-accent: #ffffff;
+    --accent-hover: #4d68ea;
+
+    --ink: #07090c;
+
+    --ro: #5fd3bd;
+    --ro-bg: #0f2723;
+    --ro-on: #04201b;
+
+    --na: #f3c262;
+    --na-bg: #2a2010;
+    --na-solid: #f3c262;
+    --na-on: #2a1a00;
+
+    --esc: #ff8e84;
+    --esc-bg: #2d1513;
+    --esc-on: #2d0a07;
+
+    --skeleton-a: #1b1f25;
+    --skeleton-b: #232831;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #0e1014;
+  --surface: #14171c;
+  --surface-2: #1b1f25;
+  --line: #272c34;
+  --line-strong: #69727f;
+  --text: #e7e9ed;
+  --text-2: #a9b0bb;
+  --text-3: #8f98a5;
+
+  --accent: #3d5ae0;
+  --accent-text: #9aabff;
+  --on-accent: #ffffff;
+  --accent-hover: #4d68ea;
+
+  --ink: #07090c;
+
+  --ro: #5fd3bd;
+  --ro-bg: #0f2723;
+  --ro-on: #04201b;
+
+  --na: #f3c262;
+  --na-bg: #2a2010;
+  --na-solid: #f3c262;
+  --na-on: #2a1a00;
+
+  --esc: #ff8e84;
+  --esc-bg: #2d1513;
+  --esc-on: #2d0a07;
+
+  --skeleton-a: #1b1f25;
+  --skeleton-b: #232831;
+}
+
+@media (max-width: 767px) {
+  :root {
+    --gutter: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 0ms;
+    --dur-med: 0ms;
+  }
+}
