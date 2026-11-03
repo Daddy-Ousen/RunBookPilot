@@ -1,31 +1,32 @@
 # Handoff
 
 ## Current state
-- Branch: `ui-redesign` (from main `d5fb9d5`). Tag `pre-redesign` marks the start.
-- Phase 0 (audit) is DONE. Files: `docs/ui-audit.md`, 21 screenshots in `docs/audit/`. No app code changed.
-- Not pushed. Dev server stopped.
+- Branch: `ui-redesign` (from main `d5fb9d5`). Tag `pre-redesign` marks the start. Not pushed.
+- Phase 0 (audit) is DONE: `docs/ui-audit.md`, 21 screenshots in `docs/audit/`.
+- Phase 1 (design plan) is DRAFTED: `docs/design-plan.md`. It WAITS for the owner's OK. Do not start Phase 2 before the OK.
+- No app code changed (`app/`, `static/`, `data/`, `tests/` untouched).
 
-## Next step
-- Phase 1: write `docs/design-plan.md` (Opus 5.5 high). Use `docs/ui-audit.md` as input. Stop for the owner's OK.
+## What Phase 1 decided (short)
+- Keep the calm hairline Geist look. Cool slate neutrals. Self-host Geist + Geist Mono with `font-display: swap`.
+- Brand accent changed from red-orange to cobalt (`#2b4acb` light, `#3d5ae0` fill / `#9aabff` text dark). Reason: red-orange looked like "escalate".
+- Risk colors: teal read-only, amber needs approval, red escalate. Confidence and queue priority use neutral ink.
+- Bold element: command block with a solid risk tab, 4 px risk rail, ink code surface in both themes, "Not run by RunbookPilot." in every block.
+- Layout: rail 216 px at >= 1200, 64 px icons at 768-1199, Menu sheet under the top bar at < 768. Two columns at >= 960.
+- Result order: verdict strip, likely cause, tickable steps, commands (read-only, then amber warning + needs-approval), source runbooks (expand), escalation, Details (collapsed), writeback bar ("Staged, not sent to a live PSA.").
+- Empty state: "Run demo" button (loads AD lockout sample and analyzes it).
 
-## Audit top 10 (one line each)
-1. 390 px top bar overlaps, page scrolls sideways (584 px).
-2. Result order wrong: writeback and badges before diagnosis and commands; no verdict strip.
-3. Raw terms in main UI (`read_only`, `needs_approval`, BM25, `executed_on_host`).
-4. Queue and RMM data not labelled sample/staged.
-5. Empty state is a spec sheet; no demo button.
-6. Nav: 3 tabs, "Integrations 0/12" chip, no Runbooks view, sandbox+benchmark mixed.
-7. Input column crowded; queue clipped; samples have no description.
-8. Errors and loading weak: raw text, no retry, no wait time.
-9. Tiny type (11 px mono), 24 font sizes, 17/24 targets under 40 px, some contrast fails.
-10. Command block: no tickable steps, no never-executed note near commands, runbook chips do not expand.
+## Next step (after owner OK)
+- Phase 2: Foundation (Opus 5.5 high). Build exactly the tokens, type scale, components, file split and router in `docs/design-plan.md` sections 2, 3, 4, 7. Keep all old features working.
 
 ## Gotchas
 - `.env` holds the real LLM key. Never print or commit it.
-- Port 8000 has a stale old server (PID 3952). Run new work on another port (8010 used) with `OPENBLAS_NUM_THREADS=1`.
-- Playwright MCP failed to connect. Python Playwright works with system `python` (not `.venv`). Script: scratchpad `shots.py`.
+- Port 8000 has a stale old server (PID 3952). Use port 8010 with `OPENBLAS_NUM_THREADS=1`.
+- Playwright MCP fails to connect. Python Playwright works with system `python` (not `.venv`).
 - Triage calls the live LLM (5 to 11 s). Keep calls few.
-- Full-page screenshots show sticky-header overlap. This is a capture artifact.
+- 429 sends a `Retry-After` header (`app/main.py:262`); use it for the countdown. Same-origin, so the header is readable.
+- Light amber tab fill `#f2b530` is 1.8:1 on white. Give it a 1 px `--na` border (plan section 2 says so).
+- Keep `#eval` working as an alias for `#benchmark` (old links).
+- Contrast script: scratchpad `contrast.py` of the Phase 1 session (not in repo). Re-run the pairs if any token changes.
 
 ## Active files
-- `docs/ui-audit.md`, `docs/audit/*.png`, `progress.md`, `handoff.md`.
+- `docs/design-plan.md`, `progress.md`, `handoff.md`.
