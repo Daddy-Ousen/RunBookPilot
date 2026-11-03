@@ -257,17 +257,40 @@
         <div class="view-head">
           <div>
             <h1 id="runbooks-title" class="view-title" tabindex="-1">Runbooks</h1>
-            <p>The runbooks RunbookPilot searches when it triages a ticket.</p>
+            <p>The runbooks RunbookPilot searches when it triages a ticket. Read them here. Nothing on this page runs a command.</p>
           </div>
         </div>
-        <div class="runbooks-tools">
-          <div class="field">
-            <label for="runbook-search" class="field-label">Search runbooks</label>
-            <input type="search" id="runbook-search" class="input" placeholder="Title or ID" autocomplete="off" />
+        <div id="runbooks-layout" class="runbooks-layout" data-reading="false">
+          <div class="runbooks-list-col">
+            <div class="runbooks-tools">
+              <div class="field">
+                <label for="runbook-search" class="field-label">Search runbooks</label>
+                <input type="search" id="runbook-search" class="input" placeholder="Title, ID or a word from the text" autocomplete="off" aria-describedby="runbook-count" />
+              </div>
+              <p id="runbook-count" class="t-sm text-2 tabular" role="status"></p>
+            </div>
+            <ul id="runbook-list" class="list runbook-list" aria-label="Runbooks"></ul>
           </div>
-          <span id="runbook-count" class="t-sm text-2 tabular"></span>
+          <article id="runbook-reader" class="reader" aria-labelledby="reader-title">
+            <button type="button" id="runbook-back" class="btn btn-secondary btn-sm reader-back">All runbooks</button>
+            <div id="reader-empty" class="reader-empty">
+              <p class="t-lg">Pick a runbook to read it.</p>
+              <p class="text-2">You see the same text RunbookPilot searches and the model copies commands from.</p>
+            </div>
+            <div id="reader-content" class="reader-content" hidden>
+              <div class="reader-head">
+                <h2 id="reader-title" class="reader-title" tabindex="-1"></h2>
+                <div class="cluster">
+                  <span id="reader-id" class="mono t-sm text-2 wrap-anywhere"></span>
+                  <span id="reader-added" class="badge badge-staged" hidden>Added in this session</span>
+                </div>
+                <ul id="reader-tags" class="tag-list" aria-label="Tags"></ul>
+              </div>
+              <p class="t-sm text-3">Commands in a runbook are for a person to read and run. RunbookPilot never runs them.</p>
+              <div id="reader-body" class="reader-body" aria-live="polite"></div>
+            </div>
+          </article>
         </div>
-        <ul id="runbook-list" class="list runbook-list"></ul>
       </section>
 
       <!-- Safety lab -->
@@ -275,32 +298,59 @@
         <div class="view-head">
           <div>
             <h1 id="safety-title" class="view-title" tabindex="-1">Safety lab</h1>
-            <p>Test how the safety rules label a PowerShell command. The command is never run.</p>
+            <p>Test how the safety rules label a PowerShell command. RunbookPilot checks the text only. It never runs the command.</p>
           </div>
         </div>
-        <div class="columns">
-          <div class="stack">
-            <form id="safety-inspect-form" class="stack" novalidate>
-              <div class="field">
-                <label for="safety-cmd-input" class="field-label">PowerShell command</label>
-                <input type="text" id="safety-cmd-input" class="input mono" value="Get-Service Spooler; Stop-Service Spooler -Force" maxlength="2000" spellcheck="false" autocomplete="off" />
-                <p class="field-help">Not run. RunbookPilot never runs commands.</p>
-              </div>
-              <div><button type="submit" id="btn-safety-inspect" class="btn btn-primary">Check command</button></div>
-            </form>
-            <section aria-labelledby="safety-presets-title">
-              <h2 id="safety-presets-title" class="section-title">Test commands</h2>
-              <ul id="safety-preset-list" class="list"></ul>
-            </section>
-          </div>
-          <section class="panel" aria-labelledby="safety-result-title" aria-live="polite">
-            <div class="section-head">
-              <h2 id="safety-result-title" class="section-title">Safety rule result</h2>
-              <span id="safety-verdict-badge" class="badge">Not checked yet</span>
+        <div class="safety-grid">
+          <form id="safety-inspect-form" class="stack safety-form" novalidate>
+            <div class="field">
+              <label for="safety-cmd-input" class="field-label">PowerShell command</label>
+              <input type="text" id="safety-cmd-input" class="input mono" value="Get-Service Spooler; Stop-Service Spooler -Force" maxlength="2000" spellcheck="false" autocomplete="off" aria-describedby="safety-cmd-help" />
+              <p id="safety-cmd-help" class="field-help">Type or paste one command. It is checked, not run.</p>
             </div>
-            <p id="safety-verdict-reason" class="text-2 prose"></p>
-            <h3 class="field-label stages-title">Pipeline stages</h3>
-            <ol id="safety-stages-list" class="stages-list"></ol>
+            <div><button type="submit" id="btn-safety-inspect" class="btn btn-primary">Check command</button></div>
+          </form>
+
+          <section class="safety-result" aria-labelledby="safety-result-title">
+            <h2 id="safety-result-title" class="section-title">Safety rule result</h2>
+            <div id="safety-result-region" class="stack" aria-live="polite">
+              <div id="safety-empty" class="reader-empty safety-empty">
+                <p class="t-lg">Not checked yet.</p>
+                <p class="text-2">Pick a test command, or type your own and select Check command.</p>
+              </div>
+              <article id="safety-block" class="cmd cmd-ro" hidden>
+                <span class="cmd-tab"><span id="safety-tab-icon"></span><span id="safety-tab-word"></span></span>
+                <div class="cmd-body">
+                  <div class="cmd-head">
+                    <div class="stack safety-verdict-text">
+                      <p id="safety-verdict-badge" class="cmd-purpose safety-verdict"></p>
+                      <p id="safety-verdict-reason" class="t-sm text-2"></p>
+                    </div>
+                  </div>
+                  <pre class="cmd-code"><span class="cmd-prompt" aria-hidden="true">PS&gt; </span><code id="safety-checked-cmd"></code></pre>
+                  <div class="cmd-foot">
+                    <span id="safety-not-run" class="cmd-note">Not run. RunbookPilot never runs commands.</span>
+                  </div>
+                </div>
+              </article>
+              <div id="safety-error" hidden></div>
+              <details id="safety-tech" class="disclosure" hidden>
+                <summary>Technical details</summary>
+                <dl class="kv safety-kv">
+                  <div><dt>Risk label (raw)</dt><dd id="safety-raw-risk" class="mono"></dd></div>
+                  <div><dt>executed_on_host</dt><dd id="safety-raw-executed" class="mono"></dd></div>
+                </dl>
+                <h3 class="field-label stages-title">Pipeline stages</h3>
+                <p class="field-help">The rules split a command at each pipe and check every part. A command blocked early has no stages.</p>
+                <ol id="safety-stages-list" class="stages-list"></ol>
+              </details>
+            </div>
+          </section>
+
+          <section class="safety-presets" aria-labelledby="safety-presets-title">
+            <h2 id="safety-presets-title" class="section-title">Test commands</h2>
+            <p class="field-help">Select one to fill the box and check it.</p>
+            <ul id="safety-preset-list" class="list"></ul>
           </section>
         </div>
       </section>
@@ -310,25 +360,43 @@
         <div class="view-head">
           <div>
             <h1 id="benchmark-title" class="view-title" tabindex="-1">Benchmark</h1>
-            <p>Retrieval and safety results over the 20 benchmark tickets and every runbook command.</p>
+            <p>A fixed test you can re-run. It checks if search finds the right runbook, and if the safety rules label every runbook command correctly. It does not call the model.</p>
           </div>
-          <button type="button" id="btn-refresh-eval" class="btn btn-secondary">Refresh</button>
+          <button type="button" id="btn-refresh-eval" class="btn btn-secondary">Run the test again</button>
         </div>
-        <dl class="kv panel bench-metrics">
-          <div><dt>Right runbook in the top 3</dt><dd id="eval-metric-hitrate" class="tabular">…</dd></div>
-          <div><dt>Benchmark tickets</dt><dd id="eval-metric-split" class="tabular">…</dd></div>
-          <div><dt>Commands checked</dt><dd id="eval-metric-commands" class="tabular">…</dd></div>
-          <div><dt>Commands that change the system but marked read-only</dt><dd id="eval-metric-unsafe" class="tabular">…</dd></div>
-        </dl>
+
+        <div id="bench-status" class="bench-status" role="status" aria-live="polite"></div>
+
+        <div class="bench-cards">
+          <section class="panel bench-card" aria-labelledby="bench-search-title">
+            <h2 id="bench-search-title" class="section-title">Runbook search</h2>
+            <p class="t-sm text-2">Each benchmark ticket has one expected runbook. A hit means that runbook is in the top 3 search results.</p>
+            <dl class="bench-metrics">
+              <div><dt>Right runbook in the top 3</dt><dd id="eval-metric-hitrate" class="tabular">…</dd></div>
+              <div><dt>Benchmark tickets</dt><dd id="eval-metric-split" class="tabular">…</dd></div>
+            </dl>
+          </section>
+          <section class="panel bench-card" aria-labelledby="bench-safety-title">
+            <h2 id="bench-safety-title" class="section-title">Command safety</h2>
+            <p class="t-sm text-2">The safety rules label every command in every runbook. The test looks for any command that changes the system but is marked read-only.</p>
+            <dl class="bench-metrics">
+              <div><dt>Commands checked</dt><dd id="eval-metric-commands" class="tabular">…</dd></div>
+              <div><dt>Commands that change the system but marked read-only</dt><dd class="bench-unsafe"><span id="eval-metric-unsafe" class="tabular">…</span> <span id="eval-metric-unsafe-state" class="badge badge-strong" hidden></span></dd></div>
+            </dl>
+          </section>
+        </div>
+
+        <h2 class="section-title bench-table-title">Ticket results</h2>
         <div class="table-wrap">
-          <table class="table">
-            <caption class="sr-only">Benchmark tickets</caption>
+          <table class="table bench-table">
+            <caption class="sr-only">Benchmark ticket results</caption>
             <thead>
-              <tr><th scope="col">Ticket</th><th scope="col">Expected runbook</th><th scope="col">Top 3 matches</th><th scope="col">Result</th></tr>
+              <tr><th scope="col">Ticket</th><th scope="col">Expected runbook</th><th scope="col">Top 3 matches (search score)</th><th scope="col">Result</th></tr>
             </thead>
             <tbody id="eval-rows"></tbody>
           </table>
         </div>
+        <p class="t-sm text-3 bench-note">Search uses BM25L, a word-matching score. A higher score ranks higher. Scores from different tickets do not compare with each other.</p>
       </section>
 
       <!-- Integrations -->
