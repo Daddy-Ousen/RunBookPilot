@@ -218,7 +218,7 @@
                 <ul class="legend-list">
                   <li class="legend-item legend-ro"><span class="legend-word">Read-only</span><span class="text-2">Only reads state. Safe to run.</span></li>
                   <li class="legend-item legend-na"><span class="legend-word">Needs approval</span><span class="text-2">Changes the system. Get approval first.</span></li>
-                  <li class="legend-item legend-esc"><span class="legend-word">Escalate</span><span class="text-2">No runbook covers the ticket. Send it to Tier 3.</span></li>
+                  <li class="legend-item legend-esc"><span class="legend-word">Escalate</span><span class="text-2">No runbook covers the ticket, or a runbook rule says to escalate. Send it to Tier 3.</span></li>
                 </ul>
               </div>
             </div>
@@ -499,7 +499,7 @@
           Escalate to Tier 3
         </h3>
         <p class="prose" data-slot="escalate-reason"></p>
-        <p class="t-sm text-2">Draft a runbook so the next ticket like this is covered, or flag the ticket for Tier 3.</p>
+        <p class="t-sm text-2" data-slot="escalate-help"></p>
         <div class="btn-row notice-actions">
           <button type="button" id="btn-draft-runbook" class="btn btn-primary">Draft a runbook</button>
           <button type="button" id="btn-escalate-flag" class="btn btn-secondary">Flag for Tier 3</button>
