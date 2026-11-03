@@ -4,7 +4,7 @@ import { byId } from "./dom.js";
 import { initTheme } from "./theme.js";
 import { initToast } from "./toast.js";
 import { initRouter, onRoute } from "./router.js";
-import { initRunbooks } from "./views/runbooks.js";
+import { initRunbooks, onRunbooksShown } from "./views/runbooks.js";
 import { initTriage, onTriageShown } from "./views/triage.js";
 import { initSafety, onSafetyShown } from "./views/safety.js";
 import { initBenchmark, onBenchmarkShown } from "./views/benchmark.js";
@@ -56,6 +56,7 @@ initBenchmark();
 initIntegrations();
 
 onRoute("triage", onTriageShown);
+onRoute("runbooks", onRunbooksShown);
 onRoute("safety", onSafetyShown);
 onRoute("benchmark", onBenchmarkShown);
 onRoute("integrations", onIntegrationsShown);

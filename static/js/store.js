@@ -61,7 +61,8 @@ export const state = {
   lastTicket: "",
   screenshot: null, // { dataUrl, name, caption }
   rmmLoopOutput: null,
-  draftMarkdown: new Map() // runbook ID -> markdown of a runbook added in this session
+  draftMarkdown: new Map(), // runbook ID -> markdown of a runbook added in this session
+  openRunbook: null // runbook ID to open when the Runbooks view shows next
 };
 
 // Tiny event bus between modules.

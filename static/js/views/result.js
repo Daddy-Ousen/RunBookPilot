@@ -9,6 +9,8 @@ import { post } from "../api.js";
 import { state, emit, loadJSON, saveJSON } from "../store.js";
 import { risk, confidence, countsLine, modelName, capital, verdict, NOT_RUN } from "../copy.js";
 import { copyButton } from "../clipboard.js";
+import { runbookText, failedMessage } from "../runbook-text.js";
+import { parseFrontMatter, renderMarkdown } from "../markdown.js";
 import { toast } from "../toast.js";
 
 const TICKS_PREFIX = "rbp_ticks_";
@@ -149,6 +151,28 @@ function fillDetails(root, slot, data, meta, commands) {
 
 /* ---------- Source runbooks ---------- */
 
+// Fills one source box with the runbook text. Tries again on a failed load.
+async function fillSourceText(box, id) {
+  clear(box).appendChild(el("p", { class: "t-sm text-3", role: "status", text: "Loading runbook text…" }));
+  const res = await runbookText(id);
+  clear(box);
+  if (!res.ok) {
+    box.appendChild(
+      el(
+        "div",
+        { class: "stack" },
+        el("p", { class: "t-sm text-2", role: "alert", text: failedMessage(res) }),
+        res.reason === "failed"
+          ? el("div", null, el("button", { type: "button", class: "btn btn-secondary btn-sm", text: "Try again", on: { click: () => fillSourceText(box, id) } }))
+          : null
+      )
+    );
+    return;
+  }
+  const { body } = parseFrontMatter(res.text);
+  box.appendChild(renderMarkdown(body, { headingOffset: 2 }));
+}
+
 function fillSources(root, slot, matched, meta) {
   const list = root.querySelector("#matched-runbooks-list");
   show(slot("no-runbooks"), matched.length === 0);
@@ -158,7 +182,7 @@ function fillSources(root, slot, matched, meta) {
   matched.forEach((id, i) => {
     const title = state.runbookTitles.get(id) || id;
     const rank = ranked.indexOf(id);
-    const markdown = state.draftMarkdown.get(id);
+    const text = el("div", { class: "source-text" });
     const body = el(
       "div",
       { class: "source-body stack" },
@@ -168,23 +192,28 @@ function fillSources(root, slot, matched, meta) {
         el("div", null, el("dt", { text: "Runbook ID" }), el("dd", { class: "mono wrap-anywhere", text: id })),
         el("div", null, el("dt", { text: "Search rank" }), el("dd", { text: rank >= 0 ? rank + 1 + " of " + ranked.length : "Picked by the model" }))
       ),
-      markdown
-        ? el("pre", { class: "code code-scroll source-text", text: markdown })
-        : el("p", { class: "t-sm text-3", text: "The triage answer sends the runbook ID and title only. The steps and commands above come from this runbook." })
+      text,
+      el("p", { class: "t-sm" }, el("a", { href: "#runbooks", text: "Open in Runbooks", on: { click: () => (state.openRunbook = id) } }))
     );
-    list.appendChild(
+    const details = el(
+      "details",
+      { class: "disclosure source" },
       el(
-        "details",
-        { class: "disclosure source" },
-        el(
-          "summary",
-          null,
-          el("span", { class: "source-title", text: title }),
-          i === 0 && matched.length > 1 ? el("span", { class: "badge", text: "Best match" }) : null
-        ),
-        body
-      )
+        "summary",
+        null,
+        el("span", { class: "source-title", text: title }),
+        i === 0 && matched.length > 1 ? el("span", { class: "badge", text: "Best match" }) : null
+      ),
+      body
     );
+    // The text loads on the first open, then stays in the page.
+    let started = false;
+    details.addEventListener("toggle", () => {
+      if (!details.open || started) return;
+      started = true;
+      fillSourceText(text, id);
+    });
+    list.appendChild(details);
   });
 }
 
