@@ -1,9 +1,9 @@
 # Handoff
 
 ## Current state
-- main = the Phase 0-6 redesign, LIVE at https://runbookpilot.rhasan.online (alias https://runbookpilot-phi.vercel.app). Tag `pre-redesign` (`d5fb9d5`) marks the old UI.
-- Branch `ui-mood` (from main, NOT pushed, NOT merged) = Phase 7 mood refresh, direction B "Friendly Daylight" (mockup: https://claude.ai/artifact/EzfKvysv39heCk4zjBQsoL, `project/Daylight.dc.html`).
-- Checks on `ui-mood`: pytest 105 passed; no innerHTML/outerHTML/insertAdjacentHTML in `static/`; `app/safety.py` unchanged vs `pre-redesign`; no diff in `app/ data/ tests/`; contrast script 128 pairs AA (light + dark); 5 routes at 1440 and 390, light and dark: no sideways scroll, no target under 40 px, no console errors (mocked `/triage`).
+- main = Phase 0-6 redesign + Phase 7 "Friendly Daylight" reskin (`27135d0`), LIVE at https://runbookpilot.rhasan.online (alias https://runbookpilot-phi.vercel.app). Tag `pre-redesign` (`d5fb9d5`) marks the old UI; `7533855` is the last commit before Phase 7 (roll back the look by reverting `27135d0`).
+- Mockup canvas: https://claude.ai/artifact/EzfKvysv39heCk4zjBQsoL (`project/Daylight.dc.html`). Branch `ui-mood` is merged (local only).
+- Checks (sub-session on `ui-mood`, master re-ran pytest and rule checks on main): pytest 105 passed; no innerHTML/outerHTML/insertAdjacentHTML in `static/`; `app/safety.py` unchanged vs `pre-redesign`; no diff in `app/ data/ tests/`; contrast script 128 pairs AA (light + dark); 5 routes at 1440 and 390, light and dark: no sideways scroll, no target under 40 px, no console errors (mocked `/triage`).
 - Screenshots: `docs/phase7/`.
 
 ## What Phase 7 changed (files)
@@ -13,10 +13,7 @@
 - New `static/js/ps-highlight.js` (PowerShell color spans, textContent only). Used by `views/result.js` and `views/safety.js`.
 
 ## Next step
-1. Owner reviews `ui-mood` locally (run the server on 8010, open `/#triage`, Run demo). Light and dark.
-2. If OK: push `ui-mood`, check the Vercel preview, then merge to main (fast-forward) and push. UI-work stop time: Nov 4, 12:00 Dhaka.
-3. If not OK or no time: main stays as it is. Nothing is lost.
-4. Then record the demo video and submit (due Nov 5, 08:00 Dhaka). Demo path: `/#triage`, Run demo, verdict, steps, commands, Copy; Uncovered VoIP sample (escalate); Safety lab.
+1. Record the demo video and submit (due Nov 5, 08:00 Dhaka). Demo path: `/#triage`, Run demo, verdict, steps, commands, Copy; Uncovered VoIP sample (escalate); Safety lab.
 
 ## Not done in Phase 7
 - Lighthouse / axe not re-run. Keyboard-only pass not re-run.

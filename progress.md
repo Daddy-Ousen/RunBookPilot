@@ -70,12 +70,15 @@ Source plan: `UI_REDESIGN_PLAN.md` (repo root). Follow it phase by phase. Stop a
   - [x] Owner approved the preview (phone test by owner).
   - [x] Merged `ui-redesign` into main (fast-forward to `58e7b73`), pytest 105 on main, pushed. Production deploy Ready at https://runbookpilot.rhasan.online (also https://runbookpilot-phi.vercel.app): `/`, CSS, JS, favicon, runbooks all 200; title "Triage · RunbookPilot".
 
-## Phase 7 (2026-11-04): Mood refresh (built on `ui-mood`, waits for owner review)
+## Phase 7 (2026-11-04): Mood refresh (DONE, live)
 - Owner said the live site looks "bland and depressing".
 - [x] 3 mood mockups on a design canvas (not in the repo): https://claude.ai/artifact/EzfKvysv39heCk4zjBQsoL. A = Midnight Console (dark first, cyan accent, IBM Plex Sans). B = Friendly Daylight (lavender ground, violet accent, rounded, pill nav, hero input, Manrope). C = Signal Blocks (filled cobalt rail, full-width amber verdict banner, Space Grotesk). All show the same AD lockout result.
 - [x] Owner picked B: Friendly Daylight (2026-11-04).
 - Model guide: Phase 7 = Opus 5.5, high (sub-session on branch `ui-mood`).
-- [x] Applied B on branch `ui-mood` (2026-11-04, sub-session). Not pushed, not merged.
+- [x] Applied B on branch `ui-mood` (2026-11-04, sub-session, `27135d0`).
+- [x] Master checked: pytest 105 on main; no diff in `app/ data/ tests/`; `app/safety.py` unchanged vs `pre-redesign`; no innerHTML in `static/`; screenshots match B.
+- [x] Owner chose to merge without a preview. Fast-forward main to `27135d0`, pushed. Production checked: `/`, tokens.css (has `#5b3df5`), Manrope font link, `ps-highlight.js`, favicon, `/runbooks` all 200; hero renders in the browser.
+- Not re-run: Lighthouse, axe, keyboard-only pass.
   - [x] Tokens (`static/css/tokens.css`, light + both dark blocks): lavender `#f4f2ff` ground, white surface, text `#1b1640`, violet accent `#5b3df5` / text `#4a2fe0` / tint `#ece8ff`; violet-tinted dark (`#120f24` bg, `#1a1633` surface, `#b5a6ff` accent text). New: `--r-pill`, `--r-input` 16, `--r-panel` 20, `--r-card` 24, `--shadow-card`, `--shadow-soft`, `--ro-solid`/`--ro-row`, `--na-ink`/`--na-sub`/`--na-line`, `--esc-ink`, 5 sample tints, 4 code colors.
   - [x] Font: Manrope 400-800 + JetBrains Mono via the same Google Fonts `<link>` (Geist removed). `theme-color` metas + `theme.js` bar colors = `#f4f2ff` / `#120f24`. Favicon violet `#5b3df5`; brand glyph uses it.
   - [x] Components: pill buttons (700 weight), pill badges, 16 px inputs (1.5 px `--line-strong` border kept for 3:1), segmented Mode = lavender track + white knob with violet ring, cards with soft shadow, tinted notices, rail active = solid violet pill at every width.
