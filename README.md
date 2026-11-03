@@ -121,7 +121,10 @@ All connectors operate in **staged/standby mode** (`live_sync_active=false`, `re
 - `PUT /integrations/{provider_id}`: Validate and stage endpoint URLs, credentials, and sync mode (`draft_internal_note`, `webhook_auto_triage`, or `manual_pull`).
 - `POST /integrations/{provider_id}/test`: Run a staged dry-run validation of required fields and URL schemas without making external network calls.
 - `DELETE /integrations/{provider_id}`: Clear stored credentials and reset the connector to `not_configured`.
-- `POST /integrations/webhooks/{provider_id}`: Standby webhook receiver that returns HTTP `202 Accepted` (`mode="staged_standby"`) and logs `request_id` + `provider_id` only (never webhook payload content).
+- `POST /integrations/webhooks/{provider_id}`: Standby webhook receiver that returns HTTP `202 Accepted` (`mode="staged_standby"`), enqueues incoming ticket/alert payloads into the pending queue, and logs `request_id` + `provider_id` only (never webhook payload content).
+- `GET /integrations/queue`: Returns pending and triaged PSA tickets and RMM alerts (each enriched with read-only `RMMDeviceTelemetry` endpoint context; supports `?staged_only=true` filtering).
+- `POST /integrations/tickets/{ticket_id}/writeback`: Formats and records a staged PSA internal triage note (`action="internal_note"`) or Tier 3 escalation (`action="escalate"`) and updates the queue item status (`triaged` / `escalated`).
+- `POST /integrations/rmm/dispatch` & `GET /integrations/rmm/jobs`: Deterministically classifies submitted commands via `app/safety.py` and queues a staged simulation job (`executed_on_host=false`). Commands classified as `needs_approval` require `approved_by_technician=true` and a non-empty `approval_note`.
 
 ---
 

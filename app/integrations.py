@@ -8,23 +8,34 @@ All connectors operate in staged/standby mode:
 
 from __future__ import annotations
 
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from threading import Lock
 from urllib.parse import urlparse
 
+from app.safety import classify_command
 from app.schema import (
     IntegrationCategory,
     IntegrationFieldSpec,
     IntegrationProviderView,
+    IntegrationQueueItem,
     IntegrationStatus,
     IntegrationSyncMode,
     IntegrationTestRequest,
     IntegrationTestResult,
     IntegrationUpdateRequest,
+    QueueItemPriority,
+    RMMDeviceTelemetry,
+    RMMDispatchRequest,
+    RMMJobRecord,
+    TicketWritebackRequest,
+    TicketWritebackResponse,
 )
 
 SECRET_MASK = "********"
+MAX_QUEUE_ITEMS = 50
+MAX_RMM_JOBS = 100
 
 
 class IntegrationNotFoundError(KeyError):
@@ -668,6 +679,260 @@ PROVIDER_CATALOG: tuple[IntegrationProviderSpec, ...] = (
 _CATALOG_BY_ID: dict[str, IntegrationProviderSpec] = {spec.id: spec for spec in PROVIDER_CATALOG}
 
 
+def _build_initial_queue() -> list[IntegrationQueueItem]:
+    """Return seeded synthetic PSA tickets and RMM alerts with device telemetry."""
+    return [
+        IntegrationQueueItem(
+            id="INC-40821",
+            external_ref="CW #40821",
+            provider_id="connectwise_psa",
+            provider_name="ConnectWise PSA",
+            category="ticketing",
+            title="Recurring AD account lockout for user01@corp.example.test",
+            ticket_text=(
+                "Standard user user01@corp.example.test changed their password yesterday and "
+                "now gets 'The referenced account is currently locked out' every 15 minutes. "
+                "Domain controller dc-01.corp.example.test logged Event ID 4740 from their "
+                "docked workstation wks-acct-07.corp.example.test."
+            ),
+            priority="high",
+            status="pending",
+            created_at="2026-11-03T09:42:00Z",
+            requester="user01@corp.example.test",
+            device=RMMDeviceTelemetry(
+                hostname="dc-01.corp.example.test",
+                rmm_provider_id="ninjaone_rmm",
+                rmm_provider_name="NinjaOne RMM",
+                os_version="Windows Server 2022 Datacenter (21H2)",
+                agent_status="online",
+                last_boot="14d 06h ago",
+                cpu_percent=18,
+                memory_percent=54,
+                disk_free_gb=142.4,
+                active_alert="Security Event ID 4740 threshold exceeded (6 lockouts / 15m)",
+                ip_address="10.20.0.10",
+            ),
+        ),
+        IntegrationQueueItem(
+            id="INC-40829",
+            external_ref="NINJA-9914",
+            provider_id="ninjaone_rmm",
+            provider_name="NinjaOne RMM",
+            category="rmm",
+            title="VSS snapshot timeout 0x800423f4 during nightly image backup",
+            ticket_text=(
+                "Alert on srv-app-01.corp.example.test: Last night's scheduled BCDR image "
+                "backup failed at 02:15 AM with error 0x800423f4 and VSS Event ID 8193 "
+                "snapshot timeout. Volume Shadow Copy writers are stuck in a retryable error state."
+            ),
+            priority="critical",
+            status="pending",
+            created_at="2026-11-03T09:31:00Z",
+            requester="alert-monitor@msp-alpha.example.test",
+            device=RMMDeviceTelemetry(
+                hostname="srv-app-01.corp.example.test",
+                rmm_provider_id="ninjaone_rmm",
+                rmm_provider_name="NinjaOne RMM",
+                os_version="Windows Server 2019 Standard (1809)",
+                agent_status="degraded",
+                last_boot="47d 19h ago",
+                cpu_percent=34,
+                memory_percent=78,
+                disk_free_gb=68.0,
+                active_alert="VSS Writer state error + Backup job failure (0x800423f4)",
+                ip_address="10.20.10.24",
+            ),
+        ),
+        IntegrationQueueItem(
+            id="INC-40834",
+            external_ref="HALO-19204",
+            provider_id="halopsa",
+            provider_name="HaloPSA",
+            category="ticketing",
+            title="Print jobs stuck in Spooling on finance floor printer queue",
+            ticket_text=(
+                "Multiple users in Finance cannot print to shared printer PRN-FIN-02 on print "
+                "server srv-print-01.corp.example.test. Jobs remain stuck in 'Spooling' or "
+                "'Deleting' status and the Print Spooler service terminated unexpectedly (Event ID 7031)."
+            ),
+            priority="medium",
+            status="pending",
+            created_at="2026-11-03T09:18:00Z",
+            requester="fin-ops@corp.example.test",
+            device=RMMDeviceTelemetry(
+                hostname="srv-print-01.corp.example.test",
+                rmm_provider_id="datto_rmm",
+                rmm_provider_name="Datto RMM",
+                os_version="Windows Server 2022 Standard (21H2)",
+                agent_status="online",
+                last_boot="9d 11h ago",
+                cpu_percent=12,
+                memory_percent=46,
+                disk_free_gb=94.2,
+                active_alert="Service Spooler unexpected termination (Event ID 7031)",
+                ip_address="10.20.10.35",
+            ),
+        ),
+        IntegrationQueueItem(
+            id="INC-40840",
+            external_ref="AT-20261103.0042",
+            provider_id="autotask_psa",
+            provider_name="Datto Autotask PSA",
+            category="ticketing",
+            title="Workstation cannot resolve internal DNS names after VPN reconnect",
+            ticket_text=(
+                "Workstation wks-fin-04.corp.example.test cannot reach internal file share "
+                "\\\\srv-fs-02.corp.example.test\\finance by hostname after reconnecting to split-tunnel "
+                "VPN, though ping to 10.20.10.15 succeeds. nslookup times out against stale DNS cache."
+            ),
+            priority="high",
+            status="pending",
+            created_at="2026-11-03T08:55:00Z",
+            requester="user04@corp.example.test",
+            device=RMMDeviceTelemetry(
+                hostname="wks-fin-04.corp.example.test",
+                rmm_provider_id="connectwise_automate",
+                rmm_provider_name="ConnectWise Automate",
+                os_version="Windows 11 Enterprise (23H2)",
+                agent_status="online",
+                last_boot="3d 04h ago",
+                cpu_percent=22,
+                memory_percent=61,
+                disk_free_gb=188.5,
+                active_alert="Internal DNS resolution check failed for corp.example.test",
+                ip_address="10.20.40.114",
+            ),
+        ),
+        IntegrationQueueItem(
+            id="INC-40845",
+            external_ref="DRMM-7710",
+            provider_id="datto_rmm",
+            provider_name="Datto RMM",
+            category="rmm",
+            title="System C: drive free space below 4% threshold on file server",
+            ticket_text=(
+                "Datto RMM disk monitor triggered on srv-fs-02.corp.example.test: System volume "
+                "C: has only 3.2 GB free (3.8% remaining). C:\\Windows\\Temp and C:\\Windows\\Logs\\CBS "
+                "consumed 28 GB after cumulative update staging."
+            ),
+            priority="high",
+            status="pending",
+            created_at="2026-11-03T08:30:00Z",
+            requester="drmm-monitor@msp-alpha.example.test",
+            device=RMMDeviceTelemetry(
+                hostname="srv-fs-02.corp.example.test",
+                rmm_provider_id="datto_rmm",
+                rmm_provider_name="Datto RMM",
+                os_version="Windows Server 2022 Standard (21H2)",
+                agent_status="degraded",
+                last_boot="62d 02h ago",
+                cpu_percent=29,
+                memory_percent=71,
+                disk_free_gb=3.2,
+                active_alert="Logical disk C: free space < 5% critical threshold",
+                ip_address="10.20.10.15",
+            ),
+        ),
+        IntegrationQueueItem(
+            id="INC-40851",
+            external_ref="SN-INC0094120",
+            provider_id="servicenow_itsm",
+            provider_name="ServiceNow ITSM",
+            category="ticketing",
+            title="Outbound M365 emails stuck in Deferred queue after gateway update",
+            ticket_text=(
+                "Users at tenant-alpha.test report outbound M365 emails to external partner "
+                "domains are delayed by 45 minutes and sitting in Deferred status in Exchange "
+                "Online message trace with '451 4.4.0 DNS query failed' on partner-relay.example.test."
+            ),
+            priority="medium",
+            status="pending",
+            created_at="2026-11-03T08:12:00Z",
+            requester="it-service-desk@tenant-alpha.test",
+            device=RMMDeviceTelemetry(
+                hostname="srv-hybrid-01.corp.example.test",
+                rmm_provider_id="nable_ncentral",
+                rmm_provider_name="N-able N-central",
+                os_version="Windows Server 2022 Standard (21H2)",
+                agent_status="online",
+                last_boot="21d 08h ago",
+                cpu_percent=15,
+                memory_percent=52,
+                disk_free_gb=110.0,
+                active_alert="Exchange hybrid connector queue length > 25 messages",
+                ip_address="10.20.20.40",
+            ),
+        ),
+    ]
+
+
+def _simulate_rmm_output(
+    *,
+    hostname: str,
+    rmm_name: str,
+    command: str,
+    classified_risk: str,
+    approval_note: str | None,
+) -> str:
+    """Generate a clearly labeled staged-simulation transcript without executing any command."""
+    header = (
+        f"[STAGED RMM SIMULATION - NO HOST COMMAND EXECUTED]\n"
+        f"Connector : {rmm_name} (standby simulation mode)\n"
+        f"Endpoint  : {hostname}\n"
+        f"Risk Gate : {classified_risk}"
+    )
+    if classified_risk == "needs_approval":
+        header += f" (Approved: {approval_note})"
+
+    lowered = command.lower()
+    if "get-aduser" in lowered or "4740" in lowered:
+        body = (
+            "Simulated RMM Agent Output (Preview):\n"
+            "SamAccountName : user01\n"
+            "LockedOut      : True\n"
+            "BadPwdCount    : 5\n"
+            "CallerComputer : WKS-ACCT-07.corp.example.test"
+        )
+    elif "unlock-adaccount" in lowered:
+        body = (
+            "Simulated RMM Component Queued:\n"
+            "Action : Unlock-ADAccount for identity 'user01' staged in RMM job queue."
+        )
+    elif "vss" in lowered or "8193" in lowered or "shadow" in lowered:
+        body = (
+            "Simulated RMM Agent Output (Preview):\n"
+            "Writer name: 'System Writer' | State: [8] Failed | Last error: Timed out\n"
+            "Writer name: 'SqlServerWriter' | State: [5] Waiting for completion"
+        )
+    elif "spooler" in lowered or "print" in lowered:
+        body = (
+            "Simulated RMM Agent Output (Preview):\n"
+            "Status   Name               DisplayName\n"
+            "------   ----               -----------\n"
+            "Running  Spooler            Print Spooler (Stale jobs in C:\\Windows\\System32\\spool\\PRINTERS: 4)"
+        )
+    elif "dns" in lowered or "ipconfig" in lowered or "nslookup" in lowered:
+        body = (
+            "Simulated RMM Agent Output (Preview):\n"
+            "Connection-specific DNS Suffix  . : corp.example.test\n"
+            "DNS Servers . . . . . . . . . . . : 10.20.0.10, 10.20.0.11"
+        )
+    elif "psdrive" in lowered or "childitem" in lowered or "measure-object" in lowered:
+        body = (
+            "Simulated RMM Agent Output (Preview):\n"
+            "Name  Used (GB)  Free (GB)  Provider\n"
+            "----  ---------  ---------  --------\n"
+            "C         79.80       3.20  FileSystem"
+        )
+    else:
+        body = (
+            "Simulated RMM Job Staged:\n"
+            f"Command '{command}' queued in {rmm_name} standby queue for {hostname}."
+        )
+
+    return f"{header}\n\n{body}"
+
+
 class IntegrationRegistry:
     """Thread-safe registry managing staged RMM and Ticketing integration configs."""
 
@@ -676,6 +941,8 @@ class IntegrationRegistry:
         self._states: dict[str, _StoredProviderState] = {
             spec.id: _StoredProviderState() for spec in PROVIDER_CATALOG
         }
+        self._queue: list[IntegrationQueueItem] = _build_initial_queue()
+        self._rmm_jobs: list[RMMJobRecord] = []
 
     def _get_spec(self, provider_id: str) -> IntegrationProviderSpec:
         spec = _CATALOG_BY_ID.get(provider_id)
@@ -872,3 +1139,237 @@ class IntegrationRegistry:
             missing_fields=[],
             invalid_fields=[],
         )
+
+    def list_queue(
+        self,
+        *,
+        provider_id: str | None = None,
+        staged_only: bool = False,
+    ) -> list[IntegrationQueueItem]:
+        """Return pending and triaged PSA/RMM queue items."""
+        with self._lock:
+            items = list(self._queue)
+            if provider_id:
+                items = [item for item in items if item.provider_id == provider_id]
+            if staged_only:
+                staged_ids = {
+                    pid
+                    for pid, st in self._states.items()
+                    if self._compute_status(st.enabled, st.values) == "staged"
+                }
+                items = [item for item in items if item.provider_id in staged_ids]
+            return [item.model_copy(deep=True) for item in items]
+
+    def get_queue_item(self, ticket_id: str) -> IntegrationQueueItem:
+        """Look up a single queue item by ID."""
+        with self._lock:
+            for item in self._queue:
+                if item.id == ticket_id:
+                    return item.model_copy(deep=True)
+        raise IntegrationNotFoundError(f"Queue item '{ticket_id}' not found.")
+
+    def enqueue_webhook_event(
+        self, provider_id: str, payload: dict[str, object]
+    ) -> IntegrationQueueItem | None:
+        """Create a pending queue item when a webhook payload contains summary/ticket fields."""
+        spec = self._get_spec(provider_id)
+        raw_title = (
+            payload.get("title")
+            or payload.get("summary")
+            or payload.get("subject")
+            or payload.get("alert_name")
+        )
+        raw_text = (
+            payload.get("ticket_text")
+            or payload.get("description")
+            or payload.get("body")
+            or payload.get("message")
+            or raw_title
+        )
+        if not isinstance(raw_title, str) or not raw_title.strip():
+            return None
+        if not isinstance(raw_text, str) or not raw_text.strip():
+            return None
+
+        title = raw_title.strip()[:160]
+        ticket_text = raw_text.strip()[:4000]
+        raw_host = payload.get("hostname") or payload.get("device_hostname") or "srv-win-01.corp.example.test"
+        hostname = str(raw_host).strip()[:120] or "srv-win-01.corp.example.test"
+
+        raw_priority = str(payload.get("priority", "medium")).strip().lower()
+        priority: QueueItemPriority = (
+            raw_priority  # type: ignore[assignment]
+            if raw_priority in ("critical", "high", "medium", "low")
+            else "medium"
+        )
+
+        now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        short_id = uuid.uuid4().hex[:5].upper()
+        item_id = f"WH-{short_id}"
+        ext_ref = str(payload.get("external_ref") or payload.get("ticket_id") or item_id)[:40]
+
+        rmm_id = spec.id if spec.category == "rmm" else "ninjaone_rmm"
+        rmm_name = spec.name if spec.category == "rmm" else "NinjaOne RMM"
+
+        new_item = IntegrationQueueItem(
+            id=item_id,
+            external_ref=ext_ref,
+            provider_id=spec.id,
+            provider_name=spec.name,
+            category=spec.category,
+            title=title,
+            ticket_text=ticket_text,
+            priority=priority,
+            status="pending",
+            created_at=now_iso,
+            requester="webhook@msp-alpha.example.test",
+            device=RMMDeviceTelemetry(
+                hostname=hostname,
+                rmm_provider_id=rmm_id,
+                rmm_provider_name=rmm_name,
+                os_version="Windows Server 2022 Standard (21H2)",
+                agent_status="online",
+                last_boot="6d 02h ago",
+                cpu_percent=24,
+                memory_percent=58,
+                disk_free_gb=84.0,
+                active_alert=title[:120],
+                ip_address="10.20.10.50",
+            ),
+        )
+
+        with self._lock:
+            self._queue.insert(0, new_item)
+            if len(self._queue) > MAX_QUEUE_ITEMS:
+                self._queue = self._queue[:MAX_QUEUE_ITEMS]
+            return new_item.model_copy(deep=True)
+
+    def writeback_ticket(
+        self, ticket_id: str, payload: TicketWritebackRequest
+    ) -> TicketWritebackResponse:
+        """Format and record a staged PSA internal note or escalation update."""
+        provider_spec = self._get_spec(payload.provider_id)
+        now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+        runbooks_line = (
+            ", ".join(payload.matched_runbooks) if payload.matched_runbooks else "None (Escalated)"
+        )
+        steps_lines = "\n".join(
+            f"{idx + 1}. {step}" for idx, step in enumerate(payload.steps[:10])
+        ) or "None"
+        cmd_lines = "\n".join(
+            f"- [{cmd.risk}] {cmd.command} ({cmd.purpose})" for cmd in payload.commands[:10]
+        ) or "None"
+
+        header_tag = (
+            "[RunbookPilot Escalation Notice]"
+            if payload.action == "escalate"
+            else "[RunbookPilot Internal Triage Note]"
+        )
+        note_lines = [
+            f"{header_tag} ({now_iso})",
+            f"Target Connector: {provider_spec.name} (staged simulation)",
+            f"Root Cause ({payload.confidence} confidence): {payload.likely_cause}",
+            f"Matched Runbooks: {runbooks_line}",
+        ]
+        if payload.action == "escalate" and payload.escalate_reason:
+            note_lines.append(f"Escalation Reason: {payload.escalate_reason}")
+        note_lines.append(f"Remediation Steps:\n{steps_lines}")
+        note_lines.append(f"Suggested PowerShell Commands (Display-Only):\n{cmd_lines}")
+        note_preview = "\n".join(note_lines)
+
+        new_status = "escalated" if payload.action == "escalate" else "triaged"
+        external_ref = ticket_id
+
+        with self._lock:
+            for idx, item in enumerate(self._queue):
+                if item.id == ticket_id:
+                    external_ref = item.external_ref
+                    updated_item = item.model_copy(
+                        update={
+                            "status": new_status,
+                            "last_writeback_note": note_preview,
+                            "last_writeback_at": now_iso,
+                        }
+                    )
+                    self._queue[idx] = updated_item
+                    break
+
+        action_label = (
+            "flagged for Tier 3 escalation"
+            if payload.action == "escalate"
+            else "updated with an internal triage note"
+        )
+        return TicketWritebackResponse(
+            ticket_id=ticket_id,
+            external_ref=external_ref,
+            provider_id=provider_spec.id,
+            provider_name=provider_spec.name,
+            action=payload.action,
+            ticket_status=new_status,
+            mode="staged_simulation",
+            note_preview=note_preview,
+            recorded_at=now_iso,
+            message=(
+                f"Ticket {external_ref} {action_label} in {provider_spec.name} "
+                "(staged simulation mode)."
+            ),
+        )
+
+    def dispatch_rmm_command(self, payload: RMMDispatchRequest) -> RMMJobRecord:
+        """Deterministically classify a command and queue a staged RMM job record."""
+        spec = self._get_spec(payload.rmm_provider_id)
+        if spec.category != "rmm":
+            raise IntegrationValidationError(
+                f"Provider '{spec.name}' is a Ticketing/PSA connector, not an RMM platform."
+            )
+
+        # Always re-classify command deterministically on the backend (never trust client input).
+        classified_risk = classify_command(payload.command)
+        approval_note = (payload.approval_note or "").strip() or None
+
+        if classified_risk == "needs_approval":
+            if not payload.approved_by_technician or not approval_note:
+                raise IntegrationValidationError(
+                    "Commands classified as needs_approval require explicit technician approval "
+                    "and a non-empty approval_note before queuing an RMM job."
+                )
+
+        now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        job_id = f"RMM-JOB-{uuid.uuid4().hex[:6].upper()}"
+        sim_output = _simulate_rmm_output(
+            hostname=payload.hostname,
+            rmm_name=spec.name,
+            command=payload.command,
+            classified_risk=classified_risk,
+            approval_note=approval_note,
+        )
+
+        record = RMMJobRecord(
+            job_id=job_id,
+            rmm_provider_id=spec.id,
+            rmm_provider_name=spec.name,
+            hostname=payload.hostname,
+            ticket_id=payload.ticket_id,
+            command=payload.command,
+            purpose=payload.purpose,
+            classified_risk=classified_risk,
+            approved_by_technician=payload.approved_by_technician,
+            approval_note=approval_note,
+            mode="staged_simulation",
+            executed_on_host=False,
+            status="queued_staged",
+            simulated_output=sim_output,
+            created_at=now_iso,
+        )
+
+        with self._lock:
+            self._rmm_jobs.insert(0, record)
+            if len(self._rmm_jobs) > MAX_RMM_JOBS:
+                self._rmm_jobs = self._rmm_jobs[:MAX_RMM_JOBS]
+        return record
+
+    def list_rmm_jobs(self) -> list[RMMJobRecord]:
+        """Return staged RMM job records."""
+        with self._lock:
+            return [job.model_copy(deep=True) for job in self._rmm_jobs]

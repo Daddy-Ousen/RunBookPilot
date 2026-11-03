@@ -12,6 +12,9 @@ IntegrationCategory = Literal["ticketing", "rmm"]
 IntegrationStatus = Literal["not_configured", "staged", "paused"]
 IntegrationSyncMode = Literal["draft_internal_note", "webhook_auto_triage", "manual_pull"]
 IntegrationFieldType = Literal["url", "text", "secret"]
+QueueItemStatus = Literal["pending", "triaged", "escalated"]
+QueueItemPriority = Literal["critical", "high", "medium", "low"]
+TicketWritebackAction = Literal["internal_note", "escalate"]
 
 MAX_TICKET_CHARS = 4000
 MAX_INTEGRATION_FIELD_CHARS = 512
@@ -199,4 +202,112 @@ class WebhookAckResponse(BaseModel):
     mode: Literal["staged_standby"] = "staged_standby"
     provider_status: IntegrationStatus
     request_id: str
+    queued_ticket_id: str | None = None
     message: str
+
+
+class RMMDeviceTelemetry(BaseModel):
+    """Read-only endpoint telemetry context enriched from an RMM connector."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    hostname: str
+    rmm_provider_id: str
+    rmm_provider_name: str
+    os_version: str
+    agent_status: Literal["online", "degraded", "offline"]
+    last_boot: str
+    cpu_percent: int = Field(..., ge=0, le=100)
+    memory_percent: int = Field(..., ge=0, le=100)
+    disk_free_gb: float = Field(..., ge=0.0)
+    active_alert: str
+    ip_address: str
+
+
+class IntegrationQueueItem(BaseModel):
+    """A pending or triaged support ticket or RMM alert in the integration queue."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    external_ref: str
+    provider_id: str
+    provider_name: str
+    category: IntegrationCategory
+    title: str
+    ticket_text: str
+    priority: QueueItemPriority
+    status: QueueItemStatus = "pending"
+    created_at: str
+    requester: str
+    device: RMMDeviceTelemetry | None = None
+    last_writeback_note: str | None = None
+    last_writeback_at: str | None = None
+
+
+class TicketWritebackRequest(BaseModel):
+    """Payload for posting a triage internal note or escalation status to a PSA ticket."""
+
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    provider_id: str = Field(..., min_length=1, max_length=64)
+    action: TicketWritebackAction = "internal_note"
+    likely_cause: str = Field(..., min_length=1, max_length=2000)
+    confidence: ConfidenceLevel
+    matched_runbooks: list[str] = Field(default_factory=list)
+    steps: list[str] = Field(default_factory=list)
+    commands: list[CommandItem] = Field(default_factory=list)
+    escalate_reason: str | None = Field(default=None, max_length=1000)
+
+
+class TicketWritebackResponse(BaseModel):
+    """Result of writing a triage note or escalation update back to a PSA ticket."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    ticket_id: str
+    external_ref: str
+    provider_id: str
+    provider_name: str
+    action: TicketWritebackAction
+    ticket_status: QueueItemStatus
+    mode: Literal["staged_simulation"] = "staged_simulation"
+    note_preview: str
+    recorded_at: str
+    message: str
+
+
+class RMMDispatchRequest(BaseModel):
+    """Request to queue a PowerShell diagnostic check or approved component in an RMM."""
+
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    rmm_provider_id: str = Field(..., min_length=1, max_length=64)
+    hostname: str = Field(..., min_length=1, max_length=255)
+    command: str = Field(..., min_length=1, max_length=2000)
+    purpose: str = Field(..., min_length=1, max_length=500)
+    ticket_id: str | None = Field(default=None, max_length=64)
+    approved_by_technician: bool = False
+    approval_note: str | None = Field(default=None, max_length=500)
+
+
+class RMMJobRecord(BaseModel):
+    """Staged RMM job record with deterministic safety classification and simulated output."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    job_id: str
+    rmm_provider_id: str
+    rmm_provider_name: str
+    hostname: str
+    ticket_id: str | None = None
+    command: str
+    purpose: str
+    classified_risk: CommandRisk
+    approved_by_technician: bool
+    approval_note: str | None = None
+    mode: Literal["staged_simulation"] = "staged_simulation"
+    executed_on_host: Literal[False] = False
+    status: Literal["queued_staged"] = "queued_staged"
+    simulated_output: str
+    created_at: str

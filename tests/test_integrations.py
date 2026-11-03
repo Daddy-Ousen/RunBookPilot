@@ -238,6 +238,188 @@ def test_ui_includes_integrations_settings_workspace_elements() -> None:
             "cfg-webhook-url",
             "cfg-test-btn",
             "cfg-save-btn",
+            "pending-queue-panel",
+            "pending-queue-list",
+            "rmm-telemetry-panel",
+            "psa-writeback-panel",
         ):
             assert elem_id in ui.text
         assert len(PROVIDER_CATALOG) == 12
+
+
+def test_pending_queue_rmm_telemetry_and_staged_filter() -> None:
+    app = create_app()
+    with TestClient(app) as client:
+        # 1. Default queue contains 6 seeded items with RMM device telemetry
+        q_resp = client.get("/integrations/queue")
+        assert q_resp.status_code == 200
+        items = q_resp.json()
+        assert len(items) == 6
+        first = items[0]
+        assert first["id"] == "INC-40821"
+        assert first["device"] is not None
+        assert first["device"]["hostname"] == "dc-01.corp.example.test"
+        assert first["device"]["rmm_provider_id"] == "ninjaone_rmm"
+
+        # 2. Staged-only filter returns empty before any connector is staged
+        staged_empty = client.get("/integrations/queue?staged_only=true")
+        assert staged_empty.status_code == 200
+        assert staged_empty.json() == []
+
+        # 3. Stage ConnectWise PSA and verify staged_only returns ConnectWise tickets
+        stage_cw = client.put(
+            "/integrations/connectwise_psa",
+            json={
+                "enabled": True,
+                "sync_mode": "draft_internal_note",
+                "values": {
+                    "site_url": "https://psa.msp-alpha.example.test",
+                    "company_id": "msp_alpha",
+                    "client_id": "00000000-0000-0000-0000-000000000000",
+                    "public_key": "pub_01",
+                    "private_key": "prv_secret_01",
+                },
+            },
+        )
+        assert stage_cw.status_code == 200
+
+        staged_items = client.get("/integrations/queue?staged_only=true").json()
+        assert len(staged_items) == 1
+        assert staged_items[0]["provider_id"] == "connectwise_psa"
+
+
+def test_psa_ticket_writeback_and_escalation_updates_queue_status(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    app = create_app()
+    secret_cause_marker = "SENSITIVE_DIAGNOSIS_NOTE_CONTENT_77312"
+
+    with caplog.at_level(logging.INFO):
+        with TestClient(app) as client:
+            wb = client.post(
+                "/integrations/tickets/INC-40821/writeback",
+                json={
+                    "provider_id": "connectwise_psa",
+                    "action": "internal_note",
+                    "likely_cause": f"Stale cached credentials on workstation ({secret_cause_marker}).",
+                    "confidence": "high",
+                    "matched_runbooks": ["rb-01-ad-account-lockout"],
+                    "steps": ["Check Event ID 4740 caller computer", "Clear cached credentials"],
+                    "commands": [
+                        {
+                            "command": "Get-ADUser -Identity user01 -Properties LockedOut",
+                            "purpose": "Check lockout state",
+                            "risk": "read_only",
+                        }
+                    ],
+                },
+            )
+            assert wb.status_code == 200
+            wb_data = wb.json()
+            assert wb_data["ticket_status"] == "triaged"
+            assert wb_data["mode"] == "staged_simulation"
+            assert "rb-01-ad-account-lockout" in wb_data["note_preview"]
+
+            # Queue item status should now be 'triaged'
+            queue_after = client.get("/integrations/queue").json()
+            item_after = next(i for i in queue_after if i["id"] == "INC-40821")
+            assert item_after["status"] == "triaged"
+
+            # Escalation action transitions status to 'escalated'
+            esc = client.post(
+                "/integrations/tickets/INC-40821/writeback",
+                json={
+                    "provider_id": "connectwise_psa",
+                    "action": "escalate",
+                    "likely_cause": "Requires Tier 3 domain controller review.",
+                    "confidence": "low",
+                    "matched_runbooks": [],
+                    "steps": [],
+                    "commands": [],
+                    "escalate_reason": "Domain controller replication conflict.",
+                },
+            )
+            assert esc.status_code == 200
+            assert esc.json()["ticket_status"] == "escalated"
+
+    logged_text = "\n".join(record.getMessage() for record in caplog.records)
+    assert secret_cause_marker not in logged_text
+
+
+def test_safety_gated_rmm_command_dispatch_enforces_approval_for_mutating_commands(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    app = create_app()
+    unique_cmd_marker = "SENSITIVE_POWERSHELL_ARG_55192"
+
+    with caplog.at_level(logging.INFO):
+        with TestClient(app) as client:
+            # 1. read_only command succeeds without technician approval
+            ro_resp = client.post(
+                "/integrations/rmm/dispatch",
+                json={
+                    "rmm_provider_id": "ninjaone_rmm",
+                    "hostname": "dc-01.corp.example.test",
+                    "command": f"Get-ADUser -Identity {unique_cmd_marker} -Properties LockedOut",
+                    "purpose": "Verify lockout status",
+                    "ticket_id": "INC-40821",
+                    "approved_by_technician": False,
+                },
+            )
+            assert ro_resp.status_code == 200
+            ro_job = ro_resp.json()
+            assert ro_job["classified_risk"] == "read_only"
+            assert ro_job["executed_on_host"] is False
+            assert ro_job["mode"] == "staged_simulation"
+
+            # 2. needs_approval command WITHOUT technician approval is blocked (422)
+            blocked_resp = client.post(
+                "/integrations/rmm/dispatch",
+                json={
+                    "rmm_provider_id": "ninjaone_rmm",
+                    "hostname": "dc-01.corp.example.test",
+                    "command": "Unlock-ADAccount -Identity user01",
+                    "purpose": "Unlock user01 AD account",
+                    "ticket_id": "INC-40821",
+                    "approved_by_technician": False,
+                },
+            )
+            assert blocked_resp.status_code == 422
+
+            # 3. needs_approval command WITH technician approval and approval_note succeeds
+            approved_resp = client.post(
+                "/integrations/rmm/dispatch",
+                json={
+                    "rmm_provider_id": "ninjaone_rmm",
+                    "hostname": "dc-01.corp.example.test",
+                    "command": "Unlock-ADAccount -Identity user01",
+                    "purpose": "Unlock user01 AD account",
+                    "ticket_id": "INC-40821",
+                    "approved_by_technician": True,
+                    "approval_note": "CHG-1042 approved by Tier 2 lead",
+                },
+            )
+            assert approved_resp.status_code == 200
+            app_job = approved_resp.json()
+            assert app_job["classified_risk"] == "needs_approval"
+            assert app_job["approved_by_technician"] is True
+            assert app_job["executed_on_host"] is False
+
+            # 4. Ticketing provider rejected for RMM dispatch
+            wrong_cat = client.post(
+                "/integrations/rmm/dispatch",
+                json={
+                    "rmm_provider_id": "connectwise_psa",
+                    "hostname": "dc-01.corp.example.test",
+                    "command": "Get-Service -Name Spooler",
+                    "purpose": "Check spooler",
+                },
+            )
+            assert wrong_cat.status_code == 422
+
+            # 5. Jobs list contains the 2 queued jobs
+            jobs = client.get("/integrations/rmm/jobs").json()
+            assert len(jobs) == 2
+
+    logged_text = "\n".join(record.getMessage() for record in caplog.records)
+    assert unique_cmd_marker not in logged_text

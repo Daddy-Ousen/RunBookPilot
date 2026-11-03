@@ -33,9 +33,14 @@ from app.retrieval import DEFAULT_RUNBOOKS_DIR, RunbookIndex
 from app.safety import apply_safety_overrides
 from app.schema import (
     IntegrationProviderView,
+    IntegrationQueueItem,
     IntegrationTestRequest,
     IntegrationTestResult,
     IntegrationUpdateRequest,
+    RMMDispatchRequest,
+    RMMJobRecord,
+    TicketWritebackRequest,
+    TicketWritebackResponse,
     TriageRequest,
     TriageResult,
     WebhookAckResponse,
@@ -279,6 +284,61 @@ def create_app(
     async def list_integrations() -> list[IntegrationProviderView]:
         return registry.list_providers()
 
+    @application.get("/integrations/queue", response_model=list[IntegrationQueueItem])
+    async def list_integration_queue(
+        provider_id: str | None = None, staged_only: bool = False
+    ) -> list[IntegrationQueueItem]:
+        return registry.list_queue(provider_id=provider_id, staged_only=staged_only)
+
+    @application.get("/integrations/rmm/jobs", response_model=list[RMMJobRecord])
+    async def list_staged_rmm_jobs() -> list[RMMJobRecord]:
+        return registry.list_rmm_jobs()
+
+    @application.post("/integrations/rmm/dispatch", response_model=RMMJobRecord)
+    async def dispatch_staged_rmm_job(
+        payload: RMMDispatchRequest, request: Request
+    ) -> RMMJobRecord:
+        request_id: str = getattr(request.state, "request_id", "unknown")
+        try:
+            job = registry.dispatch_rmm_command(payload)
+        except IntegrationNotFoundError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except IntegrationValidationError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+        logger.info(
+            "request_id=%s rmm_job_queued=%s provider=%s risk=%s",
+            request_id,
+            job.job_id,
+            job.rmm_provider_id,
+            job.classified_risk,
+        )
+        return job
+
+    @application.post(
+        "/integrations/tickets/{ticket_id}/writeback",
+        response_model=TicketWritebackResponse,
+    )
+    async def writeback_psa_ticket(
+        ticket_id: str, payload: TicketWritebackRequest, request: Request
+    ) -> TicketWritebackResponse:
+        request_id: str = getattr(request.state, "request_id", "unknown")
+        try:
+            result = registry.writeback_ticket(ticket_id, payload)
+        except IntegrationNotFoundError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except IntegrationValidationError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+        logger.info(
+            "request_id=%s ticket_writeback=%s provider=%s action=%s",
+            request_id,
+            ticket_id,
+            payload.provider_id,
+            payload.action,
+        )
+        return result
+
     @application.get("/integrations/{provider_id}", response_model=IntegrationProviderView)
     async def get_integration(provider_id: str) -> IntegrationProviderView:
         try:
@@ -375,6 +435,7 @@ def create_app(
                 detail=f"Webhook payload exceeds maximum size of {MAX_WEBHOOK_PAYLOAD_BYTES} bytes.",
             )
 
+        queued_ticket_id: str | None = None
         if raw_body.strip():
             try:
                 parsed = json.loads(raw_body)
@@ -386,6 +447,10 @@ def create_app(
                 raise HTTPException(
                     status_code=422, detail="Webhook JSON root must be an object or array."
                 )
+            if isinstance(parsed, dict):
+                queued_item = registry.enqueue_webhook_event(provider_id, parsed)
+                if queued_item is not None:
+                    queued_ticket_id = queued_item.id
 
         # Log request_id and provider_id only; never log webhook payload content.
         logger.info(
@@ -400,6 +465,7 @@ def create_app(
             mode="staged_standby",
             provider_status=provider_view.status,
             request_id=request_id,
+            queued_ticket_id=queued_ticket_id,
             message=(
                 f"{provider_view.name} webhook endpoint is ready in standby mode. "
                 "Live automated triage dispatch is currently inactive."
