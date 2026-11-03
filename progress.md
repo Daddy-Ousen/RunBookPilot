@@ -33,13 +33,13 @@ Source plan: `UI_REDESIGN_PLAN.md` (repo root). Follow it phase by phase. Stop a
   - [x] Checks: pytest 105 passed; `git grep innerHTML -- static` 0 hits; `git diff pre-redesign -- app/safety.py` empty; no diff in `app/ data/ tests/`; all handoff IDs present.
   - [x] Browser (mocked `/triage`): covered, needs approval, escalate, every error type, Copy, ticks survive reload, RMM stage + approval gate, writeback note, draft -> add runbook -> re-run (mocked). 390 px: no sideways scroll, all targets >= 40 px. 768 px: same. Keyboard: Tab order skip link -> top bar -> rail -> ticket -> Clear -> Analyze; Ctrl+Enter; Space ticks; Enter on Copy and Details; focus ring visible.
   - [x] Live (6 calls): Run demo AD lockout 200 (12.8 s); VSS 502 (upstream 504), then Try again with VSS sample screenshot 200 (30.5 s, escalate by runbook rule); M365 mail 502 (upstream 504); RMM re-triage 502 (upstream 504, request accepted); Uncovered VoIP 200 (8.7 s, escalate).
-  - [ ] NOT verified live: M365 mail covered sample, and RMM re-triage with a 200 answer. The UI sent both requests correctly; the Meta LLM endpoint returned 504.
-  - [ ] Source runbook text: no API route returns runbook text (`/runbooks` gives id + title only). The `<details>` shows ID, search rank and a note; it shows full text only for a runbook added in this session. Needs an owner decision.
+  - [ ] NOT verified live (moved to the start of Phase 4): M365 mail covered sample, and RMM re-triage with a 200 answer. The UI sent both requests correctly; the Meta LLM endpoint returned 504.
+  - [ ] Source runbook text: no API route returns runbook text (`/runbooks` gives id + title only). The `<details>` shows ID, search rank and a note; it shows full text only for a runbook added in this session. OWNER DECIDED 2026-11-03: option C. Copy `data/runbooks/*.md` to `static/runbooks/` (no backend change). Phase 4 wires it into Source runbooks and the Runbooks view. Phase 6 checks the copies match `data/runbooks/`.
   - Not emulated: `prefers-reduced-motion` (CSS sets all durations to 0; not checked in the browser).
   - Screenshots: `docs/phase3/` (empty, loading, covered, needs approval, escalate, 429 error, 390 result, dark result).
 - [ ] Phase 4: Runbooks, Safety lab, Benchmark, Integrations views.
 - [ ] Phase 5: Polish (responsive, a11y, copy, meta, favicon).
-- [ ] Phase 6: Verify (pytest, innerHTML grep, safety.py diff empty, Lighthouse a11y >= 95, 390 px, keyboard, Vercel preview, owner review, merge).
+- [ ] Phase 6: Verify (`static/runbooks/` matches `data/runbooks/`, pytest, innerHTML grep, safety.py diff empty, Lighthouse a11y >= 95, 390 px, keyboard, Vercel preview, owner review, merge).
 
 ## Model guide (sub-sessions)
 | Phase | Model | Effort |

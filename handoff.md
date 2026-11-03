@@ -16,11 +16,11 @@
 - CSS: result + command block + states in `views.css`; `.btn-sm` is 40 px below 960 px or on coarse pointers; segmented labels 40 px.
 
 ## Open items for the owner
-1. Source runbook text: no route returns runbook body. Options: (A) leave as is (ID, rank, note); (B) add a read-only `GET /runbooks/{id}` (backend change, breaks the "no new route" rule); (C) ship a static copy of `data/runbooks/*.md` under `static/` (can drift from `data/`). Recommend A for the deadline.
-2. Re-run live when the LLM is healthy: M365 mail sample and one RMM re-triage (UI sent both; upstream gave 504).
+1. Source runbook text: OWNER DECIDED option C (2026-11-03). Copy `data/runbooks/*.md` to `static/runbooks/`. Phase 4 does it. Phase 6 checks the copies match.
+2. Phase 4 starts by re-running live: M365 mail sample and one RMM re-triage (UI sent both; upstream gave 504).
 
 ## Next step
-- Owner reviews Phase 3 checkpoint (`docs/phase3/*.jpg`). Then Phase 4 (Runbooks, Safety lab, Benchmark, Integrations views), Sonnet 5.5 high.
+- Owner reviewed Phase 3 checkpoint. Next: Phase 4 (Runbooks, Safety lab, Benchmark, Integrations views), Sonnet 5.5 high.
 
 ## Gotchas
 - Keep these IDs in `index.html` (UI tests check them as text): `nav-tab-triage`, `nav-tab-integrations`, `nav-tab-eval`, `eval-workspace`, `integrations-workspace`, `reasoning-mode-select`, `screenshot-file-input`, `btn-sample-shot-rdp`, `btn-sample-shot-vss`, `rmm-loop-bar`, `btn-draft-runbook`, `btn-hot-index-runbook`, `safety-inspect-form`, `integration-provider-list`, `integration-config-form`, `cfg-fields-grid`, `cfg-webhook-url`, `cfg-test-btn`, `cfg-save-btn`, `pending-queue-panel`, `pending-queue-list`, `rmm-telemetry-panel`, `psa-writeback-panel`, `ticket-input`, `loading-state`, `escalate-banner`, `approval-warning-banner`, `likely-cause-text`, `confidence-badge`, `matched-runbooks-list`, `steps-list`, `commands-list`, `theme-toggle`.
