@@ -3,113 +3,95 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="RunbookPilot — Grounded Windows & M365 IT ticket triage workbench with deterministic PowerShell risk classification." />
-  <title>RunbookPilot — MSP Incident Triage Workbench</title>
+  <meta name="description" content="RunbookPilot: Grounded Windows and M365 IT ticket triage workbench with deterministic PowerShell risk classification." />
+  <title>RunbookPilot - Incident Triage Workbench</title>
   <link
     rel="icon"
     type="image/svg+xml"
-    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b0f17' stroke='%2310b981' stroke-width='2'/%3E%3Cpath d='M9 11l5 5-5 5M16 21h7' stroke='%2310b981' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230a0a0b' stroke='%2327272a' stroke-width='2'/%3E%3Cpath d='M9 11l5 5-5 5M16 21h7' stroke='%23f4f4f5' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Ccircle cx='23' cy='10' r='2.5' fill='%23e54d2e'/%3E%3C/svg%3E"
   />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
-    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap"
     rel="stylesheet"
   />
   <style>
     :root,
     [data-theme="dark"] {
-      --bg-canvas: #0b0f17;
-      --bg-grid: rgba(148, 163, 184, 0.045);
-      --bg-glow: rgba(16, 185, 129, 0.08);
-      --surface-1: #111827;
-      --surface-2: #172033;
-      --surface-3: #1e293b;
-      --surface-code: #070b11;
+      --bg: #0a0a0b;
+      --surface: #111113;
+      --surface-subtle: #161619;
+      --surface-hover: #1c1c20;
+      --surface-code: #070708;
 
-      --border-subtle: #1f2b3e;
-      --border-strong: #2e3f59;
+      --hairline: #222226;
+      --border-strong: #323238;
 
-      --text-primary: #f1f5f9;
-      --text-secondary: #cbd5e1;
-      --text-muted: #8b9bb4;
+      --text-primary: #f4f4f5;
+      --text-secondary: #a1a1aa;
+      --text-muted: #71717a;
 
-      --accent: #10b981;
-      --accent-hover: #34d399;
-      --accent-fg: #032217;
-      --accent-soft: rgba(16, 185, 129, 0.12);
-      --accent-border: rgba(16, 185, 129, 0.35);
+      --accent: #e54d2e;
+      --accent-soft: rgba(229, 77, 46, 0.12);
+      --accent-border: rgba(229, 77, 46, 0.36);
 
-      --ro-bg: rgba(16, 185, 129, 0.13);
-      --ro-text: #6ee7b7;
-      --ro-border: rgba(16, 185, 129, 0.38);
+      --cta-bg: #f4f4f5;
+      --cta-hover: #ffffff;
+      --cta-text: #09090b;
 
-      --na-bg: rgba(245, 158, 11, 0.13);
-      --na-text: #fcd34d;
-      --na-border: rgba(245, 158, 11, 0.45);
-      --na-surface: rgba(245, 158, 11, 0.08);
+      --ro-bg: rgba(46, 160, 67, 0.1);
+      --ro-text: #7ee787;
+      --ro-border: rgba(46, 160, 67, 0.32);
 
-      --esc-bg: rgba(239, 68, 68, 0.14);
-      --esc-text: #fca5a5;
-      --esc-border: rgba(239, 68, 68, 0.5);
+      --na-bg: rgba(210, 153, 34, 0.11);
+      --na-text: #e3b341;
+      --na-border: rgba(210, 153, 34, 0.38);
 
-      --pill-bg: rgba(148, 163, 184, 0.1);
-      --pill-text: #e2e8f0;
-      --pill-border: #2c3b52;
+      --esc-bg: rgba(248, 81, 73, 0.11);
+      --esc-text: #ffa198;
+      --esc-border: rgba(248, 81, 73, 0.42);
 
-      --code-text: #e2e8f0;
-      --code-prompt: #10b981;
-
-      --shadow-panel: 0 12px 32px -12px rgba(2, 6, 23, 0.75), 0 1px 0 rgba(255, 255, 255, 0.03) inset;
-      --shimmer-a: #172033;
-      --shimmer-b: #22304a;
+      --shimmer-a: #141417;
+      --shimmer-b: #1f1f24;
     }
 
     [data-theme="light"] {
-      --bg-canvas: #f3f6fa;
-      --bg-grid: rgba(15, 23, 42, 0.035);
-      --bg-glow: rgba(5, 150, 105, 0.07);
-      --surface-1: #ffffff;
-      --surface-2: #f8fafc;
-      --surface-3: #eef2f7;
-      --surface-code: #0f172a;
+      --bg: #fafafa;
+      --surface: #ffffff;
+      --surface-subtle: #f4f4f5;
+      --surface-hover: #e4e4e7;
+      --surface-code: #111113;
 
-      --border-subtle: #dbe3ee;
-      --border-strong: #c2cfdf;
+      --hairline: #e4e4e7;
+      --border-strong: #d4d4d8;
 
-      --text-primary: #0f172a;
-      --text-secondary: #334155;
-      --text-muted: #596980;
+      --text-primary: #09090b;
+      --text-secondary: #52525b;
+      --text-muted: #71717a;
 
-      --accent: #059669;
-      --accent-hover: #047857;
-      --accent-fg: #ffffff;
-      --accent-soft: rgba(5, 150, 105, 0.09);
-      --accent-border: rgba(5, 150, 105, 0.32);
+      --accent: #d93d1e;
+      --accent-soft: rgba(217, 61, 30, 0.08);
+      --accent-border: rgba(217, 61, 30, 0.28);
 
-      --ro-bg: #dcfce7;
-      --ro-text: #14532d;
-      --ro-border: #86efac;
+      --cta-bg: #09090b;
+      --cta-hover: #27272a;
+      --cta-text: #fafafa;
 
-      --na-bg: #fef3c7;
-      --na-text: #78350f;
-      --na-border: #f59e0b;
-      --na-surface: #fffbeb;
+      --ro-bg: #eaf6ed;
+      --ro-text: #166534;
+      --ro-border: #b7e1c1;
 
-      --esc-bg: #fee2e2;
-      --esc-text: #7f1d1d;
-      --esc-border: #ef4444;
+      --na-bg: #fef7e6;
+      --na-text: #854d0e;
+      --na-border: #f3d078;
 
-      --pill-bg: #f1f5f9;
-      --pill-text: #1e293b;
-      --pill-border: #cbd5e1;
+      --esc-bg: #fdecec;
+      --esc-text: #991b1b;
+      --esc-border: #f5b5b5;
 
-      --code-text: #f1f5f9;
-      --code-prompt: #34d399;
-
-      --shadow-panel: 0 10px 26px -12px rgba(15, 23, 42, 0.12), 0 1px 2px rgba(15, 23, 42, 0.04);
-      --shimmer-a: #eef2f7;
-      --shimmer-b: #dde5ef;
+      --shimmer-a: #f1f1f3;
+      --shimmer-b: #e4e4e7;
     }
 
     * {
@@ -125,24 +107,21 @@
       min-height: 100dvh;
       display: flex;
       flex-direction: column;
-      font-family: "IBM Plex Sans", "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
-      font-size: 16px;
+      font-family: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 15px;
       line-height: 1.55;
       color: var(--text-primary);
-      background-color: var(--bg-canvas);
-      background-image:
-        radial-gradient(ellipse 80% 420px at 50% -120px, var(--bg-glow), transparent),
-        radial-gradient(var(--bg-grid) 1px, transparent 1px);
-      background-size: 100% 100%, 22px 22px;
+      background-color: var(--bg);
       -webkit-font-smoothing: antialiased;
+    }
+
+    .mono {
+      font-family: "Geist Mono", "Cascadia Mono", Consolas, monospace;
+      font-variant-numeric: tabular-nums;
     }
 
     .tabular {
       font-variant-numeric: tabular-nums;
-    }
-
-    .mono {
-      font-family: "JetBrains Mono", "Cascadia Mono", Consolas, "Courier New", monospace;
     }
 
     .skip-link {
@@ -150,11 +129,11 @@
       left: -9999px;
       top: 8px;
       z-index: 100;
-      background: var(--accent);
-      color: var(--accent-fg);
-      padding: 8px 14px;
+      background: var(--cta-bg);
+      color: var(--cta-text);
+      padding: 6px 12px;
       border-radius: 6px;
-      font-weight: 600;
+      font-weight: 500;
       text-decoration: none;
     }
 
@@ -167,19 +146,18 @@
       outline-offset: 2px;
     }
 
-    /* Top Navigation Bar */
+    /* Navigation Bar (56px height cap, single line) */
     .topbar {
-      height: 64px;
-      border-bottom: 1px solid var(--border-subtle);
-      background: color-mix(in srgb, var(--surface-1) 88%, transparent);
-      backdrop-filter: blur(12px);
+      height: 56px;
+      border-bottom: 1px solid var(--hairline);
+      background: var(--bg);
       position: sticky;
       top: 0;
       z-index: 30;
     }
 
     .topbar-inner {
-      max-width: 1400px;
+      max-width: 1440px;
       height: 100%;
       margin: 0 auto;
       padding: 0 24px;
@@ -192,122 +170,112 @@
     .brand {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
       min-width: 0;
     }
 
-    .brand-mark {
-      width: 34px;
-      height: 34px;
-      border-radius: 8px;
-      background: var(--accent-soft);
-      border: 1px solid var(--accent-border);
-      display: grid;
-      place-items: center;
-      color: var(--accent);
+    .brand-glyph {
+      width: 10px;
+      height: 10px;
+      background: var(--accent);
+      border-radius: 2px;
       flex-shrink: 0;
     }
 
-    .brand-copy {
-      display: flex;
-      align-items: baseline;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .brand-copy h1 {
+    .brand h1 {
       margin: 0;
-      font-size: 1.08rem;
-      font-weight: 700;
+      font-size: 0.95rem;
+      font-weight: 600;
       letter-spacing: -0.02em;
       color: var(--text-primary);
     }
 
-    .brand-sub {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      font-weight: 500;
+    .brand-sep {
+      color: var(--border-strong);
+      user-select: none;
     }
 
-    .topbar-status {
+    .brand-context {
+      font-size: 0.84rem;
+      color: var(--text-secondary);
+      font-weight: 400;
+      white-space: nowrap;
+    }
+
+    .topbar-controls {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 16px;
       flex-shrink: 0;
     }
 
-    .status-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 7px;
+    .meta-stat {
       font-size: 0.78rem;
-      font-weight: 500;
-      padding: 5px 11px;
-      border-radius: 6px;
-      background: var(--surface-2);
-      border: 1px solid var(--border-subtle);
       color: var(--text-secondary);
       white-space: nowrap;
     }
 
-    .status-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: var(--accent);
-      box-shadow: 0 0 0 3px var(--accent-soft);
-    }
-
-    .status-dot.is-offline {
-      background: #ef4444;
-      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
-    }
-
-    .btn-icon {
+    .theme-btn {
+      cursor: pointer;
       display: inline-flex;
       align-items: center;
-      justify-content: center;
       gap: 6px;
-      min-height: 36px;
-      padding: 6px 11px;
+      height: 30px;
+      padding: 0 10px;
       border-radius: 6px;
-      border: 1px solid var(--border-subtle);
-      background: var(--surface-2);
+      border: 1px solid var(--hairline);
+      background: var(--surface);
       color: var(--text-secondary);
       font-family: inherit;
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       font-weight: 500;
-      cursor: pointer;
-      transition: background 180ms ease, border-color 180ms ease, color 180ms ease, transform 120ms ease;
+      transition: color 160ms ease, border-color 160ms ease, background 160ms ease, transform 120ms ease;
     }
 
-    .btn-icon:hover {
-      background: var(--surface-3);
-      border-color: var(--border-strong);
+    .theme-btn:hover {
       color: var(--text-primary);
+      border-color: var(--border-strong);
+      background: var(--surface-subtle);
     }
 
-    .btn-icon:active {
+    .theme-btn:active {
       transform: translateY(1px);
     }
 
-    /* Main Two-Column Workbench */
-    main {
+    /* Full-Height Structural Split Workbench (No floating box cards) */
+    .workbench {
       flex: 1;
       width: 100%;
-      max-width: 1400px;
+      max-width: 1440px;
       margin: 0 auto;
-      padding: 24px 24px 40px;
       display: grid;
-      grid-template-columns: minmax(350px, 41%) minmax(0, 1fr);
-      gap: 24px;
-      align-items: start;
+      grid-template-columns: minmax(360px, 42%) minmax(0, 58%);
+      align-items: stretch;
     }
 
-    @media (max-width: 980px) {
-      main {
+    .pane-intake {
+      border-right: 1px solid var(--hairline);
+      padding: 32px 28px 40px 24px;
+    }
+
+    .pane-output {
+      padding: 32px 24px 48px 32px;
+      min-width: 0;
+    }
+
+    @media (max-width: 960px) {
+      .workbench {
         grid-template-columns: 1fr;
-        padding: 16px 16px 32px;
+      }
+
+      .pane-intake {
+        border-right: none;
+        border-bottom: 1px solid var(--hairline);
+        padding: 24px 16px 28px;
+      }
+
+      .pane-output {
+        padding: 28px 16px 40px;
       }
 
       .hide-mobile {
@@ -315,325 +283,224 @@
       }
     }
 
-    .panel {
-      background: var(--surface-1);
-      border: 1px solid var(--border-subtle);
-      border-radius: 12px;
-      box-shadow: var(--shadow-panel);
-      overflow: hidden;
+    /* Left Pane: Ticket Composer */
+    .pane-header {
+      margin-bottom: 20px;
     }
 
-    .panel-intake {
-      position: sticky;
-      top: 88px;
-    }
-
-    @media (max-width: 980px) {
-      .panel-intake {
-        position: static;
-      }
-    }
-
-    .panel-header {
-      padding: 16px 20px;
-      border-bottom: 1px solid var(--border-subtle);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-    }
-
-    .panel-title-group {
-      display: flex;
-      align-items: center;
-      gap: 9px;
-    }
-
-    .panel-title {
-      margin: 0;
-      font-size: 0.96rem;
+    .pane-title {
+      margin: 0 0 4px;
+      font-size: 1.15rem;
       font-weight: 600;
-      letter-spacing: -0.01em;
+      letter-spacing: -0.02em;
       color: var(--text-primary);
     }
 
-    .panel-body {
-      padding: 20px;
+    .pane-subtitle {
+      margin: 0;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      max-width: 60ch;
     }
 
-    /* Quick Sample Presets */
-    .presets-block {
-      margin-bottom: 16px;
-    }
-
-    .field-label-row {
+    .samples-bar {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      margin-bottom: 8px;
-    }
-
-    .field-label {
-      font-size: 0.82rem;
-      font-weight: 600;
-      color: var(--text-secondary);
-    }
-
-    .field-hint {
-      font-size: 0.76rem;
-      color: var(--text-muted);
-    }
-
-    .preset-row {
-      display: flex;
       flex-wrap: wrap;
       gap: 6px;
+      margin-bottom: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--hairline);
     }
 
-    .preset-chip {
+    .samples-label {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-right: 4px;
+    }
+
+    .sample-btn {
       cursor: pointer;
       font-family: inherit;
-      font-size: 0.76rem;
+      font-size: 0.77rem;
       font-weight: 500;
-      padding: 5px 10px;
+      padding: 4px 9px;
       border-radius: 6px;
-      border: 1px solid var(--border-subtle);
-      background: var(--surface-2);
+      border: 1px solid var(--hairline);
+      background: var(--surface);
       color: var(--text-secondary);
-      transition: background 160ms ease, border-color 160ms ease, color 160ms ease, transform 120ms ease;
-      white-space: nowrap;
+      transition: color 150ms ease, border-color 150ms ease, background 150ms ease, transform 120ms ease;
     }
 
-    .preset-chip:hover {
-      background: var(--accent-soft);
-      border-color: var(--accent-border);
+    .sample-btn:hover {
       color: var(--text-primary);
+      border-color: var(--border-strong);
+      background: var(--surface-subtle);
     }
 
-    .preset-chip:active {
+    .sample-btn:active {
       transform: translateY(1px);
     }
 
-    /* Ticket Form */
-    .textarea-wrap {
-      position: relative;
+    .sample-btn.is-active {
+      border-color: var(--accent-border);
+      background: var(--accent-soft);
+      color: var(--text-primary);
+    }
+
+    .field-label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .composer-frame {
+      border: 1px solid var(--border-strong);
+      border-radius: 6px;
+      background: var(--surface);
+      overflow: hidden;
+      transition: border-color 150ms ease;
+    }
+
+    .composer-frame:focus-within {
+      border-color: var(--accent);
     }
 
     textarea {
+      display: block;
       width: 100%;
-      min-height: 240px;
+      min-height: 250px;
       resize: vertical;
-      padding: 13px 14px;
+      padding: 14px 15px;
+      border: none;
+      background: transparent;
+      color: var(--text-primary);
       font-family: inherit;
       font-size: 0.92rem;
-      line-height: 1.55;
-      color: var(--text-primary);
-      background: var(--surface-2);
-      border: 1px solid var(--border-subtle);
-      border-radius: 8px;
-      transition: border-color 160ms ease, background 160ms ease;
+      line-height: 1.6;
     }
 
     textarea::placeholder {
       color: var(--text-muted);
     }
 
-    textarea:hover {
-      border-color: var(--border-strong);
-    }
-
     textarea:focus {
-      outline: 2px solid var(--accent);
-      outline-offset: 0;
-      border-color: transparent;
-      background: var(--surface-1);
+      outline: none;
     }
 
-    .char-bar-track {
-      height: 3px;
-      background: var(--surface-3);
-      border-radius: 999px;
-      margin-top: 8px;
-      overflow: hidden;
-    }
-
-    .char-bar-fill {
-      height: 100%;
-      width: 0%;
-      background: var(--accent);
-      transition: width 120ms ease, background-color 160ms ease;
-    }
-
-    .char-bar-fill.is-warn {
-      background: #f59e0b;
-    }
-
-    .char-bar-fill.is-limit {
-      background: #ef4444;
-    }
-
-    .input-meta {
+    .composer-footer {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      gap: 10px;
-      margin-top: 8px;
-      font-size: 0.78rem;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 12px;
+      border-top: 1px solid var(--hairline);
+      background: var(--surface-subtle);
+    }
+
+    .composer-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.76rem;
       color: var(--text-muted);
     }
 
-    .safety-inline {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
+    .char-limit-warn {
+      color: var(--na-text);
     }
 
-    .actions {
+    .char-limit-max {
+      color: var(--esc-text);
+      font-weight: 600;
+    }
+
+    .composer-actions {
       display: flex;
       align-items: center;
-      gap: 10px;
-      margin-top: 16px;
-    }
-
-    .btn {
-      cursor: pointer;
-      font-family: inherit;
-      font-size: 0.88rem;
-      font-weight: 600;
-      min-height: 42px;
-      padding: 9px 16px;
-      border-radius: 8px;
-      border: 1px solid transparent;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
       gap: 8px;
-      white-space: nowrap;
-      transition: background 160ms ease, border-color 160ms ease, transform 120ms ease, opacity 160ms ease;
     }
 
-    .btn:active:not(:disabled) {
+    .btn-clear {
+      cursor: pointer;
+      height: 34px;
+      padding: 0 11px;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text-secondary);
+      font-family: inherit;
+      font-size: 0.82rem;
+      font-weight: 500;
+      transition: color 150ms ease, background 150ms ease, transform 120ms ease;
+    }
+
+    .btn-clear:hover {
+      color: var(--text-primary);
+      background: var(--surface-hover);
+    }
+
+    .btn-clear:active {
       transform: translateY(1px);
     }
 
-    .btn-primary {
-      flex: 1;
-      background: var(--accent);
-      color: var(--accent-fg);
+    .btn-submit {
+      cursor: pointer;
+      height: 34px;
+      padding: 0 14px;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      background: var(--cta-bg);
+      color: var(--cta-text);
+      font-family: inherit;
+      font-size: 0.83rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: background 150ms ease, opacity 150ms ease, transform 120ms ease;
     }
 
-    .btn-primary:hover:not(:disabled) {
-      background: var(--accent-hover);
+    .btn-submit:hover:not(:disabled) {
+      background: var(--cta-hover);
     }
 
-    .btn-primary:disabled {
-      opacity: 0.65;
+    .btn-submit:active:not(:disabled) {
+      transform: translateY(1px);
+    }
+
+    .btn-submit:disabled {
+      opacity: 0.55;
       cursor: not-allowed;
     }
 
-    .kbd-hint {
-      font-size: 0.7rem;
-      font-weight: 600;
-      padding: 2px 6px;
-      border-radius: 4px;
-      background: rgba(0, 0, 0, 0.18);
-      color: inherit;
-      letter-spacing: 0.02em;
-    }
-
-    .btn-secondary {
-      background: var(--surface-2);
-      color: var(--text-secondary);
-      border-color: var(--border-subtle);
-    }
-
-    .btn-secondary:hover:not(:disabled) {
-      background: var(--surface-3);
-      border-color: var(--border-strong);
-      color: var(--text-primary);
-    }
-
-    /* Collapsible Indexed Runbook Drawer */
-    .catalog-disclosure {
-      margin-top: 18px;
-      border-top: 1px solid var(--border-subtle);
-      padding-top: 14px;
-    }
-
-    .catalog-disclosure summary {
-      cursor: pointer;
-      font-size: 0.8rem;
+    .kbd-tag {
+      font-size: 0.69rem;
       font-weight: 500;
-      color: var(--text-muted);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      list-style: none;
-      user-select: none;
-      padding: 4px 0;
+      opacity: 0.72;
     }
 
-    .catalog-disclosure summary::-webkit-details-marker {
-      display: none;
-    }
-
-    .catalog-disclosure summary:hover {
-      color: var(--text-primary);
-    }
-
-    .catalog-grid {
-      list-style: none;
+    .intake-note {
       margin: 10px 0 0;
-      padding: 0;
-      max-height: 210px;
-      overflow-y: auto;
-      display: grid;
-      gap: 5px;
-    }
-
-    .catalog-item {
-      font-size: 0.78rem;
-      padding: 6px 9px;
-      border-radius: 6px;
-      background: var(--surface-2);
-      border: 1px solid var(--border-subtle);
-      color: var(--text-secondary);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-    }
-
-    .catalog-item-id {
-      font-size: 0.71rem;
+      font-size: 0.77rem;
       color: var(--text-muted);
-      flex-shrink: 0;
     }
 
-    /* Banners */
+    /* Callout Banners (Architectural left-border style) */
     .banner {
-      padding: 13px 15px;
-      border-radius: 8px;
-      margin-bottom: 18px;
-      font-size: 0.88rem;
+      padding: 12px 14px;
+      border-radius: 6px;
       border: 1px solid;
-      display: flex;
-      align-items: flex-start;
-      gap: 11px;
+      border-left-width: 3px;
+      margin-bottom: 24px;
+      font-size: 0.86rem;
+      line-height: 1.5;
     }
 
-    .banner-icon {
-      flex-shrink: 0;
-      margin-top: 2px;
-    }
-
-    .banner-content {
-      min-width: 0;
-      flex: 1;
-    }
-
-    .banner-content strong {
+    .banner strong {
       display: block;
       font-weight: 600;
       margin-bottom: 2px;
@@ -655,7 +522,7 @@
       background: var(--esc-bg);
       color: var(--esc-text);
       border-color: var(--esc-border);
-      margin-top: 16px;
+      margin-top: 14px;
       margin-bottom: 0;
     }
 
@@ -663,141 +530,156 @@
       display: none !important;
     }
 
-    /* Composed Empty State */
+    /* Right Pane: Composed Empty State & Runbook Index */
     .empty-state {
-      padding: 34px 20px;
+      padding-top: 4px;
     }
 
-    .empty-hero {
-      max-width: 48ch;
-      margin: 0 auto 26px;
-      text-align: center;
+    .empty-intro {
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--hairline);
+      margin-bottom: 24px;
     }
 
-    .empty-icon-ring {
-      width: 46px;
-      height: 46px;
-      border-radius: 10px;
-      margin: 0 auto 14px;
-      background: var(--accent-soft);
-      border: 1px solid var(--accent-border);
-      color: var(--accent);
-      display: grid;
-      place-items: center;
-    }
-
-    .empty-hero h3 {
+    .empty-intro h3 {
       margin: 0 0 6px;
-      font-size: 1.05rem;
+      font-size: 1.15rem;
       font-weight: 600;
+      letter-spacing: -0.02em;
       color: var(--text-primary);
     }
 
-    .empty-hero p {
+    .empty-intro p {
       margin: 0;
       font-size: 0.88rem;
-      color: var(--text-muted);
-      text-wrap: pretty;
+      color: var(--text-secondary);
+      max-width: 58ch;
     }
 
-    .workflow-steps {
+    .spec-grid {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 12px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px 24px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--hairline);
+      margin-bottom: 24px;
     }
 
-    @media (max-width: 680px) {
-      .workflow-steps {
+    @media (max-width: 600px) {
+      .spec-grid {
         grid-template-columns: 1fr;
       }
     }
 
-    .workflow-card {
-      background: var(--surface-2);
-      border: 1px solid var(--border-subtle);
-      border-radius: 8px;
-      padding: 14px;
-    }
-
-    .workflow-num {
-      font-size: 0.72rem;
-      font-weight: 600;
-      color: var(--accent);
-      margin-bottom: 6px;
-      display: block;
-    }
-
-    .workflow-card h4 {
-      margin: 0 0 4px;
-      font-size: 0.86rem;
-      font-weight: 600;
-      color: var(--text-primary);
-    }
-
-    .workflow-card p {
-      margin: 0;
-      font-size: 0.79rem;
+    .spec-item dt {
+      font-size: 0.76rem;
       color: var(--text-muted);
-      line-height: 1.45;
+      margin-bottom: 3px;
     }
 
-    /* Layout-Matched Skeleton Loading State */
-    .loading-state {
-      padding: 6px 0;
-    }
-
-    .loading-bar-top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 11px 14px;
-      border-radius: 8px;
-      background: var(--accent-soft);
-      border: 1px solid var(--accent-border);
-      margin-bottom: 20px;
-      font-size: 0.84rem;
+    .spec-item dd {
+      margin: 0;
+      font-size: 0.85rem;
       color: var(--text-primary);
-    }
-
-    .loading-status-left {
-      display: flex;
-      align-items: center;
-      gap: 10px;
       font-weight: 500;
     }
 
-    .pulse-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--accent);
-      animation: pulse-opacity 1.2s ease-in-out infinite;
-    }
-
-    .skeleton-group {
-      margin-bottom: 20px;
-    }
-
-    .skeleton-line {
-      height: 14px;
-      border-radius: 6px;
-      background: linear-gradient(90deg, var(--shimmer-a) 25%, var(--shimmer-b) 50%, var(--shimmer-a) 75%);
-      background-size: 200% 100%;
-      animation: shimmer 1.5s infinite linear;
-      margin-bottom: 10px;
-    }
-
-    .skeleton-box {
-      height: 68px;
-      border-radius: 8px;
-      background: linear-gradient(90deg, var(--shimmer-a) 25%, var(--shimmer-b) 50%, var(--shimmer-a) 75%);
-      background-size: 200% 100%;
-      animation: shimmer 1.5s infinite linear;
+    .corpus-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
       margin-bottom: 12px;
     }
 
-    @keyframes shimmer {
+    .corpus-title {
+      margin: 0;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .corpus-count {
+      font-size: 0.76rem;
+      color: var(--text-muted);
+    }
+
+    .corpus-grid {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px 16px;
+    }
+
+    @media (max-width: 640px) {
+      .corpus-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .corpus-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--hairline);
+      font-size: 0.81rem;
+      color: var(--text-secondary);
+    }
+
+    .corpus-row-title {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .corpus-row-id {
+      font-size: 0.71rem;
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+
+    /* Skeleton Loading State */
+    .loading-state {
+      padding-top: 4px;
+    }
+
+    .loading-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 16px;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--hairline);
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    .skeleton-block {
+      margin-bottom: 28px;
+    }
+
+    .sk-bar {
+      height: 14px;
+      border-radius: 4px;
+      background: linear-gradient(90deg, var(--shimmer-a) 25%, var(--shimmer-b) 50%, var(--shimmer-a) 75%);
+      background-size: 200% 100%;
+      animation: sk-shimmer 1.4s infinite linear;
+      margin-bottom: 10px;
+    }
+
+    .sk-pane {
+      height: 76px;
+      border-radius: 6px;
+      background: linear-gradient(90deg, var(--shimmer-a) 25%, var(--shimmer-b) 50%, var(--shimmer-a) 75%);
+      background-size: 200% 100%;
+      animation: sk-shimmer 1.4s infinite linear;
+      margin-bottom: 12px;
+    }
+
+    @keyframes sk-shimmer {
       0% {
         background-position: 200% 0;
       }
@@ -806,17 +688,7 @@
       }
     }
 
-    @keyframes pulse-opacity {
-      0%,
-      100% {
-        opacity: 1;
-      }
-      50% {
-        opacity: 0.3;
-      }
-    }
-
-    @keyframes fade-slide-in {
+    @keyframes reveal-up {
       from {
         opacity: 0;
         transform: translateY(6px);
@@ -827,8 +699,8 @@
       }
     }
 
-    .animate-in {
-      animation: fade-slide-in 240ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    .reveal {
+      animation: reveal-up 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -842,91 +714,78 @@
       }
     }
 
-    /* Result Sections */
-    .result-telemetry {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 8px;
-      padding-bottom: 14px;
-      margin-bottom: 16px;
-      border-bottom: 1px solid var(--border-subtle);
-      font-size: 0.77rem;
-      color: var(--text-muted);
-    }
-
-    .result-section {
-      margin-bottom: 24px;
-    }
-
-    .result-section:last-child {
-      margin-bottom: 0;
-    }
-
-    .section-header-row {
+    /* Populated Triage Result */
+    .telemetry-strip {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      margin-bottom: 10px;
+      padding-bottom: 14px;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--hairline);
+      font-size: 0.76rem;
+      color: var(--text-muted);
+    }
+
+    .result-block {
+      padding-bottom: 28px;
+      margin-bottom: 28px;
+      border-bottom: 1px solid var(--hairline);
+    }
+
+    .result-block:last-child {
+      padding-bottom: 0;
+      margin-bottom: 0;
+      border-bottom: none;
+    }
+
+    .block-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
       flex-wrap: wrap;
     }
 
-    .section-heading {
-      font-size: 0.78rem;
-      font-weight: 600;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      color: var(--text-muted);
+    .block-title {
       margin: 0;
-    }
-
-    .cause-card {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 16px;
-      background: var(--surface-2);
-      border: 1px solid var(--border-subtle);
-      border-radius: 8px;
-      padding: 15px 16px;
-    }
-
-    @media (max-width: 600px) {
-      .cause-card {
-        flex-direction: column;
-      }
+      font-size: 0.92rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      color: var(--text-primary);
     }
 
     .cause-text {
-      margin: 0;
-      font-size: 0.97rem;
+      margin: 0 0 18px;
+      font-size: 1.06rem;
       font-weight: 500;
+      line-height: 1.55;
       color: var(--text-primary);
-      max-width: 68ch;
+      max-width: 65ch;
       text-wrap: pretty;
     }
 
     .badge {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
       font-size: 0.73rem;
-      font-weight: 600;
-      padding: 4px 10px;
+      font-weight: 500;
+      padding: 3px 9px;
       border-radius: 6px;
       white-space: nowrap;
-      flex-shrink: 0;
     }
 
-    .conf-high {
+    .conf-high,
+    .risk-read_only {
       background: var(--ro-bg);
       color: var(--ro-text);
       border: 1px solid var(--ro-border);
     }
 
-    .conf-medium {
+    .conf-medium,
+    .risk-needs_approval {
       background: var(--na-bg);
       color: var(--na-text);
       border: 1px solid var(--na-border);
@@ -938,19 +797,20 @@
       border: 1px solid var(--esc-border);
     }
 
-    .risk-read_only {
-      background: var(--ro-bg);
-      color: var(--ro-text);
-      border: 1px solid var(--ro-border);
+    /* Matched Runbooks */
+    .matched-row {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      flex-wrap: wrap;
     }
 
-    .risk-needs_approval {
-      background: var(--na-bg);
-      color: var(--na-text);
-      border: 1px solid var(--na-border);
+    .matched-label {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      flex-shrink: 0;
     }
 
-    /* Matched Runbook Pills */
     .runbook-list {
       list-style: none;
       padding: 0;
@@ -960,114 +820,101 @@
       gap: 8px;
     }
 
-    .runbook-pill {
+    .runbook-tag {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      background: var(--pill-bg);
-      color: var(--pill-text);
-      border: 1px solid var(--pill-border);
-      border-radius: 8px;
-      padding: 7px 12px;
-      font-size: 0.85rem;
-      font-weight: 500;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: var(--surface);
+      border: 1px solid var(--border-strong);
+      font-size: 0.81rem;
+      color: var(--text-primary);
     }
 
-    .runbook-pill-id {
-      font-size: 0.74rem;
+    .runbook-tag-id {
+      font-size: 0.72rem;
       color: var(--text-muted);
-      padding: 1px 6px;
-      border-radius: 4px;
-      background: var(--surface-1);
-      border: 1px solid var(--border-subtle);
     }
 
-    /* Ordered Steps */
+    /* Ordered Steps (Hairline table-list, no individual card boxes) */
     .steps-list {
       list-style: none;
       margin: 0;
       padding: 0;
-      display: grid;
-      gap: 8px;
-      counter-reset: triage-step;
+      counter-reset: step-idx;
     }
 
     .steps-list li {
-      counter-increment: triage-step;
-      display: flex;
-      align-items: flex-start;
+      counter-increment: step-idx;
+      display: grid;
+      grid-template-columns: 28px minmax(0, 1fr);
       gap: 12px;
-      padding: 10px 13px;
-      border-radius: 8px;
-      background: var(--surface-2);
-      border: 1px solid var(--border-subtle);
-      font-size: 0.91rem;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--hairline);
+      font-size: 0.9rem;
       color: var(--text-primary);
+      max-width: 68ch;
+    }
+
+    .steps-list li:first-child {
+      padding-top: 2px;
+    }
+
+    .steps-list li:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
     }
 
     .steps-list li::before {
-      content: counter(triage-step, decimal-leading-zero);
-      font-family: "JetBrains Mono", Consolas, monospace;
-      font-size: 0.74rem;
-      font-weight: 600;
-      color: var(--accent);
-      background: var(--accent-soft);
-      border: 1px solid var(--accent-border);
-      border-radius: 5px;
-      padding: 2px 7px;
-      flex-shrink: 0;
-      margin-top: 1px;
+      content: counter(step-idx, decimal-leading-zero);
+      font-family: "Geist Mono", Consolas, monospace;
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      padding-top: 2px;
     }
 
-    /* PowerShell Command Cards */
-    .cmd-summary-counts {
-      display: flex;
-      align-items: center;
-      gap: 8px;
+    /* PowerShell Command Blocks */
+    .cmd-counter {
       font-size: 0.76rem;
       color: var(--text-muted);
     }
 
-    .command-card {
-      border: 1px solid var(--border-subtle);
-      border-radius: 8px;
-      margin-bottom: 12px;
+    .command-item {
+      border: 1px solid var(--border-strong);
+      border-radius: 6px;
+      margin-bottom: 14px;
       overflow: hidden;
-      background: var(--surface-2);
+      background: var(--surface);
     }
 
-    .command-card:last-child {
+    .command-item:last-child {
       margin-bottom: 0;
     }
 
-    .command-card.is-needs-approval {
+    .command-item.is-needs-approval {
       border-color: var(--na-border);
-      border-left-width: 3px;
     }
 
-    .command-top {
+    .command-bar {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      padding: 10px 13px;
-      border-bottom: 1px solid var(--border-subtle);
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--hairline);
+      background: var(--surface-subtle);
       flex-wrap: wrap;
     }
 
-    .command-card.is-needs-approval .command-top {
-      background: var(--na-surface);
-    }
-
     .command-purpose {
-      font-size: 0.86rem;
-      font-weight: 500;
-      color: var(--text-primary);
+      font-size: 0.83rem;
+      color: var(--text-secondary);
       min-width: 180px;
       flex: 1;
     }
 
-    .command-controls {
+    .command-actions {
       display: flex;
       align-items: center;
       gap: 8px;
@@ -1078,22 +925,22 @@
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      min-height: 32px;
-      padding: 4px 11px;
+      gap: 5px;
+      height: 26px;
+      padding: 0 9px;
       border-radius: 6px;
       border: 1px solid var(--border-strong);
-      background: var(--surface-1);
+      background: var(--surface);
       color: var(--text-primary);
       font-family: inherit;
-      font-size: 0.77rem;
-      font-weight: 600;
-      transition: background 150ms ease, border-color 150ms ease, transform 120ms ease;
+      font-size: 0.74rem;
+      font-weight: 500;
+      transition: border-color 150ms ease, background 150ms ease, transform 120ms ease;
     }
 
     .btn-copy:hover {
-      background: var(--surface-3);
-      border-color: var(--accent);
+      border-color: var(--text-secondary);
+      background: var(--surface-hover);
     }
 
     .btn-copy:active {
@@ -1101,17 +948,16 @@
     }
 
     .btn-copy.is-copied {
-      border-color: var(--accent);
-      color: var(--accent);
+      border-color: var(--ro-border);
+      color: var(--ro-text);
     }
 
     pre.command-code {
       margin: 0;
       padding: 13px 14px;
       background: var(--surface-code);
-      color: var(--code-text);
-      font-family: "JetBrains Mono", "Cascadia Mono", Consolas, "Courier New", monospace;
-      font-size: 0.83rem;
+      color: #f4f4f5;
+      font-size: 0.82rem;
       line-height: 1.55;
       overflow-x: auto;
       white-space: pre-wrap;
@@ -1120,79 +966,40 @@
 
     pre.command-code code::before {
       content: "PS> ";
-      color: var(--code-prompt);
+      color: var(--accent);
       user-select: none;
       font-weight: 600;
     }
 
     .muted-note {
-      color: var(--text-muted);
-      font-size: 0.87rem;
       margin: 0;
-    }
-
-    footer {
-      border-top: 1px solid var(--border-subtle);
-      padding: 14px 24px;
-      font-size: 0.77rem;
+      font-size: 0.84rem;
       color: var(--text-muted);
-    }
-
-    .footer-inner {
-      max-width: 1400px;
-      margin: 0 auto;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 8px;
     }
   </style>
 </head>
 <body>
-  <a href="#main-workspace" class="skip-link">Skip to triage workspace</a>
+  <a href="#main-workspace" class="skip-link">Skip to workspace</a>
 
   <header class="topbar">
     <div class="topbar-inner">
       <div class="brand">
-        <div class="brand-mark" aria-hidden="true">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="4 17 10 11 4 5"></polyline>
-            <line x1="12" y1="19" x2="20" y2="19"></line>
-          </svg>
-        </div>
-        <div class="brand-copy">
-          <h1>RunbookPilot</h1>
-          <span class="brand-sub hide-mobile">Windows &amp; M365 Triage Workbench</span>
-        </div>
+        <span class="brand-glyph" aria-hidden="true"></span>
+        <h1>RunbookPilot</h1>
+        <span class="brand-sep hide-mobile">/</span>
+        <span class="brand-context hide-mobile">Windows &amp; M365 Triage</span>
       </div>
 
-      <div class="topbar-status">
-        <div class="status-chip tabular" id="health-chip" title="BM25 runbook index status">
-          <span class="status-dot" id="health-dot"></span>
-          <span id="health-label">Checking index...</span>
-        </div>
-        <div class="status-chip hide-mobile" title="RunbookPilot never executes PowerShell commands">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+      <div class="topbar-controls">
+        <span id="health-label" class="meta-stat mono">Index loading...</span>
+        <span class="meta-stat mono hide-mobile">Display-only</span>
+        <button type="button" id="theme-toggle" class="theme-btn" aria-label="Switch color theme">
+          <svg id="theme-icon-sun" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="4"></circle>
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
           </svg>
-          <span>Display-Only</span>
-        </div>
-        <button type="button" id="theme-toggle" class="btn-icon" aria-label="Switch color theme">
-          <svg id="theme-icon-sun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="12" cy="12" r="5"></circle>
-            <line x1="12" y1="1" x2="12" y2="3"></line>
-            <line x1="12" y1="21" x2="12" y2="23"></line>
-            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-            <line x1="1" y1="12" x2="3" y2="12"></line>
-            <line x1="21" y1="12" x2="23" y2="12"></line>
-            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-          </svg>
-          <svg id="theme-icon-moon" class="hidden" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          <svg id="theme-icon-moon" class="hidden" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
           </svg>
           <span id="theme-label">Light</span>
         </button>
@@ -1200,242 +1007,158 @@
     </div>
   </header>
 
-  <main id="main-workspace">
-    <!-- Left Column: Ticket Intake -->
-    <section class="panel panel-intake" aria-labelledby="ticket-heading">
-      <div class="panel-header">
-        <div class="panel-title-group">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-            <polyline points="14 2 14 8 20 8"></polyline>
-            <line x1="16" y1="13" x2="8" y2="13"></line>
-            <line x1="16" y1="17" x2="8" y2="17"></line>
-          </svg>
-          <h2 id="ticket-heading" class="panel-title">Support Ticket Intake</h2>
-        </div>
+  <main id="main-workspace" class="workbench">
+    <!-- Left Column: Ticket Composer -->
+    <section class="pane-intake" aria-labelledby="ticket-heading">
+      <div class="pane-header">
+        <h2 id="ticket-heading" class="pane-title">Incident ticket</h2>
+        <p class="pane-subtitle">Paste raw ticket text, hostnames, or event IDs to retrieve matching runbooks and PowerShell checks.</p>
       </div>
 
-      <div class="panel-body">
-        <div class="presets-block">
-          <div class="field-label-row">
-            <span class="field-label">Quick-fill synthetic examples</span>
-            <span class="field-hint">1-click test</span>
-          </div>
-          <div class="preset-row" id="preset-row">
-            <button type="button" class="preset-chip" data-preset="lockout">AD Lockout (4740)</button>
-            <button type="button" class="preset-chip" data-preset="backup">BCDR VSS Backup</button>
-            <button type="button" class="preset-chip" data-preset="mail">M365 Mail Delay</button>
-            <button type="button" class="preset-chip" data-preset="escalate">Uncovered VoIP</button>
-          </div>
-        </div>
-
-        <form id="triage-form" novalidate>
-          <div class="field-label-row">
-            <label for="ticket-input" class="field-label">Incident description &amp; telemetry</label>
-            <span id="char-count" class="field-hint mono tabular">0 / 4000</span>
-          </div>
-
-          <div class="textarea-wrap">
-            <textarea
-              id="ticket-input"
-              maxlength="4000"
-              placeholder="Paste IT support ticket details, hostnames, and error codes (e.g., Account user04@tenant-alpha.test locked out repeatedly after docking laptop; Event ID 4740 logged on dc-01.corp.example.test)..."
-              required
-            ></textarea>
-          </div>
-
-          <div class="char-bar-track" aria-hidden="true">
-            <div id="char-bar-fill" class="char-bar-fill"></div>
-          </div>
-
-          <div class="input-meta">
-            <span class="safety-inline">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg>
-              Commands are never executed by this app.
-            </span>
-          </div>
-
-          <div class="actions">
-            <button type="submit" id="submit-btn" class="btn btn-primary">
-              <span>Analyze Ticket</span>
-              <span class="kbd-hint mono hide-mobile">Ctrl+Enter</span>
-            </button>
-            <button type="button" id="clear-btn" class="btn btn-secondary">Clear</button>
-          </div>
-        </form>
-
-        <div id="error-banner" class="banner banner-error hidden" role="alert">
-          <svg class="banner-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="8" x2="12" y2="12"></line>
-            <line x1="12" y1="16" x2="12.01" y2="16"></line>
-          </svg>
-          <div class="banner-content" id="error-banner-text"></div>
-        </div>
-
-        <details class="catalog-disclosure">
-          <summary>
-            <span id="catalog-summary-label">Indexed Runbook Corpus</span>
-            <span class="mono tabular" id="catalog-count-badge">...</span>
-          </summary>
-          <ul class="catalog-grid" id="catalog-list"></ul>
-        </details>
+      <div class="samples-bar" id="preset-row">
+        <span class="samples-label">Load sample:</span>
+        <button type="button" class="sample-btn" data-preset="lockout">AD lockout (4740)</button>
+        <button type="button" class="sample-btn" data-preset="backup">VSS backup stall</button>
+        <button type="button" class="sample-btn" data-preset="mail">M365 mail queue</button>
+        <button type="button" class="sample-btn" data-preset="escalate">Uncovered VoIP</button>
       </div>
+
+      <form id="triage-form" novalidate>
+        <label for="ticket-input" class="field-label">Ticket description</label>
+        <div class="composer-frame">
+          <textarea
+            id="ticket-input"
+            maxlength="4000"
+            placeholder="Example: Standard user user01@corp.example.test changed their password yesterday and keeps getting locked out every 15 minutes. Event ID 4740 logged on dc-01.corp.example.test."
+            required
+          ></textarea>
+          <div class="composer-footer">
+            <div class="composer-meta">
+              <span id="char-count" class="mono">0 / 4000</span>
+            </div>
+            <div class="composer-actions">
+              <button type="button" id="clear-btn" class="btn-clear">Clear</button>
+              <button type="submit" id="submit-btn" class="btn-submit">
+                <span>Analyze ticket</span>
+                <span class="kbd-tag mono hide-mobile">Ctrl+Enter</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        <p class="intake-note">Commands are returned as plain text and are never executed by RunbookPilot.</p>
+      </form>
+
+      <div id="error-banner" class="banner banner-error hidden" role="alert"></div>
     </section>
 
-    <!-- Right Column: Diagnosis & PowerShell Remediation Plan -->
-    <section class="panel" aria-labelledby="result-heading">
-      <div class="panel-header">
-        <div class="panel-title-group">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M9 11l3 3L22 4"></path>
-            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
-          </svg>
-          <h2 id="result-heading" class="panel-title">Diagnosis &amp; Fix Plan</h2>
+    <!-- Right Column: Triage Output -->
+    <section class="pane-output" aria-labelledby="result-heading">
+      <h2 id="result-heading" class="skip-link">Diagnosis and remediation plan</h2>
+
+      <!-- 1. Idle Specification & Corpus View -->
+      <div id="empty-state" class="empty-state">
+        <div class="empty-intro">
+          <h3>No ticket loaded</h3>
+          <p>Select a sample ticket on the left or paste an incident report to run BM25 retrieval, grounded inference, and deterministic command classification.</p>
+        </div>
+
+        <dl class="spec-grid">
+          <div class="spec-item">
+            <dt>Retrieval index</dt>
+            <dd>BM25L over local Markdown runbooks (top 3)</dd>
+          </div>
+          <div class="spec-item">
+            <dt>Command safety</dt>
+            <dd>Deterministic allowlist override (read_only vs needs_approval)</dd>
+          </div>
+        </dl>
+
+        <div>
+          <div class="corpus-header">
+            <h4 class="corpus-title">Indexed runbook library</h4>
+            <span id="catalog-count-badge" class="corpus-count mono">18 runbooks</span>
+          </div>
+          <ul id="catalog-list" class="corpus-grid"></ul>
         </div>
       </div>
 
-      <div class="panel-body">
-        <!-- 1. Composed Empty State -->
-        <div id="empty-state" class="empty-state">
-          <div class="empty-hero">
-            <div class="empty-icon-ring" aria-hidden="true">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="4 17 10 11 4 5"></polyline>
-                <line x1="12" y1="19" x2="20" y2="19"></line>
-              </svg>
-            </div>
-            <h3>Ready for incident triage</h3>
-            <p>Paste a Windows or M365 support ticket on the left — or pick a synthetic example — to generate a runbook-grounded PowerShell action plan.</p>
-          </div>
+      <!-- 2. Skeleton Loading State -->
+      <div id="loading-state" class="loading-state hidden" aria-live="polite">
+        <div class="loading-header">
+          <span>Matching runbooks and validating triage response...</span>
+          <span id="loading-timer" class="mono">0.0s</span>
+        </div>
+        <div class="skeleton-block">
+          <div class="sk-bar" style="width: 24%;"></div>
+          <div class="sk-pane"></div>
+        </div>
+        <div class="skeleton-block">
+          <div class="sk-bar" style="width: 30%;"></div>
+          <div class="sk-bar" style="width: 85%;"></div>
+          <div class="sk-bar" style="width: 72%;"></div>
+        </div>
+        <div class="skeleton-block">
+          <div class="sk-bar" style="width: 36%;"></div>
+          <div class="sk-pane" style="height: 88px;"></div>
+          <div class="sk-pane" style="height: 88px;"></div>
+        </div>
+      </div>
 
-          <div class="workflow-steps">
-            <div class="workflow-card">
-              <span class="workflow-num mono">STEP 01</span>
-              <h4>BM25 Runbook Match</h4>
-              <p>Retrieves the top 3 matching MSP runbooks from the local Markdown knowledge base.</p>
-            </div>
-            <div class="workflow-card">
-              <span class="workflow-num mono">STEP 02</span>
-              <h4>Meta Model Grounding</h4>
-              <p>Answers strictly from matched runbooks and triggers escalation if the issue is uncovered.</p>
-            </div>
-            <div class="workflow-card">
-              <span class="workflow-num mono">STEP 03</span>
-              <h4>Deterministic Risk Audit</h4>
-              <p>Overwrites every PowerShell command label as <code>read_only</code> or <code>needs_approval</code>.</p>
-            </div>
-          </div>
+      <!-- 3. Populated Result View -->
+      <div id="result-container" class="hidden" aria-live="polite">
+        <div class="telemetry-strip mono">
+          <span id="result-req-id">Request: local</span>
+          <span id="result-latency">0.0s</span>
         </div>
 
-        <!-- 2. Layout-Matched Skeleton Loading State -->
-        <div id="loading-state" class="loading-state hidden" aria-live="polite">
-          <div class="loading-bar-top">
-            <div class="loading-status-left">
-              <span class="pulse-dot"></span>
-              <span>Retrieving top runbooks &amp; running Meta model inference...</span>
-            </div>
-            <span id="loading-timer" class="mono tabular">0.0s</span>
-          </div>
-          <div class="skeleton-group">
-            <div class="skeleton-line" style="width: 28%;"></div>
-            <div class="skeleton-box"></div>
-          </div>
-          <div class="skeleton-group">
-            <div class="skeleton-line" style="width: 22%;"></div>
-            <div class="skeleton-line" style="width: 54%; height: 32px;"></div>
-          </div>
-          <div class="skeleton-group">
-            <div class="skeleton-line" style="width: 34%;"></div>
-            <div class="skeleton-box" style="height: 92px;"></div>
-            <div class="skeleton-box" style="height: 92px;"></div>
-          </div>
+        <!-- Escalation Banner -->
+        <div id="escalate-banner" class="banner banner-escalate hidden" role="alert">
+          <strong>Escalation required</strong>
+          <span id="escalate-reason-text"></span>
         </div>
 
-        <!-- 3. Populated Triage Result -->
-        <div id="result-container" class="hidden" aria-live="polite">
-          <div class="result-telemetry mono tabular">
-            <span id="result-req-id">Request ID: —</span>
-            <span id="result-latency">Latency: —</span>
-          </div>
+        <!-- Approval Warning Banner -->
+        <div id="approval-warning-banner" class="banner banner-warning hidden" role="alert">
+          <strong>Approval required before execution</strong>
+          <span>One or more PowerShell commands below modify system state (<code>needs_approval</code>). Verify scope and change authorization before running manually.</span>
+        </div>
 
-          <!-- Escalation Banner -->
-          <div id="escalate-banner" class="banner banner-escalate hidden" role="alert">
-            <svg class="banner-icon" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon>
-              <line x1="12" y1="8" x2="12" y2="12"></line>
-              <line x1="12" y1="16" x2="12.01" y2="16"></line>
-            </svg>
-            <div class="banner-content">
-              <strong>Escalation Required</strong>
-              <span id="escalate-reason-text"></span>
-            </div>
+        <!-- Diagnosis & Matched Runbooks -->
+        <div class="result-block">
+          <div class="block-header">
+            <h3 class="block-title">Diagnosis</h3>
+            <span id="confidence-badge" class="badge mono"></span>
           </div>
+          <p id="likely-cause-text" class="cause-text"></p>
 
-          <!-- Needs Approval Warning Banner -->
-          <div id="approval-warning-banner" class="banner banner-warning hidden" role="alert">
-            <svg class="banner-icon" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-              <line x1="12" y1="9" x2="12" y2="13"></line>
-              <line x1="12" y1="17" x2="12.01" y2="17"></line>
-            </svg>
-            <div class="banner-content">
-              <strong>Change Approval Required</strong>
-              <span>One or more PowerShell commands below are classified as <code>needs_approval</code> and modify system state. Verify impact and obtain change approval before running manually.</span>
-            </div>
-          </div>
-
-          <!-- Likely Cause & Confidence -->
-          <div class="result-section">
-            <div class="section-header-row">
-              <h3 class="section-heading">Likely Cause &amp; Confidence</h3>
-            </div>
-            <div class="cause-card">
-              <p id="likely-cause-text" class="cause-text"></p>
-              <span id="confidence-badge" class="badge mono"></span>
-            </div>
-          </div>
-
-          <!-- Matched Runbook Titles -->
-          <div class="result-section">
-            <div class="section-header-row">
-              <h3 class="section-heading">Matched Runbooks</h3>
-            </div>
+          <div class="matched-row">
+            <span class="matched-label">Matched runbooks:</span>
             <ul id="matched-runbooks-list" class="runbook-list"></ul>
-            <p id="no-runbooks-note" class="muted-note hidden">No approved runbooks covered this ticket.</p>
+            <p id="no-runbooks-note" class="muted-note hidden">None (ticket outside runbook coverage)</p>
           </div>
+        </div>
 
-          <!-- Ordered Steps -->
-          <div class="result-section">
-            <div class="section-header-row">
-              <h3 class="section-heading">Action Plan</h3>
-            </div>
-            <ol id="steps-list" class="steps-list"></ol>
-            <p id="no-steps-note" class="muted-note hidden">No remediation steps returned.</p>
+        <!-- Ordered Remediation Steps -->
+        <div class="result-block">
+          <div class="block-header">
+            <h3 class="block-title">Remediation sequence</h3>
           </div>
+          <ol id="steps-list" class="steps-list"></ol>
+          <p id="no-steps-note" class="muted-note hidden">No remediation steps returned.</p>
+        </div>
 
-          <!-- PowerShell Commands -->
-          <div class="result-section">
-            <div class="section-header-row">
-              <h3 class="section-heading">PowerShell Commands</h3>
-              <div id="cmd-summary-counts" class="cmd-summary-counts mono tabular"></div>
-            </div>
-            <div id="commands-list"></div>
-            <p id="no-commands-note" class="muted-note hidden">No PowerShell commands recommended for this ticket.</p>
+        <!-- PowerShell Commands -->
+        <div class="result-block">
+          <div class="block-header">
+            <h3 class="block-title">PowerShell commands</h3>
+            <span id="cmd-summary-counts" class="cmd-counter mono"></span>
           </div>
+          <div id="commands-list"></div>
+          <p id="no-commands-note" class="muted-note hidden">No PowerShell commands recommended for this ticket.</p>
         </div>
       </div>
     </section>
   </main>
-
-  <footer>
-    <div class="footer-inner">
-      <span>RunbookPilot · Grounded MSP Runbook Triage</span>
-      <span class="mono">Deterministic Safety Classifier · Zero Command Execution</span>
-    </div>
-  </footer>
 
   <script>
     (function () {
@@ -1462,7 +1185,6 @@
       const themeIconMoon = document.getElementById("theme-icon-moon");
       const themeLabel = document.getElementById("theme-label");
 
-      const healthDot = document.getElementById("health-dot");
       const healthLabel = document.getElementById("health-label");
       const catalogCountBadge = document.getElementById("catalog-count-badge");
       const catalogList = document.getElementById("catalog-list");
@@ -1471,11 +1193,9 @@
       const form = document.getElementById("triage-form");
       const ticketInput = document.getElementById("ticket-input");
       const charCount = document.getElementById("char-count");
-      const charBarFill = document.getElementById("char-bar-fill");
       const submitBtn = document.getElementById("submit-btn");
       const clearBtn = document.getElementById("clear-btn");
       const errorBanner = document.getElementById("error-banner");
-      const errorBannerText = document.getElementById("error-banner-text");
 
       const emptyState = document.getElementById("empty-state");
       const loadingState = document.getElementById("loading-state");
@@ -1497,7 +1217,6 @@
       const commandsList = document.getElementById("commands-list");
       const noCommandsNote = document.getElementById("no-commands-note");
 
-      /* Theme Management */
       function applyTheme(theme) {
         const normalized = theme === "light" ? "light" : "dark";
         rootHtml.setAttribute("data-theme", normalized);
@@ -1513,7 +1232,7 @@
         try {
           localStorage.setItem("rbp_theme", normalized);
         } catch (_e) {
-          /* Ignore storage errors in restricted contexts */
+          /* Ignore storage restrictions */
         }
       }
 
@@ -1524,7 +1243,12 @@
         } catch (_e) {
           saved = null;
         }
-        applyTheme(saved || "dark");
+        if (saved === "light" || saved === "dark") {
+          applyTheme(saved);
+          return;
+        }
+        const prefersLight = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches;
+        applyTheme(prefersLight ? "light" : "dark");
       }
 
       themeToggleBtn.addEventListener("click", () => {
@@ -1532,17 +1256,14 @@
         applyTheme(current === "dark" ? "light" : "dark");
       });
 
-      /* Health & Runbook Metadata */
       async function loadHealthAndRunbooks() {
         try {
           const [healthResp, rbResp] = await Promise.all([fetch("/health"), fetch("/runbooks")]);
           if (healthResp.ok) {
             const hData = await healthResp.json();
-            healthDot.classList.remove("is-offline");
-            healthLabel.textContent = (hData.runbooks_loaded || 0) + " Runbooks Indexed";
+            healthLabel.textContent = (hData.runbooks_loaded || 0) + " runbooks indexed";
           } else {
-            healthDot.classList.add("is-offline");
-            healthLabel.textContent = "Index Unavailable";
+            healthLabel.textContent = "Index unavailable";
           }
 
           if (rbResp.ok) {
@@ -1553,13 +1274,14 @@
                 if (item && typeof item.id === "string" && typeof item.title === "string") {
                   runbookTitlesById.set(item.id, item.title);
                   const li = document.createElement("li");
-                  li.className = "catalog-item";
+                  li.className = "corpus-row";
 
                   const titleSpan = document.createElement("span");
+                  titleSpan.className = "corpus-row-title";
                   titleSpan.textContent = item.title;
 
                   const idSpan = document.createElement("span");
-                  idSpan.className = "catalog-item-id mono";
+                  idSpan.className = "corpus-row-id mono";
                   idSpan.textContent = item.id;
 
                   li.appendChild(titleSpan);
@@ -1571,28 +1293,30 @@
             }
           }
         } catch (_err) {
-          healthDot.classList.add("is-offline");
-          healthLabel.textContent = "API Offline";
+          healthLabel.textContent = "API offline";
         }
       }
 
       function updateCharCount() {
         const len = ticketInput.value.length;
         charCount.textContent = len + " / " + MAX_CHARS;
-        const pct = Math.min(100, (len / MAX_CHARS) * 100);
-        charBarFill.style.width = pct + "%";
-        charBarFill.classList.toggle("is-warn", len >= 3500 && len < MAX_CHARS);
-        charBarFill.classList.toggle("is-limit", len >= MAX_CHARS);
+        charCount.classList.toggle("char-limit-warn", len >= 3500 && len < MAX_CHARS);
+        charCount.classList.toggle("char-limit-max", len >= MAX_CHARS);
       }
 
       function showError(message) {
-        errorBannerText.textContent = message;
+        errorBanner.textContent = message;
         errorBanner.classList.remove("hidden");
       }
 
       function clearError() {
-        errorBannerText.textContent = "";
+        errorBanner.textContent = "";
         errorBanner.classList.add("hidden");
+      }
+
+      function clearActivePreset() {
+        const buttons = presetRow.querySelectorAll(".sample-btn");
+        buttons.forEach((b) => b.classList.remove("is-active"));
       }
 
       function startLoadingClock() {
@@ -1620,7 +1344,7 @@
         svg.setAttribute("viewBox", "0 0 24 24");
         svg.setAttribute("fill", "none");
         svg.setAttribute("stroke", "currentColor");
-        svg.setAttribute("stroke-width", "2");
+        svg.setAttribute("stroke-width", "1.75");
         svg.setAttribute("stroke-linecap", "round");
         svg.setAttribute("stroke-linejoin", "round");
         svg.setAttribute("aria-hidden", "true");
@@ -1636,7 +1360,7 @@
         btn.textContent = "";
         if (state === "copied") {
           btn.classList.add("is-copied");
-          btn.appendChild(createSvgIcon(["M20 6L9 17l-5-5"], 13));
+          btn.appendChild(createSvgIcon(["M20 6L9 17l-5-5"], 12));
           const span = document.createElement("span");
           span.textContent = "Copied";
           btn.appendChild(span);
@@ -1653,7 +1377,7 @@
                 "M9 9h11a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2z",
                 "M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
               ],
-              13
+              12
             )
           );
           const span = document.createElement("span");
@@ -1686,21 +1410,20 @@
         }
         window.setTimeout(() => {
           setCopyButtonState(buttonEl, "idle");
-        }, 1600);
+        }, 1500);
       }
 
       function renderResult(data, meta) {
         emptyState.classList.add("hidden");
         loadingState.classList.add("hidden");
         resultContainer.classList.remove("hidden");
-        resultContainer.classList.remove("animate-in");
+        resultContainer.classList.remove("reveal");
         void resultContainer.offsetWidth;
-        resultContainer.classList.add("animate-in");
+        resultContainer.classList.add("reveal");
 
         resultReqId.textContent = "Request ID: " + (meta.requestId || "local");
-        resultLatency.textContent = "Completed in " + meta.elapsedSeconds + "s";
+        resultLatency.textContent = meta.elapsedSeconds + "s";
 
-        /* 1. Escalation banner */
         if (data.escalate) {
           escalateReasonText.textContent = data.escalate_reason || "Ticket requires manual escalation.";
           escalateBanner.classList.remove("hidden");
@@ -1709,7 +1432,6 @@
           escalateBanner.classList.add("hidden");
         }
 
-        /* 2. Needs-approval warning banner */
         const commands = Array.isArray(data.commands) ? data.commands : [];
         const roCount = commands.filter((c) => c && c.risk === "read_only").length;
         const naCount = commands.length - roCount;
@@ -1720,13 +1442,11 @@
           approvalWarningBanner.classList.add("hidden");
         }
 
-        /* 3. Cause & Confidence */
         likelyCauseText.textContent = data.likely_cause || "";
         const conf = ["low", "medium", "high"].includes(data.confidence) ? data.confidence : "low";
-        confidenceBadge.textContent = "Confidence: " + conf.toUpperCase();
+        confidenceBadge.textContent = conf + " confidence";
         confidenceBadge.className = "badge mono conf-" + conf;
 
-        /* 4. Matched Runbook Titles */
         matchedRunbooksList.textContent = "";
         const matchedIds = Array.isArray(data.matched_runbooks) ? data.matched_runbooks : [];
         if (matchedIds.length === 0) {
@@ -1735,7 +1455,7 @@
           noRunbooksNote.classList.add("hidden");
           matchedIds.forEach((id) => {
             const li = document.createElement("li");
-            li.className = "runbook-pill";
+            li.className = "runbook-tag";
             const title = runbookTitlesById.get(id);
 
             const titleNode = document.createElement("span");
@@ -1743,17 +1463,16 @@
             li.appendChild(titleNode);
 
             if (title) {
-              const idBadge = document.createElement("span");
-              idBadge.className = "runbook-pill-id mono";
-              idBadge.textContent = id;
-              li.appendChild(idBadge);
+              const idNode = document.createElement("span");
+              idNode.className = "runbook-tag-id mono";
+              idNode.textContent = id;
+              li.appendChild(idNode);
             }
 
             matchedRunbooksList.appendChild(li);
           });
         }
 
-        /* 5. Action Plan Steps */
         stepsList.textContent = "";
         const steps = Array.isArray(data.steps) ? data.steps : [];
         if (steps.length === 0) {
@@ -1769,41 +1488,33 @@
           });
         }
 
-        /* 6. PowerShell Commands */
         commandsList.textContent = "";
         if (commands.length === 0) {
           cmdSummaryCounts.textContent = "0 commands";
           noCommandsNote.classList.remove("hidden");
         } else {
-          cmdSummaryCounts.textContent = roCount + " read_only · " + naCount + " needs_approval";
+          cmdSummaryCounts.textContent = roCount + " read_only, " + naCount + " needs_approval";
           noCommandsNote.classList.add("hidden");
 
           commands.forEach((item) => {
             const risk = item.risk === "read_only" ? "read_only" : "needs_approval";
 
             const card = document.createElement("div");
-            card.className = "command-card" + (risk === "needs_approval" ? " is-needs-approval" : "");
+            card.className = "command-item" + (risk === "needs_approval" ? " is-needs-approval" : "");
 
             const topBar = document.createElement("div");
-            topBar.className = "command-top";
+            topBar.className = "command-bar";
 
             const purposeSpan = document.createElement("span");
             purposeSpan.className = "command-purpose";
             purposeSpan.textContent = item.purpose || "";
 
-            const controls = document.createElement("div");
-            controls.className = "command-controls";
+            const actions = document.createElement("div");
+            actions.className = "command-actions";
 
             const badge = document.createElement("span");
             badge.className = "badge mono risk-" + risk;
-            if (risk === "read_only") {
-              badge.appendChild(createSvgIcon(["M20 6L9 17l-5-5"], 12));
-            } else {
-              badge.appendChild(createSvgIcon(["M12 9v4", "M12 17h.01", "M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"], 12));
-            }
-            const badgeText = document.createElement("span");
-            badgeText.textContent = risk;
-            badge.appendChild(badgeText);
+            badge.textContent = risk;
 
             const copyBtn = document.createElement("button");
             copyBtn.type = "button";
@@ -1814,13 +1525,13 @@
               copyTextToClipboard(item.command || "", copyBtn);
             });
 
-            controls.appendChild(badge);
-            controls.appendChild(copyBtn);
+            actions.appendChild(badge);
+            actions.appendChild(copyBtn);
             topBar.appendChild(purposeSpan);
-            topBar.appendChild(controls);
+            topBar.appendChild(actions);
 
             const pre = document.createElement("pre");
-            pre.className = "command-code";
+            pre.className = "command-code mono";
             const code = document.createElement("code");
             code.textContent = item.command || "";
             pre.appendChild(code);
@@ -1832,7 +1543,6 @@
         }
       }
 
-      /* Preset Chips */
       presetRow.addEventListener("click", (event) => {
         const target = event.target.closest("[data-preset]");
         if (!target) {
@@ -1840,6 +1550,8 @@
         }
         const key = target.getAttribute("data-preset");
         if (key && SAMPLE_TICKETS[key]) {
+          clearActivePreset();
+          target.classList.add("is-active");
           ticketInput.value = SAMPLE_TICKETS[key];
           updateCharCount();
           clearError();
@@ -1847,7 +1559,6 @@
         }
       });
 
-      /* Keyboard Shortcut: Ctrl+Enter / Cmd+Enter to Analyze */
       ticketInput.addEventListener("keydown", (event) => {
         if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
           event.preventDefault();
@@ -1857,9 +1568,13 @@
         }
       });
 
-      ticketInput.addEventListener("input", updateCharCount);
+      ticketInput.addEventListener("input", () => {
+        clearActivePreset();
+        updateCharCount();
+      });
 
       clearBtn.addEventListener("click", () => {
+        clearActivePreset();
         ticketInput.value = "";
         updateCharCount();
         clearError();
