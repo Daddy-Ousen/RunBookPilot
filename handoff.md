@@ -5,8 +5,8 @@
 - Local `.env` already switched; old Meta values are commented lines in `.env`. A backup of the old `.env` was copied to `%TEMP%/rbp_env_backup`.
 - Owner pasted the real Baseten key into `.env`. Never print it.
 - Model always reasons (default `xhigh`, slow). `LLM_REASONING_EFFORT=medium` set. Baseten returns reasoning in `reasoning_content`; `content` holds the answer, so the JSON parse should work. Verified locally: smoke test 1.6 s; 3 real triages correct in 2.8 to 6.1 s.
+- Committed `4d1aed8` on main, not pushed. Push main to deploy the code.
 - Next: owner sets Vercel env vars (`LLM_BASE_URL`, `LLM_MODEL`, `LLM_API_KEY`, `LLM_REASONING_EFFORT`) and redeploys; then check the live site; then commit.
-- Uncommitted files: `app/llm.py`, `tests/test_llm_and_api.py`, `.env.example`, `README.md`, `scripts/llm_smoke.py`, `progress.md`, `handoff.md`.
 
 ## Current state
 - main = Phase 0-6 redesign + Phase 7 "Friendly Daylight" reskin (`27135d0`), LIVE at https://runbookpilot.rhasan.online (alias https://runbookpilot-phi.vercel.app). Tag `pre-redesign` (`d5fb9d5`) marks the old UI; `7533855` is the last commit before Phase 7 (roll back the look by reverting `27135d0`).

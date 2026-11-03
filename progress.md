@@ -99,7 +99,7 @@ Source plan: `UI_REDESIGN_PLAN.md` (repo root). Follow it phase by phase. Stop a
 - [x] Owner pasted the Baseten key. Smoke test: HTTP 200 in 1.6 s, `reasoning_content` comes in its own field.
 - [x] Real `/triage` on Baseten (TestClient): DNS -> rb-07 high 6.1 s; AD lockout -> rb-02 high 3.7 s; VoIP -> escalate, no runbooks 2.8 s. Old Meta endpoint took 10 to 33 s.
 - [ ] Vercel env vars: set `LLM_BASE_URL`, `LLM_MODEL`, `LLM_API_KEY`, `LLM_REASONING_EFFORT`, then redeploy.
-- [ ] Commit (not done yet).
+- [x] Committed `4d1aed8` on main (not pushed).
 
 ## Next
 - UI work is finished. Record the demo video (Standard mode; stop the stale server on port 8000 first if demoing locally). Submit by Nov 5, 08:00 Dhaka.
