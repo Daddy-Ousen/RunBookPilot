@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import time
@@ -11,10 +12,15 @@ from pathlib import Path
 from threading import Lock
 
 import httpx
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import Body, FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+from app.integrations import (
+    IntegrationNotFoundError,
+    IntegrationRegistry,
+    IntegrationValidationError,
+)
 from app.llm import (
     LLMConfig,
     LLMConfigError,
@@ -25,9 +31,18 @@ from app.llm import (
 )
 from app.retrieval import DEFAULT_RUNBOOKS_DIR, RunbookIndex
 from app.safety import apply_safety_overrides
-from app.schema import TriageRequest, TriageResult
+from app.schema import (
+    IntegrationProviderView,
+    IntegrationTestRequest,
+    IntegrationTestResult,
+    IntegrationUpdateRequest,
+    TriageRequest,
+    TriageResult,
+    WebhookAckResponse,
+)
 
 DEFAULT_STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
+MAX_WEBHOOK_PAYLOAD_BYTES = 65_536
 
 # Configure application logging (request IDs only; suppress verbose HTTP client logs).
 logging.basicConfig(
@@ -113,10 +128,12 @@ def create_app(
     rate_limit_window_seconds: float | None = None,
     llm_config: LLMConfig | None = None,
     llm_http_client: httpx.AsyncClient | None = None,
+    integrations_registry: IntegrationRegistry | None = None,
 ) -> FastAPI:
     """Create and configure the RunbookPilot FastAPI application."""
     resolved_runbooks_dir = Path(runbooks_dir) if runbooks_dir is not None else DEFAULT_RUNBOOKS_DIR
     resolved_static_dir = Path(static_dir) if static_dir is not None else DEFAULT_STATIC_DIR
+    registry = integrations_registry if integrations_registry is not None else IntegrationRegistry()
 
     max_reqs = (
         rate_limit_requests
@@ -257,6 +274,137 @@ def create_app(
 
         # Deterministically override every command's risk label (never trust LLM risk labels).
         return apply_safety_overrides(raw_result)
+
+    @application.get("/integrations", response_model=list[IntegrationProviderView])
+    async def list_integrations() -> list[IntegrationProviderView]:
+        return registry.list_providers()
+
+    @application.get("/integrations/{provider_id}", response_model=IntegrationProviderView)
+    async def get_integration(provider_id: str) -> IntegrationProviderView:
+        try:
+            return registry.get_provider(provider_id)
+        except IntegrationNotFoundError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    @application.put("/integrations/{provider_id}", response_model=IntegrationProviderView)
+    async def update_integration(
+        provider_id: str, payload: IntegrationUpdateRequest, request: Request
+    ) -> IntegrationProviderView:
+        request_id: str = getattr(request.state, "request_id", "unknown")
+        try:
+            updated = registry.update_provider(provider_id, payload)
+        except IntegrationNotFoundError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except IntegrationValidationError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+        logger.info(
+            "request_id=%s integration_updated=%s status=%s",
+            request_id,
+            provider_id,
+            updated.status,
+        )
+        return updated
+
+    @application.delete("/integrations/{provider_id}", response_model=IntegrationProviderView)
+    async def reset_integration(provider_id: str, request: Request) -> IntegrationProviderView:
+        request_id: str = getattr(request.state, "request_id", "unknown")
+        try:
+            reset_view = registry.reset_provider(provider_id)
+        except IntegrationNotFoundError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+        logger.info("request_id=%s integration_reset=%s", request_id, provider_id)
+        return reset_view
+
+    @application.post("/integrations/{provider_id}/test", response_model=IntegrationTestResult)
+    async def test_integration(
+        provider_id: str,
+        request: Request,
+        payload: IntegrationTestRequest | None = Body(default=None),
+    ) -> IntegrationTestResult:
+        request_id: str = getattr(request.state, "request_id", "unknown")
+        try:
+            result = registry.test_provider(provider_id, payload)
+        except IntegrationNotFoundError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except IntegrationValidationError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+        logger.info(
+            "request_id=%s integration_tested=%s status=%s",
+            request_id,
+            provider_id,
+            result.status,
+        )
+        return result
+
+    @application.post(
+        "/integrations/webhooks/{provider_id}",
+        response_model=WebhookAckResponse,
+        status_code=202,
+    )
+    async def receive_integration_webhook(
+        provider_id: str, request: Request
+    ) -> WebhookAckResponse:
+        request_id: str = getattr(request.state, "request_id", "unknown")
+        client_ip = _extract_client_ip(request)
+
+        allowed, retry_after = limiter.allow(client_ip)
+        if not allowed:
+            logger.warning(
+                "request_id=%s webhook_rate_limited=true retry_after_s=%d",
+                request_id,
+                retry_after,
+            )
+            raise HTTPException(
+                status_code=429,
+                detail=f"Rate limit exceeded. Retry after {retry_after} seconds.",
+                headers={"Retry-After": str(retry_after)},
+            )
+
+        try:
+            provider_view = registry.get_provider(provider_id)
+        except IntegrationNotFoundError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+        raw_body = await request.body()
+        if len(raw_body) > MAX_WEBHOOK_PAYLOAD_BYTES:
+            raise HTTPException(
+                status_code=413,
+                detail=f"Webhook payload exceeds maximum size of {MAX_WEBHOOK_PAYLOAD_BYTES} bytes.",
+            )
+
+        if raw_body.strip():
+            try:
+                parsed = json.loads(raw_body)
+            except ValueError as exc:
+                raise HTTPException(
+                    status_code=422, detail="Webhook payload must be valid JSON."
+                ) from exc
+            if not isinstance(parsed, (dict, list)):
+                raise HTTPException(
+                    status_code=422, detail="Webhook JSON root must be an object or array."
+                )
+
+        # Log request_id and provider_id only; never log webhook payload content.
+        logger.info(
+            "request_id=%s webhook_standby_ack=%s provider_status=%s",
+            request_id,
+            provider_id,
+            provider_view.status,
+        )
+        return WebhookAckResponse(
+            provider_id=provider_view.id,
+            accepted=True,
+            mode="staged_standby",
+            provider_status=provider_view.status,
+            request_id=request_id,
+            message=(
+                f"{provider_view.name} webhook endpoint is ready in standby mode. "
+                "Live automated triage dispatch is currently inactive."
+            ),
+        )
 
     @application.get("/", include_in_schema=False)
     async def serve_ui() -> FileResponse:

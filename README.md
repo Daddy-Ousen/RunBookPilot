@@ -109,6 +109,22 @@ python scripts\eval.py
 
 ---
 
+## Ticketing/PSA & RMM Integrations (Standby Mode)
+
+`app/integrations.py` and the **Integrations** view in `static/index.html` (`/#integrations`) provide a staged connector registry for **12 popular MSP platforms**:
+
+- **Ticketing & PSA (6)**: ConnectWise PSA, Datto Autotask PSA, HaloPSA, ServiceNow ITSM, Jira Service Management, and Freshservice.
+- **RMM Platforms (6)**: NinjaOne RMM, Datto RMM, ConnectWise Automate, N-able N-central, Atera RMM, and SyncroMSP.
+
+All connectors operate in **staged/standby mode** (`live_sync_active=false`, `remote_execution_allowed=false`):
+- `GET /integrations` & `GET /integrations/{provider_id}`: List connector specifications, capabilities, webhook paths, and masked configuration state (`"********"` for saved secrets).
+- `PUT /integrations/{provider_id}`: Validate and stage endpoint URLs, credentials, and sync mode (`draft_internal_note`, `webhook_auto_triage`, or `manual_pull`).
+- `POST /integrations/{provider_id}/test`: Run a staged dry-run validation of required fields and URL schemas without making external network calls.
+- `DELETE /integrations/{provider_id}`: Clear stored credentials and reset the connector to `not_configured`.
+- `POST /integrations/webhooks/{provider_id}`: Standby webhook receiver that returns HTTP `202 Accepted` (`mode="staged_standby"`) and logs `request_id` + `provider_id` only (never webhook payload content).
+
+---
+
 ## Safety Design
 
 1. **Zero Command Execution**: Neither the backend nor the UI executes PowerShell commands (`subprocess`, `os.system`, and shell invocations are completely absent from application code).

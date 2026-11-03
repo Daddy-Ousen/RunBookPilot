@@ -976,6 +976,353 @@
       font-size: 0.84rem;
       color: var(--text-muted);
     }
+
+    /* Topbar View Navigation Tabs */
+    .nav-tabs {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-left: 6px;
+    }
+
+    .nav-tab {
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 30px;
+      padding: 0 10px;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text-secondary);
+      font-family: inherit;
+      font-size: 0.82rem;
+      font-weight: 500;
+      transition: color 150ms ease, background 150ms ease, border-color 150ms ease, transform 120ms ease;
+    }
+
+    .nav-tab:hover {
+      color: var(--text-primary);
+      background: var(--surface-subtle);
+    }
+
+    .nav-tab:active {
+      transform: translateY(1px);
+    }
+
+    .nav-tab.is-active {
+      color: var(--text-primary);
+      background: var(--surface);
+      border-color: var(--border-strong);
+    }
+
+    .nav-tab-count {
+      font-size: 0.7rem;
+      padding: 1px 5px;
+      border-radius: 4px;
+      background: var(--surface-subtle);
+      color: var(--text-muted);
+      border: 1px solid var(--hairline);
+    }
+
+    /* Integrations Settings Workbench */
+    .workbench-integrations {
+      grid-template-columns: minmax(340px, 38%) minmax(0, 62%);
+    }
+
+    @media (max-width: 960px) {
+      .workbench-integrations {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .directory-toolbar {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding-bottom: 14px;
+      margin-bottom: 8px;
+      border-bottom: 1px solid var(--hairline);
+    }
+
+    .directory-tabs {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .directory-search {
+      width: 100%;
+      height: 34px;
+      padding: 0 11px;
+      border-radius: 6px;
+      border: 1px solid var(--border-strong);
+      background: var(--surface);
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 0.83rem;
+      transition: border-color 150ms ease;
+    }
+
+    .directory-search::placeholder {
+      color: var(--text-muted);
+    }
+
+    .directory-search:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .provider-list {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .provider-row {
+      cursor: pointer;
+      width: 100%;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 11px 10px;
+      border: none;
+      border-bottom: 1px solid var(--hairline);
+      border-left: 2px solid transparent;
+      background: transparent;
+      color: var(--text-primary);
+      font-family: inherit;
+      transition: background 140ms ease, border-color 140ms ease;
+    }
+
+    .provider-row:hover {
+      background: var(--surface-subtle);
+    }
+
+    .provider-row.is-selected {
+      background: var(--surface-subtle);
+      border-left-color: var(--accent);
+    }
+
+    .provider-row-main {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .provider-row-name {
+      font-size: 0.87rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .provider-row-meta {
+      font-size: 0.74rem;
+      color: var(--text-muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .status-staged {
+      background: var(--ro-bg);
+      color: var(--ro-text);
+      border: 1px solid var(--ro-border);
+    }
+
+    .status-paused {
+      background: var(--na-bg);
+      color: var(--na-text);
+      border: 1px solid var(--na-border);
+    }
+
+    .status-not_configured {
+      background: var(--surface);
+      color: var(--text-muted);
+      border: 1px solid var(--hairline);
+    }
+
+    .banner-standby {
+      background: var(--surface);
+      color: var(--text-secondary);
+      border-color: var(--border-strong);
+      border-left-color: var(--accent);
+    }
+
+    .banner-standby strong {
+      color: var(--text-primary);
+    }
+
+    .banner-ok {
+      background: var(--ro-bg);
+      color: var(--ro-text);
+      border-color: var(--ro-border);
+    }
+
+    .provider-heading-group {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .webhook-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 9px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border-strong);
+      background: var(--surface);
+    }
+
+    .webhook-url {
+      font-size: 0.8rem;
+      color: var(--text-primary);
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+
+    .cfg-mode-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      padding-bottom: 20px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--hairline);
+    }
+
+    @media (max-width: 680px) {
+      .cfg-mode-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .cfg-select,
+    .cfg-input {
+      width: 100%;
+      height: 36px;
+      padding: 0 11px;
+      border-radius: 6px;
+      border: 1px solid var(--border-strong);
+      background: var(--surface);
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 0.85rem;
+      transition: border-color 150ms ease;
+    }
+
+    .cfg-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .cfg-select:focus,
+    .cfg-input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .cfg-toggle-box {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+    }
+
+    .cfg-toggle-label {
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      height: 36px;
+      padding: 0 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border-strong);
+      background: var(--surface);
+      font-size: 0.83rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      user-select: none;
+    }
+
+    .cfg-toggle-label input[type="checkbox"] {
+      width: 15px;
+      height: 15px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .cfg-fields-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px 20px;
+      margin-bottom: 24px;
+    }
+
+    @media (max-width: 680px) {
+      .cfg-fields-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .cfg-field-item.is-wide {
+      grid-column: 1 / -1;
+    }
+
+    .cfg-field-top {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .cfg-field-label {
+      font-size: 0.81rem;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .cfg-field-tag {
+      font-size: 0.71rem;
+      color: var(--text-muted);
+    }
+
+    .cfg-field-tag.is-stored {
+      color: var(--ro-text);
+    }
+
+    .cfg-help {
+      margin: 5px 0 0;
+      font-size: 0.74rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .cfg-actions-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding-top: 16px;
+      border-top: 1px solid var(--hairline);
+      flex-wrap: wrap;
+    }
+
+    .cfg-actions-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .cfg-validate-btn {
+      height: 34px;
+      padding: 0 12px;
+      font-size: 0.82rem;
+    }
   </style>
 </head>
 <body>
@@ -986,8 +1333,16 @@
       <div class="brand">
         <span class="brand-glyph" aria-hidden="true"></span>
         <h1>RunbookPilot</h1>
-        <span class="brand-sep hide-mobile">/</span>
-        <span class="brand-context hide-mobile">Windows &amp; M365 Triage</span>
+        <span class="brand-sep">/</span>
+        <nav class="nav-tabs" aria-label="Workspace views">
+          <button type="button" id="nav-tab-triage" class="nav-tab is-active" data-view="triage" aria-current="page">
+            Triage
+          </button>
+          <button type="button" id="nav-tab-integrations" class="nav-tab" data-view="integrations">
+            <span>Integrations</span>
+            <span id="nav-integrations-badge" class="nav-tab-count mono">0/12</span>
+          </button>
+        </nav>
       </div>
 
       <div class="topbar-controls">
@@ -1159,6 +1514,112 @@
       </div>
     </section>
   </main>
+
+  <!-- Integrations Settings View (Ticketing/PSA & RMM Standby Connectors) -->
+  <section id="integrations-workspace" class="workbench workbench-integrations hidden" aria-labelledby="integrations-heading">
+    <!-- Left Column: Connector Directory -->
+    <div class="pane-intake">
+      <div class="pane-header">
+        <h2 id="integrations-heading" class="pane-title">Ticketing &amp; RMM integrations</h2>
+        <p class="pane-subtitle">Stage PSA service boards and RMM alert feeds. Connectors operate in standby mode until live worker sync is activated.</p>
+      </div>
+
+      <div class="directory-toolbar">
+        <div id="integration-category-bar" class="directory-tabs" role="tablist" aria-label="Connector categories">
+          <button type="button" class="sample-btn is-active" data-category="all">All (12)</button>
+          <button type="button" class="sample-btn" data-category="ticketing">Ticketing &amp; PSA (6)</button>
+          <button type="button" class="sample-btn" data-category="rmm">RMM platforms (6)</button>
+        </div>
+        <input
+          type="search"
+          id="integration-search-input"
+          class="directory-search"
+          placeholder="Filter by provider name or protocol..."
+          aria-label="Filter integration providers"
+        />
+      </div>
+
+      <div id="integration-provider-list" class="provider-list" role="listbox" aria-label="Integration providers"></div>
+      <p id="integration-empty-filter" class="muted-note hidden" style="padding-top: 12px;">No providers match the current filter.</p>
+    </div>
+
+    <!-- Right Column: Selected Provider Settings -->
+    <div class="pane-output">
+      <div class="banner banner-standby">
+        <strong>Standby mode (connectors staged, live polling inactive)</strong>
+        <span>Endpoint URLs, API credentials, sync behavior, and webhook routes can be configured and validated now. Outbound ticket writeback is paused, and remote command execution on RMM endpoints is permanently disabled.</span>
+      </div>
+
+      <div id="integration-detail-pane">
+        <!-- Provider Summary & Capabilities -->
+        <div class="result-block">
+          <div class="block-header">
+            <div class="provider-heading-group">
+              <h3 id="cfg-provider-name" class="pane-title" style="margin: 0;">ConnectWise PSA</h3>
+              <span id="cfg-provider-protocol" class="meta-stat mono"></span>
+            </div>
+            <span id="cfg-provider-status" class="badge mono status-not_configured">unconfigured</span>
+          </div>
+          <p id="cfg-provider-desc" class="pane-subtitle" style="margin-bottom: 16px;"></p>
+          <div class="matched-row">
+            <span class="matched-label">Capabilities:</span>
+            <ul id="cfg-provider-capabilities" class="runbook-list"></ul>
+          </div>
+        </div>
+
+        <!-- Inbound Webhook Standby Route -->
+        <div class="result-block">
+          <div class="block-header">
+            <h4 class="block-title">Inbound webhook receiver</h4>
+            <span class="meta-stat mono">HTTP 202 standby</span>
+          </div>
+          <div class="webhook-bar">
+            <code id="cfg-webhook-url" class="webhook-url mono">/integrations/webhooks/connectwise_psa</code>
+            <button type="button" id="cfg-copy-webhook-btn" class="btn-copy" aria-label="Copy inbound webhook URL"></button>
+          </div>
+          <p class="intake-note">Point your PSA ticket callout or RMM alert webhook to this URL. Requests receive a 202 Accepted standby response with privacy-safe request_id logging.</p>
+        </div>
+
+        <!-- Dynamic Connection Settings Form -->
+        <form id="integration-config-form" class="result-block" novalidate>
+          <div class="block-header">
+            <h4 class="block-title">Connection and sync settings</h4>
+            <span id="cfg-updated-at" class="meta-stat mono">Not saved yet</span>
+          </div>
+
+          <div class="cfg-mode-grid">
+            <div>
+              <label for="cfg-sync-mode" class="field-label">Sync behavior when active</label>
+              <select id="cfg-sync-mode" class="cfg-select">
+                <option value="draft_internal_note">Draft internal triage note only</option>
+                <option value="webhook_auto_triage">Auto-triage inbound webhook events</option>
+                <option value="manual_pull">Manual ticket lookup by ID</option>
+              </select>
+            </div>
+            <div class="cfg-toggle-box">
+              <span class="field-label">Readiness state</span>
+              <label class="cfg-toggle-label" for="cfg-enabled-checkbox">
+                <input type="checkbox" id="cfg-enabled-checkbox" />
+                <span>Stage connector as ready</span>
+              </label>
+            </div>
+          </div>
+
+          <div id="cfg-fields-grid" class="cfg-fields-grid"></div>
+
+          <div class="cfg-actions-bar">
+            <button type="button" id="cfg-reset-btn" class="btn-clear">Reset config</button>
+            <div class="cfg-actions-right">
+              <button type="button" id="cfg-test-btn" class="sample-btn cfg-validate-btn">Validate staged config</button>
+              <button type="submit" id="cfg-save-btn" class="btn-submit">Save settings</button>
+            </div>
+          </div>
+
+          <div id="cfg-feedback-banner" class="banner hidden" role="status" style="margin-top: 16px; margin-bottom: 0;"></div>
+        </form>
+      </div>
+    </div>
+  </section>
 
   <script>
     (function () {
@@ -1656,9 +2117,451 @@
         }
       });
 
+      /* -------------------------------------------------------------------
+       * Integrations Settings Controller (Ticketing/PSA & RMM Standby View)
+       * ------------------------------------------------------------------- */
+      const mainWorkspace = document.getElementById("main-workspace");
+      const integrationsWorkspace = document.getElementById("integrations-workspace");
+      const navTabTriage = document.getElementById("nav-tab-triage");
+      const navTabIntegrations = document.getElementById("nav-tab-integrations");
+      const navIntegrationsBadge = document.getElementById("nav-integrations-badge");
+
+      const categoryBar = document.getElementById("integration-category-bar");
+      const searchInput = document.getElementById("integration-search-input");
+      const providerListEl = document.getElementById("integration-provider-list");
+      const emptyFilterNote = document.getElementById("integration-empty-filter");
+
+      const cfgProviderName = document.getElementById("cfg-provider-name");
+      const cfgProviderProtocol = document.getElementById("cfg-provider-protocol");
+      const cfgProviderStatus = document.getElementById("cfg-provider-status");
+      const cfgProviderDesc = document.getElementById("cfg-provider-desc");
+      const cfgProviderCapabilities = document.getElementById("cfg-provider-capabilities");
+      const cfgWebhookUrl = document.getElementById("cfg-webhook-url");
+      const cfgCopyWebhookBtn = document.getElementById("cfg-copy-webhook-btn");
+
+      const cfgForm = document.getElementById("integration-config-form");
+      const cfgUpdatedAt = document.getElementById("cfg-updated-at");
+      const cfgSyncMode = document.getElementById("cfg-sync-mode");
+      const cfgEnabledCheckbox = document.getElementById("cfg-enabled-checkbox");
+      const cfgFieldsGrid = document.getElementById("cfg-fields-grid");
+      const cfgResetBtn = document.getElementById("cfg-reset-btn");
+      const cfgTestBtn = document.getElementById("cfg-test-btn");
+      const cfgSaveBtn = document.getElementById("cfg-save-btn");
+      const cfgFeedbackBanner = document.getElementById("cfg-feedback-banner");
+
+      let providersCatalog = [];
+      let activeCategoryFilter = "all";
+      let activeSearchQuery = "";
+      let selectedProviderId = null;
+
+      setCopyButtonState(cfgCopyWebhookBtn, "idle");
+
+      function formatStatusLabel(status) {
+        if (status === "staged") {
+          return "staged";
+        }
+        if (status === "paused") {
+          return "paused";
+        }
+        return "unconfigured";
+      }
+
+      function updateNavIntegrationsBadge() {
+        const total = providersCatalog.length || 12;
+        const stagedCount = providersCatalog.filter((p) => p.status === "staged").length;
+        navIntegrationsBadge.textContent = stagedCount + "/" + total;
+      }
+
+      function hideIntegrationFeedback() {
+        cfgFeedbackBanner.textContent = "";
+        cfgFeedbackBanner.className = "banner hidden";
+      }
+
+      function showIntegrationFeedback(kind, title, detail) {
+        cfgFeedbackBanner.textContent = "";
+        const variant = kind === "ok" ? "banner-ok" : "banner-escalate";
+        cfgFeedbackBanner.className = "banner " + variant;
+
+        const strong = document.createElement("strong");
+        strong.textContent = title;
+        const span = document.createElement("span");
+        span.textContent = detail;
+
+        cfgFeedbackBanner.appendChild(strong);
+        cfgFeedbackBanner.appendChild(span);
+      }
+
+      function getSelectedProvider() {
+        return providersCatalog.find((p) => p.id === selectedProviderId) || null;
+      }
+
+      function renderProviderDirectory() {
+        providerListEl.textContent = "";
+        const q = activeSearchQuery.trim().toLowerCase();
+
+        const filtered = providersCatalog.filter((item) => {
+          if (activeCategoryFilter !== "all" && item.category !== activeCategoryFilter) {
+            return false;
+          }
+          if (!q) {
+            return true;
+          }
+          const hay = (item.name + " " + item.protocol + " " + item.category + " " + item.description).toLowerCase();
+          return hay.includes(q);
+        });
+
+        if (filtered.length === 0) {
+          emptyFilterNote.classList.remove("hidden");
+          return;
+        }
+        emptyFilterNote.classList.add("hidden");
+
+        filtered.forEach((provider) => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "provider-row" + (provider.id === selectedProviderId ? " is-selected" : "");
+          btn.setAttribute("role", "option");
+          btn.setAttribute("aria-selected", provider.id === selectedProviderId ? "true" : "false");
+
+          const mainDiv = document.createElement("div");
+          mainDiv.className = "provider-row-main";
+
+          const nameSpan = document.createElement("span");
+          nameSpan.className = "provider-row-name";
+          nameSpan.textContent = provider.name;
+
+          const catPrefix = provider.category === "rmm" ? "RMM" : "Ticketing";
+          const metaSpan = document.createElement("span");
+          metaSpan.className = "provider-row-meta mono";
+          metaSpan.textContent = catPrefix + " / " + provider.protocol;
+
+          mainDiv.appendChild(nameSpan);
+          mainDiv.appendChild(metaSpan);
+
+          const badge = document.createElement("span");
+          const st = provider.status || "not_configured";
+          badge.className = "badge mono status-" + st;
+          badge.textContent = formatStatusLabel(st);
+
+          btn.appendChild(mainDiv);
+          btn.appendChild(badge);
+
+          btn.addEventListener("click", () => {
+            selectedProviderId = provider.id;
+            hideIntegrationFeedback();
+            renderProviderDirectory();
+            renderSelectedProvider();
+          });
+
+          providerListEl.appendChild(btn);
+        });
+      }
+
+      function renderSelectedProvider() {
+        const provider = getSelectedProvider();
+        if (!provider) {
+          return;
+        }
+
+        cfgProviderName.textContent = provider.name;
+        const catLabel = provider.category === "rmm" ? "RMM platform" : "Ticketing & PSA";
+        cfgProviderProtocol.textContent = catLabel + " / " + provider.protocol;
+
+        const st = provider.status || "not_configured";
+        cfgProviderStatus.className = "badge mono status-" + st;
+        cfgProviderStatus.textContent = formatStatusLabel(st);
+
+        cfgProviderDesc.textContent = provider.description || "";
+
+        cfgProviderCapabilities.textContent = "";
+        (provider.capabilities || []).forEach((cap) => {
+          const li = document.createElement("li");
+          li.className = "runbook-tag";
+          li.textContent = cap;
+          cfgProviderCapabilities.appendChild(li);
+        });
+
+        const origin = window.location && window.location.origin ? window.location.origin : "";
+        const fullWebhook = origin + (provider.webhook_path || ("/integrations/webhooks/" + provider.id));
+        cfgWebhookUrl.textContent = fullWebhook;
+
+        if (provider.updated_at) {
+          cfgUpdatedAt.textContent = "Updated " + provider.updated_at;
+        } else {
+          cfgUpdatedAt.textContent = "Not saved yet";
+        }
+
+        cfgSyncMode.value = provider.sync_mode || "draft_internal_note";
+        cfgEnabledCheckbox.checked = Boolean(provider.enabled);
+
+        cfgFieldsGrid.textContent = "";
+        const fields = Array.isArray(provider.fields) ? provider.fields : [];
+        const configuredValues = provider.configured_values || {};
+        const savedSecrets = provider.has_saved_secrets || {};
+
+        fields.forEach((fSpec, idx) => {
+          const wrapper = document.createElement("div");
+          const isWide = fSpec.field_type === "url" || (fields.length % 2 === 1 && idx === fields.length - 1);
+          wrapper.className = "cfg-field-item" + (isWide ? " is-wide" : "");
+
+          const topRow = document.createElement("div");
+          topRow.className = "cfg-field-top";
+
+          const inputId = "cfg-input-" + provider.id + "-" + fSpec.key;
+          const labelEl = document.createElement("label");
+          labelEl.className = "cfg-field-label";
+          labelEl.setAttribute("for", inputId);
+          labelEl.textContent = fSpec.label;
+
+          const tagEl = document.createElement("span");
+          tagEl.className = "cfg-field-tag mono";
+          if (fSpec.field_type === "secret" && savedSecrets[fSpec.key]) {
+            tagEl.classList.add("is-stored");
+            tagEl.textContent = "secret stored";
+          } else {
+            tagEl.textContent = fSpec.required ? "required" : "optional";
+          }
+
+          topRow.appendChild(labelEl);
+          topRow.appendChild(tagEl);
+
+          const inputEl = document.createElement("input");
+          inputEl.id = inputId;
+          inputEl.className = "cfg-input" + (fSpec.field_type === "url" ? " mono" : "");
+          inputEl.setAttribute("data-field-key", fSpec.key);
+          inputEl.type = fSpec.field_type === "secret" ? "password" : fSpec.field_type === "url" ? "url" : "text";
+          inputEl.placeholder = fSpec.placeholder || "";
+          inputEl.autocomplete = "off";
+          inputEl.spellcheck = false;
+          inputEl.value = configuredValues[fSpec.key] || "";
+
+          const helpP = document.createElement("p");
+          helpP.className = "cfg-help";
+          helpP.textContent = fSpec.help_text || "";
+
+          wrapper.appendChild(topRow);
+          wrapper.appendChild(inputEl);
+          wrapper.appendChild(helpP);
+          cfgFieldsGrid.appendChild(wrapper);
+        });
+      }
+
+      function collectFormValues() {
+        const values = {};
+        const inputs = cfgFieldsGrid.querySelectorAll("[data-field-key]");
+        inputs.forEach((el) => {
+          const key = el.getAttribute("data-field-key");
+          if (key) {
+            values[key] = el.value.trim();
+          }
+        });
+        return values;
+      }
+
+      function replaceProviderInCatalog(updatedView) {
+        providersCatalog = providersCatalog.map((p) => (p.id === updatedView.id ? updatedView : p));
+        updateNavIntegrationsBadge();
+        renderProviderDirectory();
+        renderSelectedProvider();
+      }
+
+      async function loadIntegrations() {
+        try {
+          const resp = await fetch("/integrations");
+          if (!resp.ok) {
+            return;
+          }
+          const list = await resp.json();
+          if (Array.isArray(list) && list.length > 0) {
+            providersCatalog = list;
+            if (!selectedProviderId || !providersCatalog.some((p) => p.id === selectedProviderId)) {
+              selectedProviderId = providersCatalog[0].id;
+            }
+            updateNavIntegrationsBadge();
+            renderProviderDirectory();
+            renderSelectedProvider();
+          }
+        } catch (_err) {
+          /* Ignore offline state during startup */
+        }
+      }
+
+      function switchWorkspaceView(viewName, updateHash) {
+        const isIntegrations = viewName === "integrations";
+        if (isIntegrations) {
+          mainWorkspace.classList.add("hidden");
+          integrationsWorkspace.classList.remove("hidden");
+          navTabTriage.classList.remove("is-active");
+          navTabTriage.removeAttribute("aria-current");
+          navTabIntegrations.classList.add("is-active");
+          navTabIntegrations.setAttribute("aria-current", "page");
+          if (providersCatalog.length === 0) {
+            loadIntegrations();
+          }
+          if (updateHash && window.location.hash !== "#integrations") {
+            history.replaceState(null, "", "#integrations");
+          }
+        } else {
+          integrationsWorkspace.classList.add("hidden");
+          mainWorkspace.classList.remove("hidden");
+          navTabIntegrations.classList.remove("is-active");
+          navTabIntegrations.removeAttribute("aria-current");
+          navTabTriage.classList.add("is-active");
+          navTabTriage.setAttribute("aria-current", "page");
+          if (updateHash && window.location.hash === "#integrations") {
+            history.replaceState(null, "", window.location.pathname + window.location.search);
+          }
+        }
+      }
+
+      navTabTriage.addEventListener("click", () => {
+        switchWorkspaceView("triage", true);
+      });
+
+      navTabIntegrations.addEventListener("click", () => {
+        switchWorkspaceView("integrations", true);
+      });
+
+      window.addEventListener("hashchange", () => {
+        if (window.location.hash === "#integrations") {
+          switchWorkspaceView("integrations", false);
+        } else {
+          switchWorkspaceView("triage", false);
+        }
+      });
+
+      categoryBar.addEventListener("click", (event) => {
+        const btn = event.target.closest("[data-category]");
+        if (!btn) {
+          return;
+        }
+        const cat = btn.getAttribute("data-category") || "all";
+        activeCategoryFilter = cat;
+        categoryBar.querySelectorAll("[data-category]").forEach((el) => {
+          el.classList.toggle("is-active", el === btn);
+        });
+        renderProviderDirectory();
+      });
+
+      searchInput.addEventListener("input", () => {
+        activeSearchQuery = searchInput.value;
+        renderProviderDirectory();
+      });
+
+      cfgCopyWebhookBtn.addEventListener("click", () => {
+        copyTextToClipboard(cfgWebhookUrl.textContent || "", cfgCopyWebhookBtn);
+      });
+
+      cfgTestBtn.addEventListener("click", async () => {
+        const provider = getSelectedProvider();
+        if (!provider) {
+          return;
+        }
+        hideIntegrationFeedback();
+        cfgTestBtn.disabled = true;
+
+        try {
+          const resp = await fetch("/integrations/" + encodeURIComponent(provider.id) + "/test", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              sync_mode: cfgSyncMode.value,
+              values: collectFormValues()
+            })
+          });
+          const data = await resp.json();
+          if (!resp.ok) {
+            showIntegrationFeedback("error", "Validation request failed", data.detail || "Unable to validate config.");
+            return;
+          }
+          if (data.ok) {
+            showIntegrationFeedback("ok", "Staged dry-run passed", data.message);
+          } else {
+            showIntegrationFeedback("error", "Validation incomplete", data.message);
+          }
+        } catch (err) {
+          showIntegrationFeedback("error", "Connection error", err.message || "Could not reach /integrations test endpoint.");
+        } finally {
+          cfgTestBtn.disabled = false;
+        }
+      });
+
+      cfgForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const provider = getSelectedProvider();
+        if (!provider) {
+          return;
+        }
+        hideIntegrationFeedback();
+        cfgSaveBtn.disabled = true;
+
+        try {
+          const resp = await fetch("/integrations/" + encodeURIComponent(provider.id), {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              enabled: cfgEnabledCheckbox.checked,
+              sync_mode: cfgSyncMode.value,
+              values: collectFormValues()
+            })
+          });
+          const data = await resp.json();
+          if (!resp.ok) {
+            let msg = "Unable to save integration settings.";
+            if (typeof data.detail === "string") {
+              msg = data.detail;
+            } else if (Array.isArray(data.detail) && data.detail[0]?.msg) {
+              msg = data.detail[0].msg;
+            }
+            showIntegrationFeedback("error", "Configuration error", msg);
+            return;
+          }
+
+          replaceProviderInCatalog(data);
+          const modeLabel = data.status === "staged"
+            ? "Connector is staged as ready in standby mode."
+            : data.status === "paused"
+              ? "Draft settings saved (connector paused)."
+              : "Connector settings cleared.";
+          showIntegrationFeedback("ok", "Settings saved for " + data.name, modeLabel);
+        } catch (err) {
+          showIntegrationFeedback("error", "Save failed", err.message || "Network error while saving settings.");
+        } finally {
+          cfgSaveBtn.disabled = false;
+        }
+      });
+
+      cfgResetBtn.addEventListener("click", async () => {
+        const provider = getSelectedProvider();
+        if (!provider) {
+          return;
+        }
+        hideIntegrationFeedback();
+        cfgResetBtn.disabled = true;
+
+        try {
+          const resp = await fetch("/integrations/" + encodeURIComponent(provider.id), {
+            method: "DELETE"
+          });
+          if (resp.ok) {
+            const data = await resp.json();
+            replaceProviderInCatalog(data);
+            showIntegrationFeedback("ok", "Configuration reset", data.name + " has been reset to unconfigured.");
+          }
+        } catch (err) {
+          showIntegrationFeedback("error", "Reset failed", err.message || "Network error while resetting connector.");
+        } finally {
+          cfgResetBtn.disabled = false;
+        }
+      });
+
       initTheme();
       updateCharCount();
       loadHealthAndRunbooks();
+      loadIntegrations();
+      if (window.location.hash === "#integrations") {
+        switchWorkspaceView("integrations", false);
+      }
     })();
   </script>
 </body>

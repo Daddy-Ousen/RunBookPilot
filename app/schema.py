@@ -8,8 +8,13 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 ConfidenceLevel = Literal["low", "medium", "high"]
 CommandRisk = Literal["read_only", "needs_approval"]
+IntegrationCategory = Literal["ticketing", "rmm"]
+IntegrationStatus = Literal["not_configured", "staged", "paused"]
+IntegrationSyncMode = Literal["draft_internal_note", "webhook_auto_triage", "manual_pull"]
+IntegrationFieldType = Literal["url", "text", "secret"]
 
 MAX_TICKET_CHARS = 4000
+MAX_INTEGRATION_FIELD_CHARS = 512
 
 
 class CommandItem(BaseModel):
@@ -83,3 +88,115 @@ class TriageRequest(BaseModel):
         if not stripped:
             raise ValueError("ticket must not be empty or whitespace only.")
         return stripped
+
+
+def _validate_integration_values_map(values: dict[str, str]) -> dict[str, str]:
+    if len(values) > 24:
+        raise ValueError("Too many integration configuration fields submitted.")
+    cleaned: dict[str, str] = {}
+    for raw_key, raw_val in values.items():
+        if not isinstance(raw_key, str) or not raw_key.strip():
+            raise ValueError("Field key must be a non-empty string.")
+        if not isinstance(raw_val, str):
+            raise ValueError(f"Field '{raw_key}' value must be a string.")
+        if len(raw_val) > MAX_INTEGRATION_FIELD_CHARS:
+            raise ValueError(
+                f"Field '{raw_key}' exceeds maximum length of {MAX_INTEGRATION_FIELD_CHARS} characters."
+            )
+        cleaned[raw_key.strip()] = raw_val.strip()
+    return cleaned
+
+
+class IntegrationFieldSpec(BaseModel):
+    """Schema descriptor for a single provider configuration field."""
+
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    key: str = Field(..., min_length=1)
+    label: str = Field(..., min_length=1)
+    field_type: IntegrationFieldType
+    placeholder: str = Field(..., min_length=1)
+    required: bool = True
+    help_text: str = Field(..., min_length=1)
+
+
+class IntegrationProviderView(BaseModel):
+    """Public masked representation of an RMM or Ticketing connector."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str = Field(..., min_length=1)
+    name: str = Field(..., min_length=1)
+    category: IntegrationCategory
+    protocol: str = Field(..., min_length=1)
+    description: str = Field(..., min_length=1)
+    capabilities: list[str]
+    fields: list[IntegrationFieldSpec]
+    webhook_path: str = Field(..., min_length=1)
+    remote_execution_allowed: Literal[False] = False
+    live_sync_active: Literal[False] = False
+    status: IntegrationStatus
+    enabled: bool
+    sync_mode: IntegrationSyncMode
+    configured_values: dict[str, str]
+    has_saved_secrets: dict[str, bool]
+    updated_at: str | None = None
+
+
+class IntegrationUpdateRequest(BaseModel):
+    """Payload for staging or updating a connector's settings."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    enabled: bool = False
+    sync_mode: IntegrationSyncMode = "draft_internal_note"
+    values: dict[str, str] = Field(default_factory=dict)
+
+    @field_validator("values")
+    @classmethod
+    def _validate_values(cls, values: dict[str, str]) -> dict[str, str]:
+        return _validate_integration_values_map(values)
+
+
+class IntegrationTestRequest(BaseModel):
+    """Optional draft values to validate during a staged dry-run check."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    sync_mode: IntegrationSyncMode | None = None
+    values: dict[str, str] | None = None
+
+    @field_validator("values")
+    @classmethod
+    def _validate_optional_values(cls, values: dict[str, str] | None) -> dict[str, str] | None:
+        if values is None:
+            return None
+        return _validate_integration_values_map(values)
+
+
+class IntegrationTestResult(BaseModel):
+    """Result of a staged dry-run validation check (no outbound live execution)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    provider_id: str
+    ok: bool
+    status: Literal["staged_ready", "validation_failed"]
+    mode: Literal["staged_dry_run"] = "staged_dry_run"
+    message: str
+    checked_fields: list[str]
+    missing_fields: list[str]
+    invalid_fields: list[str]
+
+
+class WebhookAckResponse(BaseModel):
+    """Standby acknowledgment returned by inbound PSA/RMM webhook receivers."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    provider_id: str
+    accepted: bool = True
+    mode: Literal["staged_standby"] = "staged_standby"
+    provider_status: IntegrationStatus
+    request_id: str
+    message: str
