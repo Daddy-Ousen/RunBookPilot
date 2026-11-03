@@ -26,7 +26,7 @@ export function priority(raw) {
 export function queueStatus(raw) {
   if (raw === "triaged") return "Triaged";
   if (raw === "escalated") return "Escalated";
-  return null;
+  return "Pending";
 }
 
 export function connectorStatus(raw) {
@@ -54,25 +54,53 @@ export function countsLine(roCount, naCount) {
 export const NOT_RUN = "Not run by RunbookPilot.";
 export const NEVER_RUNS = "RunbookPilot never runs commands. Copy and run them yourself.";
 
-// HTTP error to UI text. retryAfter in seconds when known.
-export function errorText(status, retryAfter) {
+// HTTP error to UI text: { title: what failed, next: what to do }.
+// retryAfter in seconds when known. status 0 = network, "timeout" = no answer in time.
+export function errorParts(status, retryAfter) {
   switch (status) {
     case 429:
-      return retryAfter ? "The model is busy. Wait " + retryAfter + " s, then try again." : "The model is busy. Wait a moment, then try again.";
+      return {
+        title: "The model is busy.",
+        next: retryAfter ? "Wait " + retryAfter + " s, then try again." : "Wait a moment, then try again."
+      };
     case 504:
-      return "The model took too long. Try again, or use Standard mode.";
+    case "timeout":
+      return { title: "The model took too long.", next: "Try again, or use Standard mode." };
     case 502:
     case 500:
-      return "The model sent no usable answer. Try again.";
+      return { title: "The model sent no usable answer.", next: "Try again. If it fails again, use Standard mode." };
     case 503:
-      return "The service is not ready. Wait a moment, then try again.";
+      return { title: "The service is not ready.", next: "Wait a moment, then try again." };
     case 422:
     case 400:
     case 413:
-      return "The ticket could not be read. Check the text and try again.";
+      return { title: "The ticket could not be read.", next: "Check the text and try again." };
     case 0:
-      return "No connection to RunbookPilot. Check the server, then try again.";
+      return { title: "No connection to RunbookPilot.", next: "Check the server, then try again." };
     default:
-      return "Something went wrong (HTTP " + status + "). Try again.";
+      return { title: "Something went wrong (HTTP " + status + ").", next: "Try again." };
   }
+}
+
+export function errorText(status, retryAfter) {
+  const parts = errorParts(status, retryAfter);
+  return parts.title + " " + parts.next;
+}
+
+// Verdict state word for a triage result.
+export function verdict(data, naCount) {
+  if (data.escalate) return { word: "Escalate to Tier 3", variant: "esc" };
+  if (naCount > 0) return { word: "Needs approval steps", variant: "na" };
+  return { word: "Covered by runbooks", variant: "ro" };
+}
+
+// ISO time to a short age: "40 min", "3 h", "2 d".
+export function age(iso) {
+  const t = Date.parse(iso);
+  if (Number.isNaN(t)) return "";
+  const mins = Math.max(0, Math.round((Date.now() - t) / 60000));
+  if (mins < 60) return mins + " min";
+  const hours = Math.round(mins / 60);
+  if (hours < 48) return hours + " h";
+  return Math.round(hours / 24) + " d";
 }

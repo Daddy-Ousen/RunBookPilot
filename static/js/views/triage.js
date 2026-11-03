@@ -1,14 +1,17 @@
 // Triage view: ticket input, samples, mode, screenshot, queue, submit, states.
 
-import { el, byId, clear, setText, show, badge, notice } from "../dom.js";
+import { el, byId, clear, setText, show, badge, icon, ICONS } from "../dom.js";
 import { post, get, triageMeta } from "../api.js";
-import { state, on, emit } from "../store.js";
-import { priority, queueStatus, modelName } from "../copy.js";
+import { state, on, emit, loadSession, saveSession } from "../store.js";
+import { priority, queueStatus, modelName, errorParts, verdict, age } from "../copy.js";
 import { renderResult, resetResult } from "./result.js";
 import { ensureIndex } from "./runbooks.js";
 
 const MAX_CHARS = 4000;
 const MAX_SCREENSHOT_BYTES = 1400000;
+const TRIAGE_TIMEOUT_MS = 90000;
+const LAST_RESULT_KEY = "rbp_last_result";
+const DESKTOP = window.matchMedia("(min-width: 960px)");
 
 export const SAMPLES = [
   {
@@ -34,6 +37,12 @@ export const SAMPLES = [
     title: "Uncovered VoIP",
     desc: "No runbook covers this (escalates)",
     text: "Desk SIP VoIP handset on PoE switch port Gi1/0/24 is stuck in a TFTP firmware bootloop and failing LLDP-MED voice VLAN 120 negotiation."
+  },
+  {
+    key: "rdp-shot",
+    title: "RDP error screenshot",
+    desc: "Short ticket plus an error dialog image",
+    shot: "rdp"
   }
 ];
 
@@ -77,54 +86,68 @@ function setTicket(text) {
 
 /* ---------- Errors ---------- */
 
+// Local problems with the input: shown under the ticket box.
+function showInputError(message) {
+  setText(ui.ticketError, message);
+  show(ui.ticketError, Boolean(message));
+}
+
 function clearError() {
   clear(ui.errorRegion);
+  showInputError("");
   if (countdownId) {
     window.clearInterval(countdownId);
     countdownId = null;
   }
 }
 
-// res: api result, or { message } for local validation.
+// Request errors: shown in the result column with cause, next step and Try again.
 function showError(res) {
   clearError();
-  const retryBtn = res.status !== undefined ? el("button", { type: "button", class: "btn btn-secondary btn-sm", text: "Try again", on: { click: () => submitTriage() } }) : null;
-  const tech = res.detail || res.requestId
-    ? el(
-        "details",
-        { class: "disclosure" },
-        el("summary", { text: "Technical details" }),
-        el(
-          "div",
-          { class: "disclosure-body mono wrap-anywhere" },
-          res.status ? el("div", { text: "HTTP " + res.status }) : null,
-          res.detail ? el("div", { text: res.detail }) : null,
-          res.requestId ? el("div", { text: "Request ID: " + res.requestId }) : null
-        )
-      )
-    : null;
-  const box = notice(
-    "danger",
-    res.message,
-    res.status !== undefined ? "Your ticket text is kept." : null,
-    retryBtn ? el("div", { class: "notice-actions" }, retryBtn) : null,
+  const parts = errorParts(res.timedOut ? "timeout" : res.status, res.retryAfter);
+  const retryBtn = el("button", { type: "button", class: "btn btn-primary", text: "Try again", on: { click: () => submitTriage() } });
+  const tech = el(
+    "details",
+    { class: "disclosure error-tech" },
+    el("summary", { text: "Technical details" }),
+    el(
+      "div",
+      { class: "disclosure-body mono wrap-anywhere" },
+      el("div", { text: res.timedOut ? "No answer after " + TRIAGE_TIMEOUT_MS / 1000 + " s (browser timeout)" : res.status ? "HTTP " + res.status : "No HTTP response" }),
+      res.detail ? el("div", { text: res.detail }) : null,
+      res.requestId ? el("div", { text: "Request ID: " + res.requestId }) : null
+    )
+  );
+  const next = el("span", { text: parts.next });
+  const box = el(
+    "div",
+    { class: "notice notice-danger error-panel", role: "alert" },
+    el("span", { class: "notice-title" }, icon(ICONS.warn, 16), " ", parts.title),
+    next,
+    el("span", { class: "text-2", text: "Your ticket text is kept." }),
+    el("div", { class: "notice-actions btn-row" }, retryBtn),
     tech
   );
   ui.errorRegion.appendChild(box);
 
-  if (retryBtn && res.retryAfter) {
+  if (res.retryAfter) {
     let left = res.retryAfter;
+    const paint = () => {
+      setText(next, "Wait " + left + " s, then try again.");
+      setText(retryBtn, "Try again in " + left + " s");
+    };
     retryBtn.disabled = true;
-    setText(retryBtn, "Try again in " + left + " s");
+    paint();
     countdownId = window.setInterval(() => {
       left -= 1;
       if (left <= 0) {
         window.clearInterval(countdownId);
         countdownId = null;
         retryBtn.disabled = false;
+        setText(next, "You can try again now.");
         setText(retryBtn, "Try again");
       } else {
-        setText(retryBtn, "Try again in " + left + " s");
+        paint();
       }
     }, 1000);
   }
@@ -132,10 +155,19 @@ function showError(res) {
 
 /* ---------- Result column states ---------- */
 
+// which: "empty" | "loading" | "result" | "error" (an error keeps an older result below it)
 function showState(which) {
   show(ui.empty, which === "empty");
   show(ui.loading, which === "loading");
-  show(ui.result, which === "result");
+  show(ui.result, which === "result" || (which === "error" && Boolean(state.lastResult)));
+  ui.output.dataset.state = which;
+}
+
+// One column: bring the result column into view when work starts.
+function revealOutput() {
+  if (DESKTOP.matches) return;
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  ui.output.scrollIntoView({ block: "start", behavior: reduce ? "auto" : "smooth" });
 }
 
 function startTimer() {
@@ -179,11 +211,18 @@ function pickSample(key) {
   if (!sample) return;
   unlinkQueueItem();
   clearRmmLoop();
+  if (sample.shot) {
+    setTicket(SAMPLE_SHOTS[sample.shot].ticket);
+    useSampleShot(sample.shot);
+  } else {
+    clearScreenshot();
+    setTicket(sample.text);
+  }
   activeSampleKey = key;
   renderSamples();
-  setTicket(sample.text);
   clearError();
   ui.ticket.focus();
+  if (!DESKTOP.matches) ui.ticket.scrollIntoView({ block: "center" });
 }
 
 function clearActiveSample() {
@@ -215,17 +254,18 @@ function clearScreenshot() {
 function readScreenshotFile(file) {
   if (!file) return;
   if (!/^image\/(png|jpeg|webp)$/.test(file.type)) {
-    showError({ message: "Use a PNG, JPEG or WebP image." });
+    showInputError("Use a PNG, JPEG or WebP image.");
     return;
   }
   if (file.size > MAX_SCREENSHOT_BYTES) {
-    showError({ message: "The screenshot is over 1.4 MB. Choose a smaller image." });
+    showInputError("The screenshot is over 1.4 MB. Choose a smaller image.");
     ui.shotInput.value = "";
     return;
   }
   const reader = new FileReader();
   reader.onload = () => {
     if (typeof reader.result === "string") {
+      showInputError("");
       setScreenshot(reader.result, file.name, "Uploaded screenshot (" + file.name + ")");
     }
   };
@@ -266,6 +306,7 @@ function syntheticDialogPng(shot) {
 
 function useSampleShot(key) {
   const shot = SAMPLE_SHOTS[key];
+  showInputError("");
   setScreenshot(syntheticDialogPng(shot), shot.name, shot.caption);
   if (!ui.ticket.value.trim()) setTicket(shot.ticket);
 }
@@ -296,14 +337,23 @@ function renderQueue() {
   }
   state.queueItems.forEach((item) => {
     const selected = state.activeQueueItem && state.activeQueueItem.id === item.id;
-    const statusWord = queueStatus(item.status);
-    const right = statusWord ? badge(statusWord) : badge(priority(item.priority), item.priority === "critical" ? "strong" : null);
-    const host = item.device && item.device.hostname ? " · " + item.device.hostname : "";
+    const when = age(item.created_at);
     const row = el(
       "button",
-      { type: "button", class: "list-row", "aria-pressed": selected ? "true" : "false", on: { click: () => selectQueueItem(item) } },
-      el("span", { class: "list-row-top" }, el("span", { class: "list-row-meta", text: item.provider_name + " · " + item.external_ref + host }), right),
-      el("span", { class: "list-row-title", text: item.title })
+      { type: "button", class: "list-row queue-row", "aria-pressed": selected ? "true" : "false", on: { click: () => selectQueueItem(item) } },
+      el(
+        "span",
+        { class: "list-row-top" },
+        el("span", { class: "list-row-meta", text: item.provider_name + (when ? " · " + when + " ago" : "") }),
+        badge(priority(item.priority), item.priority === "critical" ? "strong" : null)
+      ),
+      el("span", { class: "list-row-title", text: item.title }),
+      el(
+        "span",
+        { class: "list-row-meta queue-row-foot" },
+        el("span", { class: "mono", text: item.external_ref }),
+        el("span", { class: "queue-status", "data-status": item.status || "pending", text: queueStatus(item.status) })
+      )
     );
     ui.queueList.appendChild(el("li", null, row));
   });
@@ -324,6 +374,7 @@ function selectQueueItem(item) {
   state.activeQueueItem = item;
   clearActiveSample();
   clearRmmLoop();
+  clearScreenshot();
   setTicket(item.ticket_text || "");
   clearError();
   const host = item.device && item.device.hostname ? " · Host " + item.device.hostname : "";
@@ -331,7 +382,7 @@ function selectQueueItem(item) {
   show(ui.activeBar, true);
   emit("queue-selected", item);
   renderQueue();
-  if (window.matchMedia("(max-width: 959px)").matches) ui.ticket.scrollIntoView({ block: "center" });
+  if (!DESKTOP.matches) ui.ticket.scrollIntoView({ block: "center" });
 }
 
 function unlinkQueueItem() {
@@ -354,12 +405,13 @@ export async function submitTriage() {
   clearError();
   const ticket = ui.ticket.value;
   if (!ticket.trim()) {
-    showError({ message: "Enter a ticket first, or pick a sample." });
+    showInputError("Enter a ticket first, or pick a sample.");
     ui.ticket.focus();
     return;
   }
   if (ticket.length > MAX_CHARS) {
-    showError({ message: "The ticket is over 4000 characters. Make it shorter." });
+    showInputError("The ticket is over 4000 characters. Make it shorter.");
+    ui.ticket.focus();
     return;
   }
   await ensureIndex();
@@ -367,7 +419,9 @@ export async function submitTriage() {
   busy = true;
   ui.submit.disabled = true;
   ui.submit.setAttribute("aria-busy", "true");
+  setText(ui.resultStatus, "Analyzing ticket.");
   showState("loading");
+  revealOutput();
   startTimer();
   const t0 = performance.now();
 
@@ -378,15 +432,16 @@ export async function submitTriage() {
   }
   if (state.rmmLoopOutput) body.rmm_diagnostic_output = state.rmmLoopOutput;
 
-  const res = await post("/triage", body);
+  const res = await post("/triage", body, { timeoutMs: TRIAGE_TIMEOUT_MS });
   stopTimer();
   busy = false;
   ui.submit.disabled = false;
   ui.submit.removeAttribute("aria-busy");
 
-  if (!res.ok || !res.data) {
-    showState(state.lastResult ? "result" : "empty");
-    showError(res.ok ? { ...res, message: "The model sent no usable answer. Try again." } : res);
+  if (!res.ok || !res.data || typeof res.data !== "object") {
+    setText(ui.resultStatus, "");
+    showState("error");
+    showError(res.ok ? { ...res, status: 502, detail: "The response had no triage result." } : res);
     return;
   }
 
@@ -395,9 +450,29 @@ export async function submitTriage() {
   meta.vision = Boolean(state.screenshot);
   meta.rmmLoop = Boolean(state.rmmLoopOutput);
   state.lastTicket = ticket;
+  saveSession(LAST_RESULT_KEY, { data: res.data, meta, ticket });
+  showResult(res.data, meta);
+}
+
+function showResult(data, meta) {
   document.querySelectorAll(".js-model-name").forEach((n) => setText(n, modelName(meta.metaModel)));
   showState("result");
-  renderResult(ui.result, res.data, meta);
+  renderResult(ui.result, data, meta);
+  const commands = Array.isArray(data.commands) ? data.commands : [];
+  const na = commands.filter((c) => c && c.risk !== "read_only").length;
+  setText(ui.resultStatus, "Result ready: " + verdict(data, na).word + ".");
+}
+
+// A reload of this tab shows the last result again; step ticks stay by request ID.
+async function restoreLastResult() {
+  const saved = loadSession(LAST_RESULT_KEY);
+  if (!saved || !saved.data || !saved.meta) return;
+  await ensureIndex();
+  if (busy || state.lastResult) return;
+  state.lastTicket = saved.ticket || "";
+  if (!ui.ticket.value) setTicket(state.lastTicket);
+  showResult(saved.data, saved.meta);
+  if (!DESKTOP.matches) ui.samplesPanel.open = false;
 }
 
 function clearAll() {
@@ -409,9 +484,32 @@ function clearAll() {
   clearError();
   stopTimer();
   state.lastResult = null;
+  saveSession(LAST_RESULT_KEY, null);
+  setText(ui.resultStatus, "");
   resetResult(ui.result);
   showState("empty");
   ui.ticket.focus();
+}
+
+/* ---------- Samples and queue: open lists on desktop, <details> on mobile ---------- */
+
+function initInputDisclosures() {
+  const panels = [ui.samplesPanel, ui.queuePanel];
+  const apply = () => {
+    if (DESKTOP.matches) {
+      panels.forEach((p) => (p.open = true));
+    } else {
+      ui.samplesPanel.open = !state.lastResult;
+      ui.queuePanel.open = false;
+    }
+  };
+  panels.forEach((p) =>
+    p.querySelector("summary").addEventListener("click", (e) => {
+      if (DESKTOP.matches) e.preventDefault();
+    })
+  );
+  DESKTOP.addEventListener("change", apply);
+  apply();
 }
 
 /* ---------- Init ---------- */
@@ -423,8 +521,11 @@ export function initTriage() {
     charCount: byId("char-count"),
     submit: byId("submit-btn"),
     clearBtn: byId("clear-btn"),
+    ticketError: byId("ticket-error"),
     errorRegion: byId("error-region"),
     sampleList: byId("sample-list"),
+    samplesPanel: byId("samples-panel"),
+    queuePanel: byId("pending-queue-panel"),
     activeBar: byId("active-ticket-bar"),
     activeLabel: byId("active-ticket-label"),
     rmmLoopBar: byId("rmm-loop-bar"),
@@ -438,6 +539,8 @@ export function initTriage() {
     queueList: byId("pending-queue-list"),
     queueCount: byId("queue-count"),
     queueFilter: byId("queue-staged-filter-btn"),
+    output: byId("triage-output"),
+    resultStatus: byId("result-status"),
     empty: byId("empty-state"),
     loading: byId("loading-state"),
     timer: byId("loading-timer"),
@@ -445,7 +548,9 @@ export function initTriage() {
   };
 
   renderSamples();
+  setText(byId("sample-count"), String(SAMPLES.length));
   updateCharCount();
+  initInputDisclosures();
 
   ui.form.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -459,6 +564,7 @@ export function initTriage() {
   });
   ui.ticket.addEventListener("input", () => {
     clearActiveSample();
+    showInputError("");
     updateCharCount();
   });
   ui.clearBtn.addEventListener("click", clearAll);
@@ -481,7 +587,10 @@ export function initTriage() {
   });
   byId("btn-sample-shot-rdp").addEventListener("click", () => useSampleShot("rdp"));
   byId("btn-sample-shot-vss").addEventListener("click", () => useSampleShot("vss"));
-  byId("btn-remove-screenshot").addEventListener("click", clearScreenshot);
+  byId("btn-remove-screenshot").addEventListener("click", () => {
+    clearScreenshot();
+    ui.shotInput.focus();
+  });
   byId("btn-clear-rmm-loop").addEventListener("click", clearRmmLoop);
   byId("unlink-ticket-btn").addEventListener("click", unlinkQueueItem);
 
@@ -498,9 +607,11 @@ export function initTriage() {
     submitTriage();
   });
   on("retriage", () => submitTriage());
+  on("pick-sample", (key) => pickSample(key));
   on("queue-changed", () => loadQueue());
 
   showState("empty");
+  restoreLastResult();
 }
 
 export function onTriageShown() {

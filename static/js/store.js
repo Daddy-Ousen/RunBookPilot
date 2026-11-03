@@ -32,16 +32,36 @@ export function saveJSON(key, value) {
   save(key, value === null || value === undefined ? null : JSON.stringify(value));
 }
 
+// sessionStorage: kept across a reload of this tab only.
+export function loadSession(key) {
+  try {
+    const raw = sessionStorage.getItem(key);
+    return raw === null ? null : JSON.parse(raw);
+  } catch (_e) {
+    return null;
+  }
+}
+
+export function saveSession(key, value) {
+  try {
+    if (value === null || value === undefined) sessionStorage.removeItem(key);
+    else sessionStorage.setItem(key, JSON.stringify(value));
+  } catch (_e) {
+    /* Storage blocked or full: ignore */
+  }
+}
+
 // State shared by the triage input and the result.
 export const state = {
   runbookTitles: new Map(),
   queueItems: [],
   activeQueueItem: null,
-  stagedOnlyQueue: false,
+  stagedOnly: false,
   lastResult: null,
   lastTicket: "",
   screenshot: null, // { dataUrl, name, caption }
-  rmmLoopOutput: null
+  rmmLoopOutput: null,
+  draftMarkdown: new Map() // runbook ID -> markdown of a runbook added in this session
 };
 
 // Tiny event bus between modules.

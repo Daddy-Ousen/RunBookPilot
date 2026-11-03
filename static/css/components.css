@@ -68,6 +68,13 @@
   padding: 0 var(--sp-3);
 }
 
+/* Touch screens: every button keeps the 40 px target */
+@media (max-width: 767px), (pointer: coarse) {
+  .btn-sm {
+    min-height: var(--target);
+  }
+}
+
 .btn[aria-pressed="true"] {
   background: var(--surface-2);
   border-color: var(--text-2);

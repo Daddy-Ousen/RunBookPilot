@@ -106,7 +106,7 @@
         <h1 id="triage-title" class="sr-only" tabindex="-1">Triage</h1>
         <div class="columns">
           <div class="triage-input">
-            <form id="triage-form" class="stack" novalidate>
+            <form id="triage-form" class="stack triage-form" novalidate>
               <div class="field">
                 <label for="ticket-input" class="field-label">Ticket</label>
                 <div class="ticket-box">
@@ -115,7 +115,7 @@
                     class="textarea ticket-textarea"
                     rows="10"
                     maxlength="4000"
-                    aria-describedby="char-count ticket-help"
+                    aria-describedby="char-count ticket-help ticket-error"
                     placeholder="Example: user01 changed their password yesterday and is locked out every 15 minutes. Event ID 4740 on dc-01."
                   ></textarea>
                   <div class="ticket-box-footer">
@@ -127,6 +127,7 @@
                   </div>
                 </div>
                 <p id="ticket-help" class="field-help">Ctrl+Enter also analyzes. RunbookPilot never runs commands.</p>
+                <p id="ticket-error" class="field-error" role="alert" hidden></p>
               </div>
 
               <div id="active-ticket-bar" class="notice notice-staged active-ticket" hidden>
@@ -147,19 +148,18 @@
                   <input type="radio" name="reasoning-mode" id="mode-deep" value="deep" />
                   <label for="mode-deep">Deep</label>
                 </div>
-                <p class="field-help">Deep: the model reasons longer. Slower, about 10 s.</p>
+                <p class="field-help">Deep: the model reasons longer. Slower, often 20 s or more.</p>
               </fieldset>
 
               <div class="field">
-                <span class="field-label" id="screenshot-label">Screenshot</span>
+                <span class="field-label" id="screenshot-label">Screenshot <span class="text-3">(optional)</span></span>
                 <div id="drop-zone" class="drop-zone">
                   <input type="file" id="screenshot-file-input" class="sr-only" accept="image/png,image/jpeg,image/webp" aria-labelledby="screenshot-label attach-label" />
-                  <label for="screenshot-file-input" id="attach-label" class="btn btn-secondary">Attach screenshot</label>
-                  <span class="field-help">PNG, JPEG or WebP, up to 1.4 MB. Or drop a file here.</span>
-                </div>
-                <div class="btn-row">
-                  <button type="button" id="btn-sample-shot-rdp" class="btn btn-quiet btn-sm">Use sample RDP error</button>
-                  <button type="button" id="btn-sample-shot-vss" class="btn btn-quiet btn-sm">Use sample VSS error</button>
+                  <label for="screenshot-file-input" id="attach-label" class="btn btn-secondary">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                    Attach screenshot
+                  </label>
+                  <span class="field-help">Or drop a file here. PNG, JPEG or WebP, up to 1.4 MB.</span>
                 </div>
                 <div id="screenshot-preview" class="screenshot-preview" hidden>
                   <img id="screenshot-thumb" class="screenshot-thumb" alt="Attached screenshot preview" />
@@ -167,53 +167,87 @@
                     <span id="screenshot-name" class="mono wrap-anywhere"></span>
                     <span id="screenshot-caption" class="field-help wrap-anywhere"></span>
                   </div>
-                  <button type="button" id="btn-remove-screenshot" class="btn btn-quiet btn-sm">Remove</button>
+                  <button type="button" id="btn-remove-screenshot" class="btn btn-secondary btn-sm">Remove</button>
+                </div>
+                <div class="btn-row sample-shots">
+                  <span class="field-help">Sample screenshots:</span>
+                  <button type="button" id="btn-sample-shot-rdp" class="btn btn-quiet btn-sm">RDP error</button>
+                  <button type="button" id="btn-sample-shot-vss" class="btn btn-quiet btn-sm">VSS error</button>
                 </div>
               </div>
             </form>
 
-            <div id="error-region" aria-live="assertive"></div>
+            <details id="samples-panel" class="input-section input-disclosure" open>
+              <summary class="input-summary">
+                <span id="samples-title" class="section-title">Samples</span>
+                <span id="sample-count" class="badge tabular">5</span>
+              </summary>
+              <ul id="sample-list" class="list" aria-labelledby="samples-title"></ul>
+            </details>
 
-            <section class="input-section" aria-labelledby="samples-title">
-              <h2 id="samples-title" class="section-title">Samples</h2>
-              <ul id="sample-list" class="list"></ul>
-            </section>
-
-            <section id="pending-queue-panel" class="input-section" aria-labelledby="queue-title">
-              <div class="section-head">
-                <h2 id="queue-title" class="section-title">
-                  Queue <span class="badge badge-staged">Sample data</span>
-                  <span id="queue-count" class="badge tabular">0</span>
-                </h2>
-                <div class="btn-row">
-                  <button type="button" id="queue-staged-filter-btn" class="btn btn-quiet btn-sm" aria-pressed="false">Staged connectors only</button>
-                  <button type="button" id="queue-refresh-btn" class="btn btn-secondary btn-sm">Refresh</button>
-                </div>
+            <details id="pending-queue-panel" class="input-section input-disclosure">
+              <summary class="input-summary">
+                <span id="queue-title" class="section-title">Queue</span>
+                <span class="badge badge-staged">Sample data</span>
+                <span id="queue-count" class="badge tabular">0</span>
+              </summary>
+              <div class="queue-tools btn-row">
+                <button type="button" id="queue-staged-filter-btn" class="btn btn-quiet btn-sm" aria-pressed="false">Staged connectors only</button>
+                <button type="button" id="queue-refresh-btn" class="btn btn-secondary btn-sm">Refresh</button>
               </div>
               <ul id="pending-queue-list" class="list" aria-label="Queue tickets and alerts"></ul>
-            </section>
+            </details>
           </div>
 
-          <div class="triage-output">
+          <div id="triage-output" class="triage-output">
             <h2 class="sr-only">Result</h2>
+
+            <div id="error-region" class="error-region"></div>
+
             <div id="empty-state" class="empty-state">
-              <p class="t-md">Paste a ticket, pick a sample, or run the demo.</p>
-              <p class="text-2 prose">RunbookPilot matches the ticket to <span id="empty-runbook-count">18</span> runbooks and gives a fix plan with safe, labelled PowerShell commands.</p>
-              <div class="btn-row">
+              <div class="stack">
+                <p class="t-lg">Paste a ticket, pick a sample, or run the demo.</p>
+                <p class="text-2 prose">RunbookPilot matches the ticket to <span id="empty-runbook-count">18</span> runbooks and gives a fix plan with labelled PowerShell commands. It never runs a command.</p>
+              </div>
+              <div class="empty-actions">
                 <button type="button" id="run-demo-btn" class="btn btn-primary">Run demo</button>
-                <span class="field-help">Loads the AD lockout sample and analyzes it.</span>
+                <span class="field-help">Loads the AD lockout sample and analyzes it. About 15 s.</span>
+              </div>
+              <div class="legend">
+                <h3 class="field-label">What each label means</h3>
+                <ul class="legend-list">
+                  <li class="legend-item legend-ro"><span class="legend-word">Read-only</span><span class="text-2">Only reads state. Safe to run.</span></li>
+                  <li class="legend-item legend-na"><span class="legend-word">Needs approval</span><span class="text-2">Changes the system. Get approval first.</span></li>
+                  <li class="legend-item legend-esc"><span class="legend-word">Escalate</span><span class="text-2">No runbook covers the ticket. Send it to Tier 3.</span></li>
+                </ul>
               </div>
             </div>
 
             <div id="loading-state" class="loading-state" hidden>
-              <p class="t-sm text-2" aria-live="polite">Analyzing ticket… <span id="loading-timer" class="tabular">0.0 s</span></p>
-              <div class="skeleton" style="height: 64px"></div>
-              <div class="skeleton" style="height: 16px; width: 80%"></div>
-              <div class="skeleton" style="height: 16px; width: 64%"></div>
-              <div class="skeleton" style="height: 120px"></div>
+              <p class="t-sm text-2 loading-line" aria-live="polite"><span>Analyzing ticket…</span> <span id="loading-timer" class="tabular" aria-hidden="true">0.0 s</span></p>
+              <div class="skeleton sk-verdict"></div>
+              <div class="sk-group">
+                <div class="skeleton sk-line" style="width: 30%"></div>
+                <div class="skeleton sk-line-lg" style="width: 92%"></div>
+                <div class="skeleton sk-line-lg" style="width: 70%"></div>
+              </div>
+              <div class="sk-group">
+                <div class="skeleton sk-line" style="width: 20%"></div>
+                <div class="skeleton sk-row"></div>
+                <div class="skeleton sk-row"></div>
+                <div class="skeleton sk-row"></div>
+                <div class="skeleton sk-row"></div>
+              </div>
+              <div class="sk-group">
+                <div class="skeleton sk-tab"></div>
+                <div class="skeleton sk-cmd"></div>
+                <div class="skeleton sk-tab"></div>
+                <div class="skeleton sk-cmd"></div>
+              </div>
             </div>
 
-            <div id="result-container" class="result" aria-live="polite" hidden></div>
+            <p id="result-status" class="sr-only" role="status"></p>
+            <div id="result-container" class="result" hidden></div>
           </div>
         </div>
       </section>
@@ -388,26 +422,138 @@
 
   <!-- Triage result skeleton. js/views/result.js clones it and fills it with textContent. -->
   <template id="result-template">
-    <div class="cluster result-meta t-xs text-3" data-slot="meta"></div>
+    <section class="verdict" data-slot="verdict" aria-labelledby="verdict-word">
+      <div class="verdict-main">
+        <p id="verdict-word" class="verdict-word" data-slot="verdict-word"></p>
+        <p class="verdict-sub t-sm text-2" data-slot="verdict-sub"></p>
+      </div>
+      <div class="verdict-facts">
+        <span class="meter" data-slot="meter" role="img">
+          <span class="meter-seg"></span><span class="meter-seg"></span><span class="meter-seg"></span>
+        </span>
+        <span id="confidence-badge" class="verdict-fact tabular"></span>
+        <span class="verdict-fact tabular" data-slot="matched-count"></span>
+      </div>
+    </section>
+    <p class="result-hint t-sm text-3" data-slot="hint"></p>
 
-    <section id="rmm-telemetry-panel" class="section" aria-labelledby="rmm-telemetry-title" hidden>
-      <div class="section-head">
-        <h3 id="rmm-telemetry-title" class="section-title">RMM device</h3>
-        <span class="badge badge-staged">Sample data</span>
-      </div>
-      <div class="cluster telemetry-head">
-        <span class="mono wrap-anywhere" data-slot="host"></span>
-        <span class="badge" data-slot="agent"></span>
-      </div>
-      <dl class="kv">
-        <div><dt>Operating system</dt><dd data-slot="os"></dd></div>
-        <div><dt>Resources</dt><dd class="tabular" data-slot="resources"></dd></div>
-        <div><dt>Last boot and IP</dt><dd class="wrap-anywhere" data-slot="boot"></dd></div>
-        <div><dt>RMM alert</dt><dd data-slot="alert"></dd></div>
-      </dl>
+    <section class="section" aria-labelledby="cause-title">
+      <h3 id="cause-title" class="section-title">Likely cause</h3>
+      <p id="likely-cause-text" class="cause prose"></p>
     </section>
 
-    <section id="psa-writeback-panel" class="section writeback" aria-label="Ticket writeback">
+    <section class="section" aria-labelledby="steps-title">
+      <div class="section-head">
+        <h3 id="steps-title" class="section-title">Steps</h3>
+        <span class="t-sm text-3 tabular" data-slot="steps-done" aria-live="polite"></span>
+      </div>
+      <ol id="steps-list" class="checklist"></ol>
+      <p class="t-xs text-3 checklist-note" data-slot="steps-note">Ticks stay in this browser only.</p>
+      <p class="t-sm text-3" data-slot="no-steps" hidden>No steps returned.</p>
+    </section>
+
+    <section class="section" data-slot="commands-section" aria-labelledby="commands-title">
+      <div class="section-head">
+        <h3 id="commands-title" class="section-title">Commands</h3>
+        <span class="t-sm text-3" data-slot="cmd-counts"></span>
+      </div>
+      <div id="commands-list" class="stack cmd-groups">
+        <p class="never-runs t-sm text-2" data-slot="never-runs">RunbookPilot never runs commands. Copy and run them yourself.</p>
+        <h4 class="group-title" data-slot="ro-title"></h4>
+        <div class="cmd-list" data-slot="ro-list"></div>
+        <div id="approval-warning-banner" class="notice notice-warning approval-warning" role="note" hidden>
+          <span class="notice-title" data-slot="approval-title">Changes the system. Needs approval.</span>
+          <span data-slot="approval-text"></span>
+        </div>
+        <div class="cmd-list" data-slot="na-list"></div>
+      </div>
+    </section>
+
+    <section id="rmm-check-panel" class="section rmm-check" aria-labelledby="rmm-check-title" hidden>
+      <div class="section-head">
+        <h3 id="rmm-check-title" class="section-title">Check results from RMM</h3>
+        <span class="badge badge-staged">Sample data</span>
+      </div>
+      <div class="field">
+        <label for="rmm-check-output" class="field-help">Paste the output of the read-only checks, or stage an RMM check above to fill it. Then re-run triage with it.</label>
+        <textarea id="rmm-check-output" class="textarea mono rmm-check-output" rows="4" spellcheck="false" placeholder="Output of the read-only checks"></textarea>
+      </div>
+      <div class="btn-row rmm-check-actions">
+        <button type="button" id="btn-rmm-retriage" class="btn btn-secondary">Re-run triage with this output</button>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="sources-title">
+      <div class="section-head">
+        <h3 id="sources-title" class="section-title">Source runbooks</h3>
+        <a class="t-sm" href="#runbooks">All runbooks</a>
+      </div>
+      <div id="matched-runbooks-list" class="source-list"></div>
+      <p class="t-sm text-3" data-slot="no-runbooks" hidden>None. No runbook covers this ticket.</p>
+    </section>
+
+    <section id="escalate-banner" class="section" hidden>
+      <div class="escalate-panel" role="alert">
+        <h3 class="escalate-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l10 18H2z"/><path d="M12 10v4"/><path d="M12 17.5v.01"/></svg>
+          Escalate to Tier 3
+        </h3>
+        <p class="prose" data-slot="escalate-reason"></p>
+        <p class="t-sm text-2">Draft a runbook so the next ticket like this is covered, or flag the ticket for Tier 3.</p>
+        <div class="btn-row notice-actions">
+          <button type="button" id="btn-draft-runbook" class="btn btn-primary">Draft a runbook</button>
+          <button type="button" id="btn-escalate-flag" class="btn btn-secondary">Flag for Tier 3</button>
+        </div>
+      </div>
+      <div id="runbook-draft-panel" class="stack draft-panel" hidden>
+        <div class="cluster">
+          <span class="t-sm">Draft runbook</span>
+          <span class="badge mono" data-slot="draft-id"></span>
+          <span class="badge" data-slot="draft-checked">Safety rules checked</span>
+        </div>
+        <p class="t-sm text-2" data-slot="draft-status" role="status"></p>
+        <pre class="code code-scroll" data-slot="draft-markdown"></pre>
+        <div class="btn-row">
+          <button type="button" id="btn-hot-index-runbook" class="btn btn-primary">Add this runbook and re-run triage</button>
+        </div>
+      </div>
+    </section>
+
+    <details class="section result-details disclosure" data-slot="details">
+      <summary>Details</summary>
+      <div class="details-body stack">
+        <dl class="kv details-kv">
+          <div><dt>Request ID</dt><dd class="mono" data-slot="d-request"></dd></div>
+          <div><dt>Model</dt><dd data-slot="d-model"></dd></div>
+          <div><dt>Mode</dt><dd data-slot="d-mode"></dd></div>
+          <div><dt>Time</dt><dd class="tabular" data-slot="d-time"></dd></div>
+          <div><dt>Safety overrides</dt><dd data-slot="d-overrides"></dd></div>
+          <div><dt>Risk labels (raw)</dt><dd class="mono" data-slot="d-raw"></dd></div>
+        </dl>
+        <div class="stack details-scores">
+          <h4 class="field-label">Retrieval scores (BM25L)</h4>
+          <ul class="score-list" data-slot="d-scores"></ul>
+        </div>
+        <section id="rmm-telemetry-panel" class="details-telemetry" aria-labelledby="rmm-telemetry-title" hidden>
+          <div class="section-head">
+            <h4 id="rmm-telemetry-title" class="field-label">RMM device telemetry</h4>
+            <span class="badge badge-staged">Sample data</span>
+          </div>
+          <div class="cluster telemetry-head">
+            <span class="mono wrap-anywhere" data-slot="host"></span>
+            <span class="badge" data-slot="agent"></span>
+          </div>
+          <dl class="kv">
+            <div><dt>Operating system</dt><dd data-slot="os"></dd></div>
+            <div><dt>Resources</dt><dd class="tabular" data-slot="resources"></dd></div>
+            <div><dt>Last boot and IP</dt><dd class="wrap-anywhere" data-slot="boot"></dd></div>
+            <div><dt>RMM alert</dt><dd data-slot="alert"></dd></div>
+          </dl>
+        </section>
+      </div>
+    </details>
+
+    <section id="psa-writeback-panel" class="writeback" aria-label="Ticket writeback">
       <div class="writeback-row">
         <div class="field writeback-target">
           <label class="field-label" for="writeback-provider-select">Send to</label>
@@ -425,70 +571,8 @@
           <button type="button" id="btn-writeback-escalate" class="btn btn-secondary">Flag for Tier 3</button>
         </div>
       </div>
-      <p class="field-help">Staged, not sent to a live PSA. Target: <span class="mono" data-slot="target">manual-ticket</span></p>
+      <p class="field-help"><span class="badge badge-staged">Staged</span> Staged, not sent to a live PSA. Ticket: <span class="mono" data-slot="target">manual-ticket</span></p>
       <div id="writeback-feedback" class="stack writeback-feedback" role="status" hidden></div>
-    </section>
-
-    <section id="escalate-banner" class="section" hidden>
-      <div class="notice notice-danger" role="alert">
-        <span class="notice-title">Escalate to Tier 3</span>
-        <span data-slot="escalate-reason"></span>
-        <div class="btn-row notice-actions">
-          <button type="button" id="btn-draft-runbook" class="btn btn-primary">Draft a runbook</button>
-          <button type="button" id="btn-escalate-flag" class="btn btn-secondary">Flag for Tier 3</button>
-        </div>
-      </div>
-      <div id="runbook-draft-panel" class="stack draft-panel" hidden>
-        <div class="cluster">
-          <span class="t-sm">Draft runbook</span>
-          <span class="badge mono" data-slot="draft-id"></span>
-          <span class="badge">Safety rules checked</span>
-        </div>
-        <p class="t-sm text-2" data-slot="draft-status" role="status"></p>
-        <pre class="code code-scroll" data-slot="draft-markdown"></pre>
-        <div class="btn-row">
-          <button type="button" id="btn-hot-index-runbook" class="btn btn-primary">Add this runbook and re-run triage</button>
-        </div>
-      </div>
-    </section>
-
-    <section class="section" aria-labelledby="cause-title">
-      <div class="section-head">
-        <h3 id="cause-title" class="section-title">Likely cause</h3>
-        <span id="confidence-badge" class="badge"></span>
-      </div>
-      <p id="likely-cause-text" class="prose"></p>
-      <div class="stack source-runbooks">
-        <h4 class="field-label">Source runbooks</h4>
-        <ul id="matched-runbooks-list" class="tag-list"></ul>
-        <p class="t-sm text-3" data-slot="no-runbooks" hidden>None. No runbook covers this ticket.</p>
-      </div>
-    </section>
-
-    <section class="section" aria-labelledby="steps-title">
-      <div class="section-head">
-        <h3 id="steps-title" class="section-title">Steps</h3>
-      </div>
-      <ol id="steps-list" class="step-list"></ol>
-      <p class="t-sm text-3" data-slot="no-steps" hidden>No steps returned.</p>
-    </section>
-
-    <section class="section" aria-labelledby="commands-title">
-      <div class="section-head">
-        <h3 id="commands-title" class="section-title">Commands</h3>
-        <span class="t-sm text-3" data-slot="cmd-counts"></span>
-      </div>
-      <p class="t-sm text-3" data-slot="no-commands" hidden>No commands for this ticket.</p>
-      <div id="commands-list" class="stack">
-        <p class="t-sm text-2" data-slot="never-runs">RunbookPilot never runs commands. Copy and run them yourself.</p>
-        <h4 class="field-label" data-slot="ro-title"></h4>
-        <div class="stack" data-slot="ro-list"></div>
-        <div id="approval-warning-banner" class="notice notice-warning" role="note" hidden>
-          <span class="notice-title">Changes the system. Needs approval.</span>
-          <span data-slot="approval-text"></span>
-        </div>
-        <div class="stack" data-slot="na-list"></div>
-      </div>
     </section>
   </template>
 

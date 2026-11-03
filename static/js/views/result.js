@@ -1,20 +1,110 @@
-// Triage result. Phase 2: every old feature, plain layout on the new components.
+// Triage result (docs/design-plan.md sections 5 and 6).
+// Order: verdict strip, likely cause, steps, commands, RMM check box,
+// source runbooks, escalation, Details, writeback bar.
 // The skeleton is <template id="result-template"> in index.html; this module
 // clones it and fills it with textContent only.
-// Phase 3 replaces the layout (verdict strip, checklist, command blocks, Details).
 
-import { el, clear, setText, show, badge, notice, icon, ICONS } from "../dom.js";
+import { el, clear, setText, show, notice, icon, ICONS } from "../dom.js";
 import { post } from "../api.js";
-import { state, emit } from "../store.js";
-import { risk, confidence, countsLine, modelName, capital, NOT_RUN } from "../copy.js";
+import { state, emit, loadJSON, saveJSON } from "../store.js";
+import { risk, confidence, countsLine, modelName, capital, verdict, NOT_RUN } from "../copy.js";
 import { copyButton } from "../clipboard.js";
 import { toast } from "../toast.js";
+
+const TICKS_PREFIX = "rbp_ticks_";
 
 export function resetResult(container) {
   clear(container);
 }
 
-/* ---------- RMM telemetry (sample data) ---------- */
+function hashText(text) {
+  let h = 0;
+  for (let i = 0; i < text.length; i += 1) h = (h * 31 + text.charCodeAt(i)) | 0;
+  return "local-" + (h >>> 0).toString(36);
+}
+
+/* ---------- Verdict strip + hint ---------- */
+
+function fillVerdict(slot, data, roCount, naCount, matchedCount) {
+  const v = verdict(data, naCount);
+  const c = confidence(data.confidence);
+  const filled = { low: 1, medium: 2, high: 3 }[c.level];
+  slot("verdict").dataset.state = v.variant;
+  setText(slot("verdict-word"), v.word);
+  setText(
+    slot("verdict-sub"),
+    data.escalate ? "No runbook covers this ticket. Send it to Tier 3." : countsLine(roCount, naCount)
+  );
+  const meter = slot("meter");
+  meter.setAttribute("aria-label", filled + " of 3");
+  meter.querySelectorAll(".meter-seg").forEach((seg, i) => seg.toggleAttribute("data-on", i < filled));
+  setText(
+    slot("matched-count"),
+    matchedCount === 0 ? "No runbook matched" : matchedCount + (matchedCount === 1 ? " runbook matched" : " runbooks matched")
+  );
+}
+
+function fillHint(slot, data) {
+  const hint = slot("hint");
+  const safety = el("a", { href: "#safety", text: "Safety lab" });
+  if (data.escalate) {
+    hint.append("Next: draft a runbook below, or test a command in the ", safety, ".");
+    return;
+  }
+  const voip = el("button", {
+    type: "button",
+    class: "link-btn",
+    text: "Uncovered VoIP sample",
+    on: { click: () => emit("pick-sample", "escalate") }
+  });
+  hint.append("Next: try the ", voip, ", or test a command in the ", safety, ".");
+}
+
+/* ---------- Steps checklist (ticks in localStorage by request ID) ---------- */
+
+function fillSteps(root, slot, steps, key) {
+  const list = root.querySelector("#steps-list");
+  const done = slot("steps-done");
+  show(slot("no-steps"), steps.length === 0);
+  show(slot("steps-note"), steps.length > 0);
+  if (!steps.length) return;
+
+  const stored = loadJSON(key, []);
+  const ticks = new Set(Array.isArray(stored) ? stored.filter((n) => Number.isInteger(n) && n < steps.length) : []);
+  const update = () => setText(done, ticks.size + " of " + steps.length + " done");
+
+  steps.forEach((text, i) => {
+    const item = el("li", { class: "check-item" });
+    const box = el("input", {
+      type: "checkbox",
+      class: "check-box",
+      checked: ticks.has(i),
+      on: {
+        change: () => {
+          if (box.checked) ticks.add(i);
+          else ticks.delete(i);
+          item.toggleAttribute("data-done", box.checked);
+          saveJSON(key, [...ticks].sort((a, b) => a - b));
+          update();
+        }
+      }
+    });
+    item.toggleAttribute("data-done", ticks.has(i));
+    item.appendChild(
+      el(
+        "label",
+        { class: "check-step" },
+        box,
+        el("span", { class: "step-num tabular", "aria-hidden": "true", text: String(i + 1) }),
+        el("span", { class: "step-text", text })
+      )
+    );
+    list.appendChild(item);
+  });
+  update();
+}
+
+/* ---------- RMM telemetry (sample data, inside Details) ---------- */
 
 function fillTelemetry(root, slot, device) {
   const panel = root.querySelector("#rmm-telemetry-panel");
@@ -26,6 +116,76 @@ function fillTelemetry(root, slot, device) {
   setText(slot("resources"), "CPU " + device.cpu_percent + "% · RAM " + device.memory_percent + "% · " + device.disk_free_gb + " GB free");
   setText(slot("boot"), device.last_boot + " · " + device.ip_address);
   setText(slot("alert"), device.active_alert || "None");
+}
+
+/* ---------- Details (collapsed) ---------- */
+
+function fillDetails(root, slot, data, meta, commands) {
+  const mode = capital(meta.reasoningMode || "standard") + (meta.vision ? " + screenshot" : "") + (meta.rmmLoop ? " + RMM output" : "");
+  setText(slot("d-request"), meta.requestId || "Not sent");
+  setText(slot("d-model"), modelName(meta.metaModel));
+  setText(slot("d-mode"), mode);
+  setText(slot("d-time"), meta.elapsedSeconds + " s");
+  setText(
+    slot("d-overrides"),
+    meta.safetyOverrides > 0
+      ? "Safety rules changed " + meta.safetyOverrides + (meta.safetyOverrides === 1 ? " command" : " commands") + " to needs_approval."
+      : "None. Safety rules checked every command."
+  );
+  const roRaw = commands.filter((c) => c.risk === "read_only").length;
+  const naRaw = commands.length - roRaw;
+  setText(slot("d-raw"), "read_only × " + roRaw + ", needs_approval × " + naRaw + ", escalate: " + Boolean(data.escalate));
+
+  const scores = Object.entries(meta.bm25Scores || {})
+    .filter(([, v]) => typeof v === "number")
+    .sort((a, b) => b[1] - a[1]);
+  const list = slot("d-scores");
+  if (!scores.length) list.appendChild(el("li", { class: "text-3", text: "No scores sent." }));
+  scores.forEach(([id, score]) =>
+    list.appendChild(el("li", { class: "score-row" }, el("span", { class: "mono wrap-anywhere", text: id }), el("span", { class: "tabular", text: score.toFixed(2) })))
+  );
+  fillTelemetry(root, slot, state.activeQueueItem && state.activeQueueItem.device);
+}
+
+/* ---------- Source runbooks ---------- */
+
+function fillSources(root, slot, matched, meta) {
+  const list = root.querySelector("#matched-runbooks-list");
+  show(slot("no-runbooks"), matched.length === 0);
+  const ranked = Object.entries(meta.bm25Scores || {})
+    .sort((a, b) => b[1] - a[1])
+    .map(([id]) => id);
+  matched.forEach((id, i) => {
+    const title = state.runbookTitles.get(id) || id;
+    const rank = ranked.indexOf(id);
+    const markdown = state.draftMarkdown.get(id);
+    const body = el(
+      "div",
+      { class: "source-body stack" },
+      el(
+        "dl",
+        { class: "kv" },
+        el("div", null, el("dt", { text: "Runbook ID" }), el("dd", { class: "mono wrap-anywhere", text: id })),
+        el("div", null, el("dt", { text: "Search rank" }), el("dd", { text: rank >= 0 ? rank + 1 + " of " + ranked.length : "Picked by the model" }))
+      ),
+      markdown
+        ? el("pre", { class: "code code-scroll source-text", text: markdown })
+        : el("p", { class: "t-sm text-3", text: "The triage answer sends the runbook ID and title only. The steps and commands above come from this runbook." })
+    );
+    list.appendChild(
+      el(
+        "details",
+        { class: "disclosure source" },
+        el(
+          "summary",
+          null,
+          el("span", { class: "source-title", text: title }),
+          i === 0 && matched.length > 1 ? el("span", { class: "badge", text: "Best match" }) : null
+        ),
+        body
+      )
+    );
+  });
 }
 
 /* ---------- Writeback (staged) ---------- */
@@ -89,7 +249,8 @@ function wireEscalation(root, slot, data, send) {
   const status = slot("draft-status");
   const draftId = slot("draft-id");
   const draftMd = slot("draft-markdown");
-  let markdown = null;
+  const checked = slot("draft-checked");
+  let draft = null;
 
   draftBtn.addEventListener("click", async () => {
     const ticket = state.lastTicket || "";
@@ -103,45 +264,79 @@ function wireEscalation(root, slot, data, send) {
     setText(draftBtn, "Draft a runbook");
     show(draftPanel, true);
     if (!res.ok) {
-      markdown = null;
+      draft = null;
       setText(draftId, "Draft failed");
-      setText(status, "The runbook draft failed. " + (res.detail || res.message));
+      show(checked, false);
+      setText(status, "The runbook draft failed. " + res.message);
       setText(draftMd, "");
       show(addBtn, false);
       return;
     }
     const d = res.data;
-    markdown = d.markdown || "";
+    draft = { id: d.id, markdown: d.markdown || "" };
     setText(draftId, d.id);
+    show(checked, true);
+    const fixes = d.fixes ? d.fixes.length : 0;
     setText(
       status,
-      "Drafted “" + d.title + "” with " + (d.checks ? d.checks.length : 0) + " read-only checks and " + (d.fixes ? d.fixes.length : 0) + ((d.fixes && d.fixes.length === 1) ? " change that needs approval." : " changes that need approval.")
+      "Drafted “" + d.title + "” with " + (d.checks ? d.checks.length : 0) + " read-only checks and " + fixes + (fixes === 1 ? " change that needs approval." : " changes that need approval.")
     );
-    setText(draftMd, markdown);
+    setText(draftMd, draft.markdown);
     show(addBtn, true);
+    toast("Runbook drafted");
   });
 
   addBtn.addEventListener("click", async () => {
-    if (!markdown) return;
+    if (!draft) return;
     addBtn.disabled = true;
     setText(addBtn, "Adding runbook…");
-    const res = await post("/runbooks/index", { markdown });
+    const res = await post("/runbooks/index", { markdown: draft.markdown });
     addBtn.disabled = false;
     setText(addBtn, "Add this runbook and re-run triage");
     if (!res.ok) {
-      setText(status, "The runbook was not added. " + (res.detail || res.message));
+      setText(status, "The runbook was not added. " + res.message);
       return;
     }
+    state.draftMarkdown.set((res.data && res.data.id) || draft.id, draft.markdown);
     setText(status, res.data.message || "Runbook added.");
-    toast("Runbook added");
+    toast("Runbook added. Re-running triage.");
     emit("index-changed");
     emit("retriage");
   });
 }
 
-/* ---------- Commands ---------- */
+/* ---------- RMM check box (visible below commands; owner tweak 1) ---------- */
 
-async function dispatchRmm(cmd, approved, note, out, loopBar, trigger) {
+function wireRmmCheck(root, show_) {
+  const panel = root.querySelector("#rmm-check-panel");
+  const output = root.querySelector("#rmm-check-output");
+  const btn = root.querySelector("#btn-rmm-retriage");
+  const err = el("p", { class: "field-error", role: "alert", hidden: true });
+  btn.parentNode.after(err);
+  show(panel, show_);
+  output.addEventListener("input", () => show(err, false));
+  btn.addEventListener("click", () => {
+    const text = output.value.trim();
+    if (!text) {
+      setText(err, "Paste RMM output first, or stage an RMM check above.");
+      show(err, true);
+      output.focus();
+      return;
+    }
+    emit("rmm-retriage", { output: text, command: "Check results from RMM" });
+  });
+  // Staged RMM checks add their sample output here.
+  return (cmd, text) => {
+    const block = "# " + cmd + "\n" + text.trim();
+    output.value = output.value.trim() ? output.value.trim() + "\n\n" + block : block;
+    show(err, false);
+  };
+}
+
+/* ---------- Command block (the one bold element) ---------- */
+
+async function dispatchRmm(cmd, approved, note, out, trigger, addOutput) {
+  const isRo = cmd.risk === "read_only";
   const device = state.activeQueueItem && state.activeQueueItem.device ? state.activeQueueItem.device : null;
   trigger.disabled = true;
   const res = await post("/integrations/rmm/dispatch", {
@@ -154,116 +349,132 @@ async function dispatchRmm(cmd, approved, note, out, loopBar, trigger) {
     approval_note: note
   });
   trigger.disabled = false;
+  clear(out);
   show(out, true);
   if (!res.ok) {
-    setText(out, "The RMM job was not staged. " + (res.detail || res.message));
+    out.appendChild(notice("danger", "The RMM job was not staged.", res.message));
     return false;
   }
-  setText(out, res.data.simulated_output || "RMM job staged.");
-  if (res.data.simulated_output) {
-    loopBar.dataset.output = res.data.simulated_output;
-    show(loopBar, true);
-  }
-  setText(trigger, "Job staged (" + res.data.job_id + ")");
-  toast("RMM job staged");
+  const output = res.data.simulated_output || "";
+  out.append(
+    el("p", { class: "t-xs text-3" }, el("span", { class: "badge badge-staged", text: "Sample data" }), " Staged job " + res.data.job_id + ". Not run on a device."),
+    output ? el("pre", { class: "code rmm-output", text: output }) : null,
+    output ? el("p", { class: "t-xs text-3", text: "Output added to “Check results from RMM” below." }) : null
+  );
+  if (output) addOutput(cmd.command, output);
+  setText(trigger, isRo ? "RMM check staged" : "Change request staged");
+  toast(isRo ? "RMM check staged" : "RMM change request staged");
   return true;
 }
 
-function commandItem(cmd) {
+function commandBlock(cmd, addOutput) {
   const r = risk(cmd.risk);
   const isRo = cmd.risk === "read_only";
-  const code = el("pre", { class: "code" }, el("code", { text: cmd.command || "" }));
+  const code = el("code", { text: cmd.command || "" });
+  const pre = el("pre", { class: "cmd-code" }, el("span", { class: "cmd-prompt", "aria-hidden": "true", text: "PS> " }), code);
   const live = el("span", { class: "sr-only", "aria-live": "polite" });
+  let block = null;
   const copyBtn = copyButton(() => cmd.command || "", {
     ariaLabel: "Copy command",
     liveRegion: live,
+    liveText: "Command copied",
     onFail: () => {
       const range = document.createRange();
       range.selectNodeContents(code);
       const sel = window.getSelection();
       sel.removeAllRanges();
       sel.addRange(range);
+    },
+    onDone: (ok) => {
+      if (!ok || !block) return;
+      block.classList.remove("cmd-pulse");
+      void block.offsetWidth;
+      block.classList.add("cmd-pulse");
     }
   });
+  copyBtn.classList.add("cmd-copy");
   const rmmBtn = el("button", { type: "button", class: "btn btn-secondary btn-sm", text: isRo ? "Stage RMM check" : "Stage RMM change request" });
-  const out = el("pre", { class: "code rmm-output", hidden: true });
-  const loopBar = el(
-    "div",
-    { class: "notice notice-staged", hidden: true },
-    el("span", { text: "Use this RMM output to narrow the cause." }),
-    el(
-      "div",
-      { class: "notice-actions" },
-      el("button", {
-        type: "button",
-        class: "btn btn-secondary btn-sm",
-        text: "Re-run triage with this output",
-        on: { click: () => emit("rmm-retriage", { output: loopBar.dataset.output || out.textContent || "", command: cmd.command }) }
-      })
-    )
-  );
+  const out = el("div", { class: "stack cmd-out", hidden: true });
 
-  const item = el(
+  const body = el(
     "div",
-    { class: "cmd cmd-" + r.variant, role: "group", "aria-label": isRo ? "Read-only command" : "Command that changes the system. Needs approval." },
-    el(
-      "div",
-      { class: "cmd-head" },
-      el("span", { class: "cmd-purpose", text: cmd.purpose || "" }),
-      el("div", { class: "btn-row" }, el("span", { class: "badge badge-" + r.variant }, icon(isRo ? ICONS.eye : ICONS.hand, 14), r.word), rmmBtn, copyBtn)
-    ),
-    code,
-    el("p", { class: "cmd-foot", text: NOT_RUN }),
+    { class: "cmd-body" },
+    el("div", { class: "cmd-head" }, el("p", { class: "cmd-purpose", text: cmd.purpose || "" }), copyBtn),
+    pre,
+    el("div", { class: "cmd-foot" }, el("span", { class: "cmd-note", text: NOT_RUN }), rmmBtn)
+  );
+  block = el(
+    "article",
+    { class: "cmd cmd-" + r.variant, "aria-label": isRo ? "Read-only command" : "Command that changes the system. Needs approval." },
+    el("span", { class: "cmd-tab" }, icon(isRo ? ICONS.eye : ICONS.hand, 14), el("span", { text: r.word })),
+    body,
     live
   );
 
   if (isRo) {
-    rmmBtn.addEventListener("click", () => dispatchRmm(cmd, false, null, out, loopBar, rmmBtn));
+    rmmBtn.addEventListener("click", () => dispatchRmm(cmd, false, null, out, rmmBtn, addOutput));
   } else {
-    const noteInput = el("input", { type: "text", class: "input", placeholder: "Change ID or approval note, for example CHG-1042", "aria-label": "Approval note" });
-    const confirm = el("button", { type: "button", class: "btn btn-primary btn-sm", text: "Approve and stage RMM job" });
+    const noteId = "approval-" + Math.random().toString(36).slice(2, 8);
+    const noteInput = el("input", { type: "text", id: noteId, class: "input", placeholder: "For example CHG-1042" });
+    const confirm = el("button", { type: "button", class: "btn btn-primary btn-sm", text: "Approve and stage" });
     const cancel = el("button", { type: "button", class: "btn btn-quiet btn-sm", text: "Cancel" });
     const drawer = el(
       "div",
       { class: "stack cmd-approval", hidden: true },
+      el("label", { class: "field-label", for: noteId, text: "Change ID or approval note" }),
       el("p", { class: "field-help", text: "A technician must approve this change before it is staged in the RMM." }),
       el("div", { class: "cmd-approval-row" }, noteInput, confirm, cancel)
     );
+    rmmBtn.setAttribute("aria-expanded", "false");
     rmmBtn.addEventListener("click", () => {
       drawer.hidden = !drawer.hidden;
+      rmmBtn.setAttribute("aria-expanded", drawer.hidden ? "false" : "true");
       if (!drawer.hidden) noteInput.focus();
     });
-    cancel.addEventListener("click", () => show(drawer, false));
+    cancel.addEventListener("click", () => {
+      show(drawer, false);
+      rmmBtn.setAttribute("aria-expanded", "false");
+      rmmBtn.focus();
+    });
     confirm.addEventListener("click", async () => {
       const note = noteInput.value.trim();
       if (!note) {
+        clear(out);
         show(out, true);
-        setText(out, "Enter an approval note or change ID first.");
+        out.appendChild(el("p", { class: "field-error", role: "alert", text: "Enter a change ID or approval note first." }));
         noteInput.focus();
         return;
       }
-      if (await dispatchRmm(cmd, true, note, out, loopBar, rmmBtn)) show(drawer, false);
+      if (await dispatchRmm(cmd, true, note, out, rmmBtn, addOutput)) {
+        show(drawer, false);
+        rmmBtn.setAttribute("aria-expanded", "false");
+      }
     });
-    item.appendChild(drawer);
+    body.appendChild(drawer);
   }
-  item.append(out, loopBar);
-  return item;
+  body.appendChild(out);
+  return block;
 }
 
-function fillCommands(root, slot, commands) {
-  const ro = commands.filter((c) => c && c.risk === "read_only");
-  const na = commands.filter((c) => c && c.risk !== "read_only");
-  setText(slot("cmd-counts"), countsLine(ro.length, na.length));
-  show(slot("no-commands"), commands.length === 0);
-  show(root.querySelector("#commands-list"), commands.length > 0);
+function fillCommands(root, slot, commands, escalate, addOutput) {
+  const section = slot("commands-section");
+  const ro = commands.filter((c) => c.risk === "read_only");
+  const na = commands.filter((c) => c.risk !== "read_only");
+  // Escalated tickets with no commands: the escalation panel replaces the group.
+  show(section, commands.length > 0 || !escalate);
+  setText(slot("cmd-counts"), commands.length ? countsLine(ro.length, na.length) : "");
+  if (!commands.length) setText(slot("never-runs"), "No commands for this ticket.");
   show(slot("ro-title"), ro.length > 0);
   setText(slot("ro-title"), "Read-only (" + ro.length + ")");
-  ro.forEach((c) => slot("ro-list").appendChild(commandItem(c)));
+  ro.forEach((c) => slot("ro-list").appendChild(commandBlock(c, addOutput)));
   const warning = root.querySelector("#approval-warning-banner");
   show(warning, na.length > 0);
-  setText(slot("approval-text"), "Check the scope and get approval before you run " + (na.length === 1 ? "this command." : "these " + na.length + " commands."));
-  warning.querySelector(".notice-title").prepend(icon(ICONS.warn, 16), " ");
-  na.forEach((c) => slot("na-list").appendChild(commandItem(c)));
+  slot("approval-title").prepend(icon(ICONS.warn, 16), " ");
+  setText(
+    slot("approval-text"),
+    "Check the scope and get approval before you run " + (na.length === 1 ? "this command." : "these " + na.length + " commands.")
+  );
+  na.forEach((c) => slot("na-list").appendChild(commandBlock(c, addOutput)));
 }
 
 /* ---------- Render ---------- */
@@ -274,44 +485,23 @@ export function renderResult(container, data, meta) {
   const root = document.getElementById("result-template").content.cloneNode(true);
   const slot = (name) => root.querySelector('[data-slot="' + name + '"]');
 
-  // Meta line (moves into Details in Phase 3)
-  const mode = capital(meta.reasoningMode || "standard") + (meta.vision ? " + screenshot" : "") + (meta.rmmLoop ? " + RMM output" : "");
-  slot("meta").append(
-    el("span", { class: "mono", text: "Request " + (meta.requestId || "local") }),
-    el("span", { text: modelName(meta.metaModel) + " · " + mode }),
-    meta.safetyOverrides > 0 ? badge("Safety rules changed " + meta.safetyOverrides + " command(s) to needs approval", "na") : badge("Safety rules checked every command"),
-    el("span", { class: "tabular", text: meta.elapsedSeconds + " s" })
-  );
+  const commands = (Array.isArray(data.commands) ? data.commands : []).filter((c) => c && typeof c.command === "string");
+  const ro = commands.filter((c) => c.risk === "read_only");
+  const matched = Array.isArray(data.matched_runbooks) ? data.matched_runbooks : [];
+  const steps = Array.isArray(data.steps) ? data.steps : [];
 
-  fillTelemetry(root, slot, state.activeQueueItem && state.activeQueueItem.device);
+  // Resolve every slot before the fragment goes into the page.
+  setText(root.querySelector("#confidence-badge"), confidence(data.confidence).text);
+  fillVerdict(slot, data, ro.length, commands.length - ro.length, matched.length);
+  fillHint(slot, data);
+  setText(root.querySelector("#likely-cause-text"), data.likely_cause || "");
+  fillSteps(root, slot, steps, TICKS_PREFIX + (meta.requestId || hashText(steps.join("\n"))));
+  const addOutput = wireRmmCheck(root, commands.length > 0);
+  fillCommands(root, slot, commands, Boolean(data.escalate), addOutput);
+  fillSources(root, slot, matched, meta);
   const send = wireWriteback(root, slot, data);
   wireEscalation(root, slot, data, send);
-
-  // Likely cause + source runbooks
-  setText(root.querySelector("#confidence-badge"), confidence(data.confidence).text);
-  setText(root.querySelector("#likely-cause-text"), data.likely_cause || "");
-  const scores = meta.bm25Scores || {};
-  const matched = Array.isArray(data.matched_runbooks) ? data.matched_runbooks : [];
-  const rbList = root.querySelector("#matched-runbooks-list");
-  show(slot("no-runbooks"), matched.length === 0);
-  matched.forEach((id) =>
-    rbList.appendChild(
-      el(
-        "li",
-        { class: "badge" },
-        state.runbookTitles.get(id) || id,
-        el("span", { class: "mono text-3", text: " " + id + (typeof scores[id] === "number" ? " · BM25L " + scores[id].toFixed(1) : "") })
-      )
-    )
-  );
-
-  // Steps
-  const steps = Array.isArray(data.steps) ? data.steps : [];
-  const stepList = root.querySelector("#steps-list");
-  show(slot("no-steps"), steps.length === 0);
-  steps.forEach((s) => stepList.appendChild(el("li", { text: s })));
-
-  fillCommands(root, slot, Array.isArray(data.commands) ? data.commands : []);
+  fillDetails(root, slot, data, meta, commands);
 
   container.appendChild(root);
   container.classList.remove("reveal");

@@ -36,14 +36,16 @@ function paint(btn, state, label) {
 }
 
 // getText: () => string. onFail: optional, called so the caller can select the text.
-export function copyButton(getText, { label = "Copy", ariaLabel, onFail, liveRegion } = {}) {
+// onDone(ok): optional, called after each copy. liveText: what the live region says.
+export function copyButton(getText, { label = "Copy", ariaLabel, onFail, onDone, liveRegion, liveText = "Copied" } = {}) {
   const btn = el("button", { type: "button", class: "btn btn-secondary btn-sm", "aria-label": ariaLabel || null });
   paint(btn, "idle", label);
   btn.addEventListener("click", async () => {
     const ok = await copyText(getText());
     paint(btn, ok ? "copied" : "failed", label);
-    if (liveRegion) liveRegion.textContent = ok ? "Copied" : "Copy failed. Select the text and copy it.";
+    if (liveRegion) liveRegion.textContent = ok ? liveText : "Copy failed. Select the text and copy it.";
     if (!ok && onFail) onFail();
+    if (onDone) onDone(ok);
     window.setTimeout(() => paint(btn, "idle", label), 2000);
   });
   return btn;
