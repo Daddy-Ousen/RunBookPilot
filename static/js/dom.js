@@ -1,4 +1,4 @@
-// DOM helpers. Dynamic text goes in with textContent only, never innerHTML.
+// DOM helpers. Dynamic text goes in with textContent only, never as HTML strings.
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 

@@ -17,8 +17,9 @@ function sync(button) {
   const next = current === "dark" ? "light" : "dark";
   button.setAttribute("aria-label", "Switch to " + next + " theme");
   button.title = "Switch to " + next + " theme";
-  button.querySelector(".icon-moon").hidden = current === "dark";
-  button.querySelector(".icon-sun").hidden = current !== "dark";
+  // SVG elements have no hidden property; set the attribute.
+  button.querySelector(".icon-moon").toggleAttribute("hidden", current === "dark");
+  button.querySelector(".icon-sun").toggleAttribute("hidden", current !== "dark");
 }
 
 export function initTheme(button) {

@@ -85,7 +85,10 @@ function wireEscalation(root, slot, data, send) {
   const draftBtn = root.querySelector("#btn-draft-runbook");
   const addBtn = root.querySelector("#btn-hot-index-runbook");
   const draftPanel = root.querySelector("#runbook-draft-panel");
+  // Resolve slots now: the fragment is empty once it is in the page.
   const status = slot("draft-status");
+  const draftId = slot("draft-id");
+  const draftMd = slot("draft-markdown");
   let markdown = null;
 
   draftBtn.addEventListener("click", async () => {
@@ -101,20 +104,20 @@ function wireEscalation(root, slot, data, send) {
     show(draftPanel, true);
     if (!res.ok) {
       markdown = null;
-      setText(slot("draft-id"), "Draft failed");
+      setText(draftId, "Draft failed");
       setText(status, "The runbook draft failed. " + (res.detail || res.message));
-      setText(slot("draft-markdown"), "");
+      setText(draftMd, "");
       show(addBtn, false);
       return;
     }
     const d = res.data;
     markdown = d.markdown || "";
-    setText(slot("draft-id"), d.id);
+    setText(draftId, d.id);
     setText(
       status,
-      "Drafted “" + d.title + "” with " + (d.checks ? d.checks.length : 0) + " read-only checks and " + (d.fixes ? d.fixes.length : 0) + " changes that need approval."
+      "Drafted “" + d.title + "” with " + (d.checks ? d.checks.length : 0) + " read-only checks and " + (d.fixes ? d.fixes.length : 0) + ((d.fixes && d.fixes.length === 1) ? " change that needs approval." : " changes that need approval.")
     );
-    setText(slot("draft-markdown"), markdown);
+    setText(draftMd, markdown);
     show(addBtn, true);
   });
 

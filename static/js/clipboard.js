@@ -4,17 +4,24 @@
 import { el, icon, ICONS, clear, append } from "./dom.js";
 
 export async function copyText(text) {
-  try {
-    if (navigator.clipboard && window.isSecureContext) {
+  if (navigator.clipboard && window.isSecureContext) {
+    try {
       await navigator.clipboard.writeText(text);
       return true;
+    } catch (_e) {
+      /* Permission denied: try the older path below */
     }
+  }
+  try {
     const helper = el("textarea", { class: "sr-only", "aria-hidden": "true" });
     helper.value = text;
     document.body.appendChild(helper);
+    const previous = document.activeElement;
+    helper.focus();
     helper.select();
     const ok = document.execCommand("copy");
     helper.remove();
+    if (previous && previous.focus) previous.focus();
     return ok;
   } catch (_e) {
     return false;
