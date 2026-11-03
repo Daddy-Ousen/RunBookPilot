@@ -81,7 +81,7 @@ All LLM access is centralized in `app/llm.py`. Secrets are never hard-coded or l
 
 ## Deploying to Vercel (PowerShell)
 
-The repository includes `vercel.json` (bundling `data/**` and `static/**` into the FastAPI serverless function with `maxDuration: 60`) and `.python-version` (`3.11`).
+The repository includes `vercel.json` (bundling `data/**` and `static/**` into the FastAPI serverless function with `maxDuration: 60`).
 
 1. Configure `LLM_BASE_URL`, `LLM_MODEL`, and `LLM_API_KEY` in your Vercel Project Settings → **Environment Variables**.
 2. Deploy from Windows PowerShell via GitHub import or the Vercel CLI:
