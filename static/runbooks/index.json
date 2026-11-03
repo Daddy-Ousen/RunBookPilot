@@ -1,0 +1,20 @@
+{
+  "rb-01-bcdr-backup-failed": "01_bcdr_backup_failed.md",
+  "rb-02-ad-account-locked": "02_ad_account_locked.md",
+  "rb-03-hyperv-vm-wont-start": "03_hyperv_vm_wont_start.md",
+  "rb-04-m365-mail-flow-delay": "04_m365_mail_flow_delay.md",
+  "rb-05-fileserver-disk-full": "05_fileserver_disk_full.md",
+  "rb-06-windows-update-stuck": "06_windows_update_stuck.md",
+  "rb-07-dns-resolution-failure": "07_dns_resolution_failure.md",
+  "rb-08-vpn-tunnel-drops": "08_vpn_tunnel_drops.md",
+  "rb-09-printer-queue-stuck": "09_printer_queue_stuck.md",
+  "rb-10-intune-enrollment-fail": "10_intune_enrollment_fail.md",
+  "rb-11-expired-tls-certificate": "11_expired_tls_certificate.md",
+  "rb-12-server-high-cpu": "12_server_high_cpu.md",
+  "rb-13-rdp-connection-refused": "13_rdp_connection_refused.md",
+  "rb-14-azure-vm-unreachable": "14_azure_vm_unreachable.md",
+  "rb-15-shared-mailbox-access": "15_shared_mailbox_access.md",
+  "rb-16-ad-password-reset": "16_ad_password_reset.md",
+  "rb-17-slow-domain-logon": "17_slow_domain_logon.md",
+  "rb-18-raid-degraded-alert": "18_raid_degraded_alert.md"
+}
