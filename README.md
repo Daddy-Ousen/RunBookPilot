@@ -15,10 +15,10 @@ RunbookPilot is a grounded, multimodal IT incident triage and runbook automation
    - Technicians can attach or generate sample Windows error dialog screenshots (`data:image/png;base64,...`) alongside tickets in `POST /triage`.
    - `app/llm.py` dispatches OpenAI-compatible multimodal `image_url` blocks + visual context to `muse-spark-1.3` to extract hex error codes (`0x800423f4`, `0x80070005`), Event IDs, and failing service names directly from screenshots.
 2. **Closed-Loop Agentic RMM Re-Triage**:
-   - After queuing a `read_only` PowerShell diagnostic check via the RMM integration (`POST /integrations/rmm/dispatch`), technicians can click **"Refine diagnosis with this RMM output"** to feed the diagnostic telemetry (`rmm_diagnostic_output`) back into `POST /triage` so `muse-spark-1.3` narrows the root cause and remediation steps.
+   - After queuing a `read_only` PowerShell diagnostic check via the RMM integration (`POST /integrations/rmm/dispatch`), technicians can click **"Re-run triage with this output"** to feed the diagnostic telemetry (`rmm_diagnostic_output`) back into `POST /triage` so `muse-spark-1.3` narrows the root cause and remediation steps.
 3. **Autonomous Runbook Synthesis & Hot-Indexing (`POST /runbooks/draft` & `POST /runbooks/index`)**:
-   - When an incident falls outside the 18-runbook corpus (`escalate=true`), technicians can click **"Draft new runbook with Muse Spark"** to synthesize a structured Markdown runbook (`RunbookDraftResult`) with every PowerShell command deterministically classified via `app/safety.py`, then click **"Hot-index runbook & re-analyze ticket"** to add it to the active BM25L index (`18 -> 19 runbooks`) and resolve the ticket immediately.
-4. **Interactive Safety & Eval Inspector (`/#eval`)**:
+   - When an incident falls outside the 18-runbook corpus (`escalate=true`), technicians can click **"Draft a runbook"** to synthesize a structured Markdown runbook (`RunbookDraftResult`) with every PowerShell command deterministically classified via `app/safety.py`, then click **"Add this runbook and re-run triage"** to add it to the active BM25L index (`18 -> 19 runbooks`) and resolve the ticket immediately.
+4. **Interactive Safety Lab and Benchmark (`/#safety`, `/#benchmark`)**:
    - **Deterministic PowerShell Safety Sandbox (`POST /safety/inspect`)**: Test safe and adversarial PowerShell strings (`Get-ADUser`, `;` pipeline injection, `-EncodedCommand`, `$()` subexpressions, `Format-Volume`) with stage-by-stage explanations.
    - **Live 20-Ticket BM25 & Safety Benchmark Scorecard (`GET /eval/summary`)**: Real-time verification of 100% top-3 retrieval hit rate (`17/17` covered tickets) and `0` mislabeled `needs_approval` commands across the entire runbook corpus.
 5. **Meta Model Telemetry & Reasoning Mode Control (`Standard` vs `Deep`)**:
@@ -30,7 +30,7 @@ RunbookPilot is a grounded, multimodal IT incident triage and runbook automation
 
 ```mermaid
 flowchart LR
-    UI["Browser UI (static/index.html)"]
+    UI["Browser UI (static/index.html, css/, js/)"]
     API["FastAPI (app/main.py)"]
     RL["Rate Limiter & 4000-Char Check"]
     BM25["BM25 Retriever (app/retrieval.py)"]
@@ -50,6 +50,26 @@ flowchart LR
     SAFE -- "Overridden Risk Labels" --> API
     API -- "TriageResult JSON" --> UI
 ```
+
+---
+
+## User interface
+
+A static frontend with no build step: `static/index.html`, `static/css/*.css` and ES modules in `static/js/`. It follows the system light or dark theme and has a theme toggle.
+
+| Route | View |
+| :--- | :--- |
+| `/#triage` (default) | Ticket box, samples, screenshot attach, Standard/Deep mode, queue, and the result |
+| `/#runbooks` | Search and read the 18 runbooks (static copy in `static/runbooks/`, kept equal to `data/runbooks/`) |
+| `/#safety` | Safety lab: check how the safety rules label a PowerShell command |
+| `/#benchmark` | Benchmark: runbook search and command safety scorecard |
+| `/#integrations` | The 12 PSA and RMM connectors, staged |
+
+**Triage flow.** Paste a ticket, pick a sample, attach a screenshot, or select **Run demo** on the empty state (it loads the AD lockout sample and analyzes it). Press **Analyze ticket** or Ctrl+Enter. The result shows, in order: a verdict strip (covered, needs approval, or escalate, with confidence and runbook count), the likely cause, steps you can tick (ticks stay in your browser), commands grouped by risk with a Copy button, source runbooks you can open and read, an escalation panel, collapsed Details (request ID, model, scores, raw labels), and a staged ticket note bar.
+
+**Labels.** Risk always shows as text: **Read-only**, **Needs approval**, **Escalate**. Queue items and RMM telemetry carry a **Sample data** label. Connectors, RMM actions and ticket notes carry **Staged, not live** or **Staged, not sent to a live PSA**. The UI never runs a command.
+
+**Errors.** Rate limit, timeout, model error, bad input and no connection each show the cause, a next step and **Try again**. Raw detail sits in a collapsed Technical details.
 
 ---
 
@@ -80,7 +100,7 @@ python -m pytest -v
 python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
-Open `http://127.0.0.1:8000` in your browser to use the UI, or check `http://127.0.0.1:8000/health` for index status.
+Open `http://127.0.0.1:8000` in your browser to use the UI (it opens on `/#triage`), or check `http://127.0.0.1:8000/health` for index status.
 
 ---
 
@@ -131,7 +151,7 @@ python scripts\eval.py
 
 ## Ticketing/PSA & RMM Integrations (Standby Mode)
 
-`app/integrations.py` and the **Integrations** view in `static/index.html` (`/#integrations`) provide a staged connector registry for **12 popular MSP platforms**:
+`app/integrations.py` and the **Integrations** view (`/#integrations`) provide a staged connector registry for **12 popular MSP platforms**:
 
 - **Ticketing & PSA (6)**: ConnectWise PSA, Datto Autotask PSA, HaloPSA, ServiceNow ITSM, Jira Service Management, and Freshservice.
 - **RMM Platforms (6)**: NinjaOne RMM, Datto RMM, ConnectWise Automate, N-able N-central, Atera RMM, and SyncroMSP.
@@ -158,7 +178,7 @@ All connectors operate in **staged/standby mode** (`live_sync_active=false`, `re
    - The system prompt instructs the Meta Llama model to answer **only** from `<RUNBOOKS>`, treat `<TICKET>` as untrusted data, and set `escalate=true` when runbooks do not cover the ticket.
    - Output is validated against Pydantic v2 (`TriageResult`) and checked to ensure `matched_runbooks` contains only retrieved runbook IDs, retrying **once** on malformed or invalid JSON.
 4. **UI Warnings & XSS Prevention**:
-   - `static/index.html` displays a prominent escalation alert when `escalate=true` and a change-approval warning banner whenever any command is `needs_approval`.
+   - The UI shows an "Escalate to Tier 3" panel when `escalate=true`, and a "Changes the system. Needs approval." warning above every `needs_approval` command. Every command block says "Not run by RunbookPilot."
    - All dynamic text is rendered exclusively via `textContent` (never `innerHTML`).
 5. **Privacy-Preserving Logging**:
    - Middleware logs generated `request_id`, HTTP method, path, status code, and latency — never ticket content or `LLM_API_KEY`.
