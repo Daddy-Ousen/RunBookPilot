@@ -1,16 +1,13 @@
-// Theme: follow the system by default. The toggle saves an explicit choice.
+// Theme: light by default (owner choice). The toggle saves an explicit choice.
 
 import { load, save } from "./store.js";
 
 const KEY = "rbp_theme";
 const root = document.documentElement;
 const BAR_COLOR = { light: "#f4f2ff", dark: "#120f24" };
-const media = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
 
 function effective() {
-  const set = root.getAttribute("data-theme");
-  if (set === "light" || set === "dark") return set;
-  return media && media.matches ? "dark" : "light";
+  return root.getAttribute("data-theme") === "dark" ? "dark" : "light";
 }
 
 function sync(button) {
@@ -24,12 +21,12 @@ function sync(button) {
   button.querySelector(".icon-sun").toggleAttribute("hidden", current !== "dark");
 }
 
-// Browser bar color: an explicit choice wins over the system setting.
+// Browser bar color follows the page theme, not the system setting.
 function syncBarColor() {
-  const set = root.getAttribute("data-theme");
+  const color = BAR_COLOR[effective()];
   ["light", "dark"].forEach((name) => {
     const meta = document.getElementById("theme-color-" + name);
-    if (meta) meta.setAttribute("content", BAR_COLOR[set === "light" || set === "dark" ? set : name]);
+    if (meta) meta.setAttribute("content", color);
   });
 }
 
@@ -43,5 +40,4 @@ export function initTheme(button) {
     save(KEY, next);
     sync(button);
   });
-  if (media && media.addEventListener) media.addEventListener("change", () => sync(button));
 }

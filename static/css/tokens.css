@@ -1,7 +1,6 @@
 /* Design tokens. Phase 7 mood: "Friendly Daylight" (lavender ground, violet
-   accent, round shapes, soft card shadow). Light is the base. Dark applies
-   when the system asks for it and the user has not picked light, or when the
-   user picked dark. Every text pair passes AA in both themes (Phase 7 check). */
+   accent, round shapes, soft card shadow). Light is the default for
+   everyone. Dark applies only when the user picks it with the theme button. Every text pair passes AA in both themes (Phase 7 check). */
 
 :root {
   color-scheme: light;
@@ -121,72 +120,6 @@
   --dur-fast: 120ms;
   --dur-med: 180ms;
   --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    color-scheme: dark;
-
-    --bg: #120f24;
-    --surface: #1a1633;
-    --surface-2: #241f45;
-    --surface-3: #161229;
-    --line: #2e2856;
-    --line-2: #383166;
-    --line-strong: #7a72ad;
-    --text: #ecebfa;
-    --text-2: #b6b1d8;
-    --text-3: #a39dc9;
-
-    --accent: #6a50f7;
-    --accent-text: #b5a6ff;
-    --on-accent: #ffffff;
-    --accent-hover: #5b3df5;
-    --accent-tint: #2a2257;
-    --accent-tint-text: #d4cbff;
-
-    --ink: #0b0918;
-    --ink-text: #ecebfa;
-    --ink-muted: #a7a1cf;
-    --ink-btn: #ecebfa;
-    --on-ink-btn: #1b1640;
-
-    --ro: #5fd3a8;
-    --ro-bg: #10291f;
-    --ro-row: #12241e;
-    --ro-solid: #2fcf98;
-    --ro-on: #04201b;
-
-    --na: #ffc85c;
-    --na-bg: #2b2110;
-    --na-ink: #ffd27a;
-    --na-sub: #e9c98a;
-    --na-line: #6b4f1a;
-    --na-solid: #ffb020;
-    --na-on: #2a1a00;
-
-    --esc: #ff8e84;
-    --esc-bg: #2d1513;
-    --esc-ink: #ffb3ab;
-    --esc-on: #2d0a07;
-
-    --tint-1-bg: #10273a;
-    --tint-1: #8fd0ff;
-    --tint-2-bg: #261a45;
-    --tint-2: #cdb2ff;
-    --tint-3-bg: #2e2010;
-    --tint-3: #ffc483;
-    --tint-4-bg: #331817;
-    --tint-4: #ffaaa2;
-    --tint-5-bg: #10291f;
-    --tint-5: #7fe0b8;
-
-    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 32px rgba(0, 0, 0, 0.28);
-    --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.4);
-    --shadow-knob: 0 1px 3px rgba(0, 0, 0, 0.5);
-    --shadow-pop: 0 8px 28px rgba(0, 0, 0, 0.5);
-    --skeleton-a: #241f45;
-  }
 }
 
 :root[data-theme="dark"] {

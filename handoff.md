@@ -5,9 +5,10 @@
 - Mockup canvas: https://claude.ai/artifact/EzfKvysv39heCk4zjBQsoL (`project/Daylight.dc.html`). Branch `ui-mood` is merged (local only).
 - Checks (sub-session on `ui-mood`, master re-ran pytest and rule checks on main): pytest 105 passed; no innerHTML/outerHTML/insertAdjacentHTML in `static/`; `app/safety.py` unchanged vs `pre-redesign`; no diff in `app/ data/ tests/`; contrast script 128 pairs AA (light + dark); 5 routes at 1440 and 390, light and dark: no sideways scroll, no target under 40 px, no console errors (mocked `/triage`).
 - Screenshots: `docs/phase7/`.
+- Theme: light is the default for everyone, also when the system is dark. Dark only by the theme button (stored in localStorage `rbp_theme`). Dark tokens live only in `:root[data-theme="dark"]` in `static/css/tokens.css`.
 
 ## What Phase 7 changed (files)
-- `static/css/tokens.css`: new palette, radii (`--r-pill`, `--r-input`, `--r-panel`, `--r-card`), shadows, sample tints, code colors. Light + 2 identical dark blocks (keep them equal; the contrast script asserts it).
+- `static/css/tokens.css`: new palette, radii (`--r-pill`, `--r-input`, `--r-panel`, `--r-card`), shadows, sample tints, code colors. Light + one dark block (`:root[data-theme="dark"]`).
 - `static/css/base.css`, `components.css`, `layout.css`, `views.css`: the reskin. Top pill nav at >= 1200 px is CSS only (layout.css, `@media (min-width: 1200px)`).
 - `static/index.html`: Manrope + JetBrains Mono font link, `theme-color` values, hero `<div class="hero">` in the ticket card. `static/js/theme.js`: bar colors. `static/favicon.svg`: violet.
 - New `static/js/ps-highlight.js` (PowerShell color spans, textContent only). Used by `views/result.js` and `views/safety.js`.
