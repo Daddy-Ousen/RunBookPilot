@@ -5,7 +5,7 @@
 - Local `.env` already switched; old Meta values are commented lines in `.env`. A backup of the old `.env` was copied to `%TEMP%/rbp_env_backup`.
 - Owner pasted the real Baseten key into `.env`. Never print it.
 - Model always reasons (default `xhigh`, slow). `LLM_REASONING_EFFORT=medium` set. Baseten returns reasoning in `reasoning_content`; `content` holds the answer, so the JSON parse should work. Verified locally: smoke test 1.6 s; 3 real triages correct in 2.8 to 6.1 s.
-- Committed `4d1aed8` on main, not pushed. Push main to deploy the code.
+- Pushed main (`876bce9`); Vercel deploy Ready. Live site still uses the OLD Meta env vars until Vercel env vars change and a redeploy runs.
 - Next: owner sets Vercel env vars (`LLM_BASE_URL`, `LLM_MODEL`, `LLM_API_KEY`, `LLM_REASONING_EFFORT`) and redeploys; then check the live site; then commit.
 
 ## Current state
