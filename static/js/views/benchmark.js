@@ -41,7 +41,7 @@ function showError(message) {
       "danger",
       "The benchmark did not load.",
       message,
-      el("div", { class: "btn-row notice-actions" }, el("button", { type: "button", class: "btn btn-secondary btn-sm", text: "Try again", on: { click: load } }))
+      el("div", { class: "btn-row notice-actions" }, el("button", { type: "button", class: "btn btn-secondary", text: "Try again", on: { click: load } }))
     )
   );
   ["hit", "split", "cmds", "unsafe"].forEach((k) => setText(ui[k], "—"));

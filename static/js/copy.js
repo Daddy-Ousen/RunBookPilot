@@ -9,6 +9,13 @@ export function risk(raw) {
   return RISK[raw === "read_only" ? "read_only" : "needs_approval"];
 }
 
+// Plain words for raw risk labels inside a sentence from the API.
+export function plainRisk(text) {
+  return String(text || "")
+    .replace(/read_only/g, "read-only")
+    .replace(/needs_approval/g, "needs approval");
+}
+
 export function confidence(raw) {
   const level = ["low", "medium", "high"].includes(raw) ? raw : "low";
   return { level, text: level.charAt(0).toUpperCase() + level.slice(1) + " confidence" };

@@ -163,7 +163,7 @@ async function fillSourceText(box, id) {
         { class: "stack" },
         el("p", { class: "t-sm text-2", role: "alert", text: failedMessage(res) }),
         res.reason === "failed"
-          ? el("div", null, el("button", { type: "button", class: "btn btn-secondary btn-sm", text: "Try again", on: { click: () => fillSourceText(box, id) } }))
+          ? el("div", null, el("button", { type: "button", class: "btn btn-secondary", text: "Try again", on: { click: () => fillSourceText(box, id) } }))
           : null
       )
     );

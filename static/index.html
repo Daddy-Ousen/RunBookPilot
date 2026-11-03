@@ -404,13 +404,13 @@
         <div class="view-head">
           <div>
             <h1 id="integrations-title" class="view-title" tabindex="-1">Integrations</h1>
-            <p>PSA and RMM connectors.</p>
+            <p>The 12 PSA and RMM tools RunbookPilot can connect to. You can fill in and check the settings here. Nothing goes to a live system.</p>
           </div>
           <span class="badge badge-staged">Staged, not live</span>
         </div>
-        <div class="notice notice-staged integrations-banner">
+        <div class="notice notice-staged integrations-banner" role="note">
           <span class="notice-title">Staged, not live. Nothing is sent or received.</span>
-          <span>You can fill in and check settings. Ticket writeback is paused. RunbookPilot never runs commands on RMM devices.</span>
+          <span>Settings are saved in this app only. Ticket writeback and RMM actions are staged, and RunbookPilot never runs commands on a device.</span>
         </div>
         <div class="columns">
           <div class="stack">
@@ -426,6 +426,7 @@
               <label for="integration-search-input" class="field-label">Filter connectors</label>
               <input type="search" id="integration-search-input" class="input" placeholder="Name or protocol" autocomplete="off" />
             </div>
+            <p id="integration-count" class="t-sm text-2 tabular" role="status"></p>
             <ul id="integration-provider-list" class="list" aria-label="Connectors"></ul>
           </div>
 
@@ -433,7 +434,7 @@
             <section class="section" aria-labelledby="cfg-provider-name">
               <div class="section-head">
                 <div>
-                  <h2 id="cfg-provider-name" class="section-title">Connector</h2>
+                  <h2 id="cfg-provider-name" class="section-title" tabindex="-1">Connector</h2>
                   <span id="cfg-provider-protocol" class="t-sm text-3"></span>
                 </div>
                 <span id="cfg-provider-status" class="badge">Not set up</span>
@@ -445,8 +446,9 @@
             <section class="section" aria-labelledby="webhook-title">
               <div class="section-head">
                 <h3 id="webhook-title" class="section-title">Inbound webhook</h3>
-                <span class="badge badge-staged">Answers 202, staged</span>
+                <span class="badge badge-staged">Staged</span>
               </div>
+              <p class="field-help webhook-help">A test event sent to this URL gets a 202 answer (accepted). No live system is contacted.</p>
               <div class="webhook-bar">
                 <code id="cfg-webhook-url" class="mono wrap-anywhere"></code>
                 <button type="button" id="cfg-copy-webhook-btn" class="btn btn-secondary btn-sm">Copy URL</button>
@@ -480,6 +482,7 @@
                 <button type="button" id="cfg-test-btn" class="btn btn-secondary">Check settings</button>
                 <button type="submit" id="cfg-save-btn" class="btn btn-primary">Save settings</button>
               </div>
+              <p class="field-help cfg-help">Fill demo values adds made-up values so you can try the form. Check settings tests that the required fields are complete. Save settings keeps them in this app only.</p>
               <div id="cfg-feedback" role="status"></div>
             </form>
           </div>

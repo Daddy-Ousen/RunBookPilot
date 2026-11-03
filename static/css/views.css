@@ -1290,6 +1290,18 @@ h6.md-h {
   margin-top: var(--sp-3);
 }
 
+.webhook-help {
+  margin: calc(-1 * var(--sp-1)) 0 var(--sp-3);
+}
+
+.cfg-help {
+  max-width: var(--measure);
+}
+
+#cfg-provider-name:focus-visible {
+  outline-offset: 4px;
+}
+
 .webhook-bar {
   display: flex;
   flex-wrap: wrap;

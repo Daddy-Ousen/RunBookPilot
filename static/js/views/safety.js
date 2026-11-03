@@ -2,7 +2,7 @@
 
 import { el, byId, clear, setText, show, icon, ICONS, notice } from "../dom.js";
 import { post } from "../api.js";
-import { risk } from "../copy.js";
+import { risk, plainRisk } from "../copy.js";
 
 const PRESETS = [
   { label: "Get-ADUser", note: "Safe read", cmd: "Get-ADUser -Identity user01 -Properties LockedOut, BadPwdCount, LastBadPasswordAttempt" },
@@ -27,7 +27,7 @@ function showError(message, detail) {
       "danger",
       "The check did not finish.",
       message,
-      el("div", { class: "btn-row notice-actions" }, el("button", { type: "button", class: "btn btn-secondary btn-sm", text: "Try again", on: { click: () => inspect(lastCommand) } })),
+      el("div", { class: "btn-row notice-actions" }, el("button", { type: "button", class: "btn btn-secondary", text: "Try again", on: { click: () => inspect(lastCommand) } })),
       detail ? el("details", { class: "disclosure" }, el("summary", { text: "Technical details" }), el("p", { class: "mono t-sm wrap-anywhere", text: detail })) : null
     )
   );
@@ -62,7 +62,7 @@ async function inspect(command) {
   clear(ui.tabIcon).appendChild(icon(isRo ? ICONS.eye : ICONS.hand, 14));
   setText(ui.tabWord, r.word);
   setText(ui.verdict, r.long);
-  setText(ui.reason, d.reason || (isRo ? "No rule found a change in this command." : "A rule found a change, or could not rule one out."));
+  setText(ui.reason, plainRisk(d.reason) || (isRo ? "No rule found a change in this command." : "A rule found a change, or could not rule one out."));
   setText(ui.checked, command);
   show(ui.block, true);
 

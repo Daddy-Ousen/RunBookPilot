@@ -13,6 +13,7 @@ let loading = null;
 let selectedId = null;
 const info = new Map(); // id -> { tags, short, haystack } once its text is read, or { missing: true }
 let prefetching = false;
+let viewShown = false; // the text of all runbooks loads only after this view was opened
 
 const wide = () => window.matchMedia("(min-width: 960px)").matches;
 
@@ -44,7 +45,7 @@ function renderList() {
     const row = el("li", { class: "list-empty" });
     if (!items.length) {
       row.appendChild(el("span", { text: "No runbooks loaded. " }));
-      row.appendChild(el("button", { type: "button", class: "btn btn-secondary btn-sm", text: "Try again", on: { click: () => loadIndex() } }));
+      row.appendChild(el("button", { type: "button", class: "btn btn-secondary", text: "Try again", on: { click: () => loadIndex() } }));
     } else {
       row.textContent = "No runbook matches your search. Try a shorter word.";
     }
@@ -146,7 +147,7 @@ export async function loadIndex() {
   setStatus("loaded", n + " runbooks loaded");
   setText(byId("empty-runbook-count"), String(n));
   renderList();
-  prefetch();
+  if (viewShown) prefetch();
   applyPending();
   return true;
 }
@@ -172,6 +173,8 @@ function applyPending() {
 }
 
 export function onRunbooksShown() {
+  viewShown = true;
+  prefetch();
   applyPending();
 }
 

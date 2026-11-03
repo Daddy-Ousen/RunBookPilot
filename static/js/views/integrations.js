@@ -28,6 +28,7 @@ function statusBadge(status) {
 
 function renderList() {
   clear(ui.list);
+  setText(ui.count, providers.length ? providers.length + " connectors" : "");
   const q = ui.search.value.trim().toLowerCase();
   const shown = providers.filter((p) => {
     if (category !== "all" && p.category !== category) return false;
@@ -51,6 +52,11 @@ function renderList() {
             feedback(null);
             renderList();
             renderDetail();
+            // One column: the settings sit below the list, so bring them into view.
+            if (!window.matchMedia("(min-width: 960px)").matches) {
+              ui.detail.scrollIntoView({ block: "start" });
+              ui.name.focus({ preventScroll: true });
+            }
           }
         }
       },
@@ -122,7 +128,14 @@ function replace(view) {
 async function load() {
   const res = await get("/integrations");
   if (!res.ok || !Array.isArray(res.data) || !res.data.length) {
-    clear(ui.list).appendChild(el("li", { class: "list-empty", text: res.message || "No connectors." }));
+    clear(ui.list).appendChild(
+      el(
+        "li",
+        { class: "list-empty" },
+        el("span", { text: (res.message || "No connectors came back.") + " " }),
+        el("button", { type: "button", class: "btn btn-secondary", text: "Try again", on: { click: load } })
+      )
+    );
     return;
   }
   loaded = true;
@@ -144,6 +157,8 @@ async function busy(btn, fn) {
 export function initIntegrations() {
   ui = {
     list: byId("integration-provider-list"),
+    count: byId("integration-count"),
+    detail: byId("integration-detail"),
     search: byId("integration-search-input"),
     catBar: byId("integration-category-bar"),
     name: byId("cfg-provider-name"),
@@ -167,6 +182,7 @@ export function initIntegrations() {
   const oldCopy = byId("cfg-copy-webhook-btn");
   const copyBtn = copyButton(() => ui.webhook.textContent || "", { label: "Copy URL", ariaLabel: "Copy webhook URL" });
   copyBtn.id = "cfg-copy-webhook-btn";
+  copyBtn.classList.remove("btn-sm"); // keep the 40 px target on desktop
   oldCopy.replaceWith(copyBtn);
 
   ui.catBar.addEventListener("change", (e) => {
