@@ -2,17 +2,30 @@
 
 ## Current state
 - Branch: `ui-redesign` (from main `d5fb9d5`). Tag `pre-redesign` marks the start.
-- Plan: `UI_REDESIGN_PLAN.md`. State: `progress.md`.
-- Phase 0 (audit) is next. No UI code changed yet.
+- Phase 0 (audit) is DONE. Files: `docs/ui-audit.md`, 21 screenshots in `docs/audit/`. No app code changed.
+- Not pushed. Dev server stopped.
 
 ## Next step
-- Phase 0: run the app, screenshot every view at 1440, 768, 390 px, write `docs/ui-audit.md` (10 worst problems). Stop and show the owner.
+- Phase 1: write `docs/design-plan.md` (Opus 5.5 high). Use `docs/ui-audit.md` as input. Stop for the owner's OK.
+
+## Audit top 10 (one line each)
+1. 390 px top bar overlaps, page scrolls sideways (584 px).
+2. Result order wrong: writeback and badges before diagnosis and commands; no verdict strip.
+3. Raw terms in main UI (`read_only`, `needs_approval`, BM25, `executed_on_host`).
+4. Queue and RMM data not labelled sample/staged.
+5. Empty state is a spec sheet; no demo button.
+6. Nav: 3 tabs, "Integrations 0/12" chip, no Runbooks view, sandbox+benchmark mixed.
+7. Input column crowded; queue clipped; samples have no description.
+8. Errors and loading weak: raw text, no retry, no wait time.
+9. Tiny type (11 px mono), 24 font sizes, 17/24 targets under 40 px, some contrast fails.
+10. Command block: no tickable steps, no never-executed note near commands, runbook chips do not expand.
 
 ## Gotchas
-- `.env` holds the real LLM key. Never print it, never commit it.
-- Triage calls a live LLM. Rate limits (429) can happen. Do not spam it.
-- Screenshots go to `docs/audit/` so the owner can see them.
-- Only one session at a time uses the shared Playwright browser.
+- `.env` holds the real LLM key. Never print or commit it.
+- Port 8000 has a stale old server (PID 3952). Run new work on another port (8010 used) with `OPENBLAS_NUM_THREADS=1`.
+- Playwright MCP failed to connect. Python Playwright works with system `python` (not `.venv`). Script: scratchpad `shots.py`.
+- Triage calls the live LLM (5 to 11 s). Keep calls few.
+- Full-page screenshots show sticky-header overlap. This is a capture artifact.
 
 ## Active files
-- `static/index.html`, `app/main.py` (read only for routes), `progress.md`, `handoff.md`.
+- `docs/ui-audit.md`, `docs/audit/*.png`, `progress.md`, `handoff.md`.

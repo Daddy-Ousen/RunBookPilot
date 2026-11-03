@@ -12,7 +12,7 @@ Source plan: `UI_REDESIGN_PLAN.md` (repo root). Follow it phase by phase. Stop a
 - [x] `UI_REDESIGN_PLAN.md` copied to repo root.
 
 ## Phases
-- [ ] Phase 0: Audit. Screenshots at 1440/768/390 for every view. `docs/ui-audit.md` with 10 worst problems. **Checkpoint: show audit.**
+- [x] Phase 0: Audit (done 2026-11-03; `docs/ui-audit.md` + 21 PNG in `docs/audit/`). Screenshots at 1440/768/390 for every view. `docs/ui-audit.md` with 10 worst problems. **Checkpoint: show audit.**
 - [ ] Phase 1: Design plan. `docs/design-plan.md`. **Checkpoint: wait for owner OK.**
 - [ ] Phase 2: Foundation. Split `static/index.html` into `static/css/*.css` + `static/js/*.js` (ES modules), tokens, themes, base components, shell, left rail, hash router. **Checkpoint: shell works, old features run.**
 - [ ] Phase 3: Triage view (plan section 6, all states). **Checkpoint: all samples, uncovered, screenshot, RMM re-triage.**
@@ -46,4 +46,7 @@ Source plan: `UI_REDESIGN_PLAN.md` (repo root). Follow it phase by phase. Stop a
 - None.
 
 ## Backend issues seen (report only, do not fix)
-- None yet.
+- LLM paired step "Clear cached credentials" with `Clear-RecycleBin -Confirm` (lockout sample). Wrong command, label is right.
+- A stale server (PID 3952) holds port 8000: old code, no `/integrations/queue`, rejects triage with "Extra inputs are not permitted". Kill it before demos.
+- `.venv` start gave an OpenBLAS memory error. `OPENBLAS_NUM_THREADS=1` fixes it.
+- Error bodies are raw `{"detail": ...}`; no `retry_after` in the body. Latency 5 to 11 s, no real stages.
