@@ -23,6 +23,20 @@ Source plan: `UI_REDESIGN_PLAN.md` (repo root). Follow it phase by phase. Stop a
   - [x] 4 live triage calls used: covered queue ticket (18 s), RMM re-triage (20 s), uncovered VoIP (10 s), VSS screenshot in Deep (33 s). Draft runbook live once (25 s). Hot-index re-run and 429 countdown tested with an in-page fetch mock.
   - Screenshots: `docs/phase2/*.jpg` (built-in browser; 1440 shots are scaled to 800 px wide).
 - [ ] Phase 3: Triage view (plan section 6, all states). **Checkpoint: all samples, uncovered, screenshot, RMM re-triage.**
+  - Built 2026-11-03 (commits `2123b78`, `dbf73ea` and the copy-fix commit after them). NOT marked done: 2 live checkpoint items failed on the LLM upstream (see below).
+  - [x] Input column: ticket box + counter + Analyze ticket, 5 samples as a described list (adds "RDP error screenshot"), drop zone with preview and Remove, Standard/Deep with one help line, queue as full list (provider, age, title, ref, status, priority) with "Sample data". Samples/Queue are `<details>`: forced open at >= 960 px, collapsed on mobile (Samples open on the empty state).
+  - [x] Result order: verdict strip (state word, 3-segment neutral meter + word, runbook count, counts line), quiet hint line, likely cause, tickable steps (localStorage `rbp_ticks_<requestId>`), commands (read-only group, amber warning, needs-approval group), "Check results from RMM" box (Sample data) below commands, source runbooks as `<details>`, escalation panel, Details (collapsed), writeback bar with "Staged, not sent to a live PSA."
+  - [x] Bold command block: solid risk tab (icon + word; amber tab has 1 px `--na` border), 4 px rail, ink code with `PS>` prompt, purpose line, Copy -> "Copied" 2 s + aria-live "Command copied" + rail pulse, "Not run by RunbookPilot." in every block, staged RMM button (needs-approval opens an approval-note drawer). Staged RMM output is appended to the RMM check box.
+  - [x] States: empty (invite, Run demo, 3-line legend), loading (skeleton shaped like the result + timer, no stage names), errors 429 (Retry-After countdown), 504 / browser timeout (90 s), 502/500, 503, 422/400/413, network. Each: cause, next step, Try again, collapsed Technical details. An older result stays under an error, dimmed.
+  - [x] Last result kept in sessionStorage, so a reload shows it again with its ticks. A new tab starts on the empty state (judges see Run demo).
+  - [x] Escalate with a matched runbook (runbook rule says escalate) has its own sub-line and help text.
+  - [x] Checks: pytest 105 passed; `git grep innerHTML -- static` 0 hits; `git diff pre-redesign -- app/safety.py` empty; no diff in `app/ data/ tests/`; all handoff IDs present.
+  - [x] Browser (mocked `/triage`): covered, needs approval, escalate, every error type, Copy, ticks survive reload, RMM stage + approval gate, writeback note, draft -> add runbook -> re-run (mocked). 390 px: no sideways scroll, all targets >= 40 px. 768 px: same. Keyboard: Tab order skip link -> top bar -> rail -> ticket -> Clear -> Analyze; Ctrl+Enter; Space ticks; Enter on Copy and Details; focus ring visible.
+  - [x] Live (6 calls): Run demo AD lockout 200 (12.8 s); VSS 502 (upstream 504), then Try again with VSS sample screenshot 200 (30.5 s, escalate by runbook rule); M365 mail 502 (upstream 504); RMM re-triage 502 (upstream 504, request accepted); Uncovered VoIP 200 (8.7 s, escalate).
+  - [ ] NOT verified live: M365 mail covered sample, and RMM re-triage with a 200 answer. The UI sent both requests correctly; the Meta LLM endpoint returned 504.
+  - [ ] Source runbook text: no API route returns runbook text (`/runbooks` gives id + title only). The `<details>` shows ID, search rank and a note; it shows full text only for a runbook added in this session. Needs an owner decision.
+  - Not emulated: `prefers-reduced-motion` (CSS sets all durations to 0; not checked in the browser).
+  - Screenshots: `docs/phase3/` (empty, loading, covered, needs approval, escalate, 429 error, 390 result, dark result).
 - [ ] Phase 4: Runbooks, Safety lab, Benchmark, Integrations views.
 - [ ] Phase 5: Polish (responsive, a11y, copy, meta, favicon).
 - [ ] Phase 6: Verify (pytest, innerHTML grep, safety.py diff empty, Lighthouse a11y >= 95, 390 px, keyboard, Vercel preview, owner review, merge).
@@ -63,6 +77,10 @@ Source plan: `UI_REDESIGN_PLAN.md` (repo root). Follow it phase by phase. Stop a
 - None.
 
 ## Backend issues seen (report only, do not fix)
+- Phase 3: Meta LLM endpoint returned HTTP 504 on 3 of 6 triage calls (backend maps it to 502 "Meta LLM endpoint returned HTTP 504."), after 4 to 15 s. Good calls took 8.7 to 30.5 s.
+- `Clear-RecycleBin -Confirm` for "Clear cached credentials" comes from `data/runbooks/02_ad_account_locked.md` itself, not only from the LLM.
+- No read-only route returns runbook body text. "Source runbooks" cannot show the runbook text without a backend or static-data change.
+- The LLM can set `escalate: true` with matched runbooks and commands (runbook escalation rule, VSS + SqlServerWriter). The UI now handles this.
 - LLM paired step "Clear cached credentials" with `Clear-RecycleBin -Confirm` (lockout sample). Wrong command, label is right.
 - A stale server (PID 3952) holds port 8000: old code, no `/integrations/queue`, rejects triage with "Extra inputs are not permitted". Kill it before demos.
 - `.venv` start gave an OpenBLAS memory error. `OPENBLAS_NUM_THREADS=1` fixes it.

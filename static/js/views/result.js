@@ -31,10 +31,10 @@ function fillVerdict(slot, data, roCount, naCount, matchedCount) {
   const filled = { low: 1, medium: 2, high: 3 }[c.level];
   slot("verdict").dataset.state = v.variant;
   setText(slot("verdict-word"), v.word);
-  setText(
-    slot("verdict-sub"),
-    data.escalate ? "No runbook covers this ticket. Send it to Tier 3." : countsLine(roCount, naCount)
-  );
+  // Escalate can mean "no runbook covers it" or "a matched runbook says to escalate".
+  let sub = countsLine(roCount, naCount);
+  if (data.escalate) sub = matchedCount ? sub + ". The runbook says to escalate." : "No runbook covers this ticket. Send it to Tier 3.";
+  setText(slot("verdict-sub"), sub);
   const meter = slot("meter");
   meter.setAttribute("aria-label", filled + " of 3");
   meter.querySelectorAll(".meter-seg").forEach((seg, i) => seg.toggleAttribute("data-on", i < filled));
@@ -44,10 +44,10 @@ function fillVerdict(slot, data, roCount, naCount, matchedCount) {
   );
 }
 
-function fillHint(slot, data) {
+function fillHint(slot, data, matchedCount) {
   const hint = slot("hint");
   const safety = el("a", { href: "#safety", text: "Safety lab" });
-  if (data.escalate) {
+  if (data.escalate && matchedCount === 0) {
     hint.append("Next: draft a runbook below, or test a command in the ", safety, ".");
     return;
   }
@@ -235,11 +235,17 @@ function wireWriteback(root, slot, data) {
 
 /* ---------- Escalation, draft runbook, add to index ---------- */
 
-function wireEscalation(root, slot, data, send) {
+function wireEscalation(root, slot, data, send, matchedCount) {
   const panel = root.querySelector("#escalate-banner");
   if (!data.escalate) return show(panel, false);
   show(panel, true);
   setText(slot("escalate-reason"), data.escalate_reason || "No runbook covers this ticket.");
+  setText(
+    slot("escalate-help"),
+    matchedCount
+      ? "Flag the ticket for Tier 3. You can also draft a runbook for this case."
+      : "Draft a runbook so the next ticket like this is covered, or flag the ticket for Tier 3."
+  );
   root.querySelector("#btn-escalate-flag").addEventListener("click", () => send("escalate"));
 
   const draftBtn = root.querySelector("#btn-draft-runbook");
@@ -276,10 +282,11 @@ function wireEscalation(root, slot, data, send) {
     draft = { id: d.id, markdown: d.markdown || "" };
     setText(draftId, d.id);
     show(checked, true);
+    const checks = d.checks ? d.checks.length : 0;
     const fixes = d.fixes ? d.fixes.length : 0;
     setText(
       status,
-      "Drafted “" + d.title + "” with " + (d.checks ? d.checks.length : 0) + " read-only checks and " + fixes + (fixes === 1 ? " change that needs approval." : " changes that need approval.")
+      "Drafted “" + d.title + "” with " + checks + (checks === 1 ? " read-only check and " : " read-only checks and ") + fixes + (fixes === 1 ? " change that needs approval." : " changes that need approval.")
     );
     setText(draftMd, draft.markdown);
     show(addBtn, true);
@@ -493,14 +500,14 @@ export function renderResult(container, data, meta) {
   // Resolve every slot before the fragment goes into the page.
   setText(root.querySelector("#confidence-badge"), confidence(data.confidence).text);
   fillVerdict(slot, data, ro.length, commands.length - ro.length, matched.length);
-  fillHint(slot, data);
-  setText(root.querySelector("#likely-cause-text"), data.likely_cause || "");
+  fillHint(slot, data, matched.length);
+  setText(root.querySelector("#likely-cause-text"), capital(data.likely_cause || ""));
   fillSteps(root, slot, steps, TICKS_PREFIX + (meta.requestId || hashText(steps.join("\n"))));
   const addOutput = wireRmmCheck(root, commands.length > 0);
   fillCommands(root, slot, commands, Boolean(data.escalate), addOutput);
   fillSources(root, slot, matched, meta);
   const send = wireWriteback(root, slot, data);
-  wireEscalation(root, slot, data, send);
+  wireEscalation(root, slot, data, send, matched.length);
   fillDetails(root, slot, data, meta, commands);
 
   container.appendChild(root);
