@@ -63,16 +63,9 @@
   flex-shrink: 0;
 }
 
+/* Small: narrower padding only. The 40 px target stays at every width. */
 .btn-sm {
-  min-height: 32px;
   padding: 0 var(--sp-3);
-}
-
-/* Touch screens: every button keeps the 40 px target */
-@media (max-width: 959px), (pointer: coarse) {
-  .btn-sm {
-    min-height: var(--target);
-  }
 }
 
 .btn[aria-pressed="true"] {
@@ -131,6 +124,14 @@
   border: 1px dashed var(--line-strong);
   background: transparent;
   color: var(--text-2);
+}
+
+/* Text link or link-styled button that keeps the 40 px target */
+.link-target {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--target);
+  padding: 0 var(--sp-1);
 }
 
 /* Fields */

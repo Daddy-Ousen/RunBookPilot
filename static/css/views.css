@@ -424,7 +424,11 @@
 }
 
 .result-hint {
-  padding: var(--sp-2) 0 var(--sp-1);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: var(--sp-2);
+  padding: 0;
 }
 
 .link-btn {

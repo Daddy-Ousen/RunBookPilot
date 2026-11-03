@@ -48,18 +48,19 @@ function fillVerdict(slot, data, roCount, naCount, matchedCount) {
 
 function fillHint(slot, data, matchedCount) {
   const hint = slot("hint");
-  const safety = el("a", { href: "#safety", text: "Safety lab" });
+  const safety = el("a", { href: "#safety", class: "link-target", text: "Test a command in the Safety lab" });
   if (data.escalate && matchedCount === 0) {
-    hint.append("Next: draft a runbook below, or test a command in the ", safety, ".");
+    hint.append("Next: draft a runbook below, or", safety);
     return;
   }
+  hint.append("Next:");
   const voip = el("button", {
     type: "button",
-    class: "link-btn",
-    text: "Uncovered VoIP sample",
+    class: "link-target link-btn",
+    text: "Try the uncovered VoIP sample",
     on: { click: () => emit("pick-sample", "escalate") }
   });
-  hint.append("Next: try the ", voip, ", or test a command in the ", safety, ".");
+  hint.append(voip, safety);
 }
 
 /* ---------- Steps checklist (ticks in localStorage by request ID) ---------- */
@@ -193,7 +194,7 @@ function fillSources(root, slot, matched, meta) {
         el("div", null, el("dt", { text: "Search rank" }), el("dd", { text: rank >= 0 ? rank + 1 + " of " + ranked.length : "Picked by the model" }))
       ),
       text,
-      el("p", { class: "t-sm" }, el("a", { href: "#runbooks", text: "Open in Runbooks", on: { click: () => (state.openRunbook = id) } }))
+      el("p", { class: "t-sm" }, el("a", { href: "#runbooks", class: "link-target", text: "Open in Runbooks", on: { click: () => (state.openRunbook = id) } }))
     );
     const details = el(
       "details",
