@@ -520,24 +520,10 @@
   }
 }
 
-/* Skeleton */
+/* Skeleton: still blocks. The elapsed timer shows that work is going on. */
 .skeleton {
   border-radius: var(--r-control);
   background: var(--skeleton-a);
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .skeleton {
-    background: linear-gradient(90deg, var(--skeleton-a) 0%, var(--skeleton-b) 50%, var(--skeleton-a) 100%);
-    background-size: 200% 100%;
-    animation: shimmer 1.4s linear infinite;
-  }
-}
-
-@keyframes shimmer {
-  to {
-    background-position: -200% 0;
-  }
 }
 
 /* Code surface (plain; Phase 3 builds the full command block on this) */

@@ -3,13 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="RunbookPilot: grounded Windows and M365 ticket triage with labelled, never-run PowerShell commands." />
   <title>Triage · RunbookPilot</title>
-  <link
-    rel="icon"
-    type="image/svg+xml"
-    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2310141a'/%3E%3Cpath d='M9 11l5 5-5 5M16 21h7' stroke='%23e6e9ee' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Ccircle cx='23' cy='10' r='2.5' fill='%233d5ae0'/%3E%3C/svg%3E"
-  />
+  <meta name="description" content="Paste a Windows or M365 ticket. Get a fix plan from 18 runbooks, with PowerShell commands marked read-only or needs approval. RunbookPilot never runs a command." />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="RunbookPilot" />
+  <meta property="og:title" content="RunbookPilot: fix plans for Windows and M365 tickets" />
+  <meta property="og:description" content="Paste a ticket. Get steps and PowerShell commands from your runbooks, each marked read-only or needs approval. RunbookPilot never runs a command." />
+  <meta name="theme-color" id="theme-color-light" media="(prefers-color-scheme: light)" content="#f5f6f8" />
+  <meta name="theme-color" id="theme-color-dark" media="(prefers-color-scheme: dark)" content="#0e1014" />
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
   <script>
     /* Apply a saved theme before first paint. No saved theme: follow the system. */
     try {
@@ -170,9 +172,9 @@
                   <button type="button" id="btn-remove-screenshot" class="btn btn-secondary btn-sm">Remove</button>
                 </div>
                 <div class="btn-row sample-shots">
-                  <span class="field-help">Sample screenshots:</span>
-                  <button type="button" id="btn-sample-shot-rdp" class="btn btn-quiet btn-sm">RDP error</button>
-                  <button type="button" id="btn-sample-shot-vss" class="btn btn-quiet btn-sm">VSS error</button>
+                  <span class="field-help">Or try a sample screenshot:</span>
+                  <button type="button" id="btn-sample-shot-rdp" class="btn btn-secondary btn-sm">Attach RDP sample</button>
+                  <button type="button" id="btn-sample-shot-vss" class="btn btn-secondary btn-sm">Attach VSS sample</button>
                 </div>
               </div>
             </form>
@@ -493,7 +495,7 @@
 
   <!-- Triage result skeleton. js/views/result.js clones it and fills it with textContent. -->
   <template id="result-template">
-    <section class="verdict" data-slot="verdict" aria-labelledby="verdict-word">
+    <section class="verdict" data-slot="verdict" aria-labelledby="verdict-word" tabindex="-1">
       <div class="verdict-main">
         <p id="verdict-word" class="verdict-word" data-slot="verdict-word"></p>
         <p class="verdict-sub t-sm text-2" data-slot="verdict-sub"></p>

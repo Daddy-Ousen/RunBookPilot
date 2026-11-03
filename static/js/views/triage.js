@@ -121,7 +121,7 @@ function showError(res) {
   const next = el("span", { text: parts.next });
   const box = el(
     "div",
-    { class: "notice notice-danger error-panel", role: "alert" },
+    { class: "notice notice-danger error-panel", role: "alert", tabindex: "-1" },
     el("span", { class: "notice-title" }, icon(ICONS.warn, 16), " ", parts.title),
     next,
     el("span", { class: "text-2", text: "Your ticket text is kept." }),
@@ -129,6 +129,7 @@ function showError(res) {
     tech
   );
   ui.errorRegion.appendChild(box);
+  box.focus(); // the next Tab reaches Try again, not the whole input column
 
   if (res.retryAfter) {
     let left = res.retryAfter;
@@ -452,6 +453,8 @@ export async function submitTriage() {
   state.lastTicket = ticket;
   saveSession(LAST_RESULT_KEY, { data: res.data, meta, ticket });
   showResult(res.data, meta);
+  const verdictStrip = ui.result.querySelector(".verdict");
+  if (verdictStrip) verdictStrip.focus(); // the technician asked for this result: start reading at the top
 }
 
 function showResult(data, meta) {
@@ -496,6 +499,17 @@ function clearAll() {
 function initInputDisclosures() {
   const panels = [ui.samplesPanel, ui.queuePanel];
   const apply = () => {
+    // Open lists on desktop: the header does nothing, so keep it out of the tab order.
+    panels.forEach((p) => {
+      const summary = p.querySelector("summary");
+      if (DESKTOP.matches) {
+        summary.setAttribute("tabindex", "-1");
+        summary.setAttribute("aria-disabled", "true");
+      } else {
+        summary.removeAttribute("tabindex");
+        summary.removeAttribute("aria-disabled");
+      }
+    });
     if (DESKTOP.matches) {
       panels.forEach((p) => (p.open = true));
     } else {

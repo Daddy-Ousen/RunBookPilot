@@ -119,6 +119,11 @@
 
 .sample-shots {
   gap: var(--sp-1) var(--sp-2);
+  margin-top: var(--sp-1);
+}
+
+.sample-shots > .field-help {
+  flex-basis: 100%;
 }
 
 /* Samples and queue: open lists on desktop, <details> on mobile (triage.js) */
