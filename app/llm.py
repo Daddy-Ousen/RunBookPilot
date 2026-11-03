@@ -23,6 +23,8 @@ logger = logging.getLogger("runbookpilot.llm")
 
 DEFAULT_TIMEOUT_SECONDS = 55.0
 
+_REASONING_EFFORTS = ("low", "medium", "high", "xhigh")
+
 _META_MODEL_TOKENS = ("llama", "muse")
 _META_MODEL_PREFIXES = ("meta/", "meta-")
 
@@ -106,6 +108,7 @@ class LLMConfig:
     model: str
     api_key: str = field(repr=False)
     timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS
+    reasoning_effort: str | None = None
 
     @property
     def chat_completions_url(self) -> str:
@@ -164,11 +167,18 @@ def load_llm_config(timeout_seconds: float | None = None) -> LLMConfig:
     if timeout_seconds <= 0:
         raise LLMConfigError("LLM timeout must be greater than 0 seconds.")
 
+    reasoning_effort = os.environ.get("LLM_REASONING_EFFORT", "").strip().lower() or None
+    if reasoning_effort is not None and reasoning_effort not in _REASONING_EFFORTS:
+        raise LLMConfigError(
+            f"LLM_REASONING_EFFORT must be one of: {', '.join(_REASONING_EFFORTS)}."
+        )
+
     return LLMConfig(
         base_url=base_url,
         model=model,
         api_key=api_key,
         timeout_seconds=timeout_seconds,
+        reasoning_effort=reasoning_effort,
     )
 
 
@@ -283,6 +293,9 @@ async def _post_chat_completion(
     # Meta Muse reasoning models manage internal sampling and can reject custom temperature with HTTP 400.
     if "muse" not in config.model.lower():
         payload["temperature"] = 0.0
+    # Baseten Muse Spark Open always reasons (default "xhigh"); a lower effort keeps replies under the timeout.
+    if config.reasoning_effort:
+        payload["reasoning_effort"] = config.reasoning_effort
 
     try:
         response = await client.post(

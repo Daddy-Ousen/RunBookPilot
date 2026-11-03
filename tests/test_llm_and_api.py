@@ -133,6 +133,40 @@ def test_generate_triage_omits_temperature_for_muse_spark_models() -> None:
     asyncio.run(_run())
 
 
+def test_generate_triage_sends_reasoning_effort_for_baseten_muse() -> None:
+    captured_body: dict[str, object] = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal captured_body
+        captured_body = json.loads(request.content)
+        return httpx.Response(
+            200,
+            json={"choices": [{"message": {"content": json.dumps(_valid_triage_payload())}}]},
+        )
+
+    cfg = LLMConfig(
+        base_url="https://inference.baseten.co/v1",
+        model="meta-models/muse-spark-open-1026",
+        api_key="test-key",
+        reasoning_effort="medium",
+    )
+
+    async def _run() -> None:
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            await generate_triage(
+                "Workstation cannot resolve internal DNS name",
+                [_sample_scored_runbook()],
+                request_id="req-baseten",
+                config=cfg,
+                http_client=client,
+            )
+            assert captured_body["model"] == "meta-models/muse-spark-open-1026"
+            assert captured_body["reasoning_effort"] == "medium"
+            assert "temperature" not in captured_body
+
+    asyncio.run(_run())
+
+
 def test_generate_triage_retries_once_on_bad_json_and_succeeds() -> None:
     attempts = 0
 

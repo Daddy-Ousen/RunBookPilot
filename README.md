@@ -114,6 +114,7 @@ All LLM access is centralized in `app/llm.py`. Secrets are never hard-coded or l
 | `LLM_MODEL` | Yes | — | Meta model identifier (e.g., `muse-spark-1.3` or `meta-llama/Llama-3.3-70B-Instruct-Turbo`). Non-Meta models are rejected. |
 | `LLM_API_KEY` | Yes | — | Bearer API key for the Meta model endpoint. |
 | `LLM_TIMEOUT_SECONDS` | No | `55.0` | Upstream HTTP timeout in seconds for each model request (sized under Vercel's 60s function limit). |
+| `LLM_REASONING_EFFORT` | No | — | Sent as `reasoning_effort` (`low`, `medium`, `high`, `xhigh`). Use with Baseten Muse Spark Open (`https://inference.baseten.co/v1`, model `meta-models/muse-spark-open-1026`) to keep replies under the timeout. |
 | `RATE_LIMIT_REQUESTS` | No | `15` | Maximum `POST /triage` requests allowed per client IP per window. |
 | `RATE_LIMIT_WINDOW_SECONDS` | No | `60` | Sliding rate-limit window duration in seconds. |
 

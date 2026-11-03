@@ -92,6 +92,15 @@ Source plan: `UI_REDESIGN_PLAN.md` (repo root). Follow it phase by phase. Stop a
   - Screenshots: `docs/phase7/` (`empty-1440-light.jpg`, `result-1440-light.jpg`, `result-1440-dark.jpg`, `commands-1440-dark.jpg`, `escalate-1440-light.jpg`, `result-390-light.jpg`; built-in browser, 1440 shots scaled to 800 px wide).
   - Not done: Lighthouse and axe not re-run; keyboard-only pass not re-run (no DOM order change except the hero `<div>`, which has no focus stop). At >= 1200 the nav sits after the theme button in Tab order (DOM order) but shows in the middle of the bar. No Vercel preview yet.
 
+## Baseten LLM switch (2026-11-04, works locally)
+- [x] Local `.env` points to Baseten (`https://inference.baseten.co/v1`, model `meta-models/muse-spark-open-1026`, `LLM_REASONING_EFFORT=medium`). Old Meta lines kept as comments. Key is a placeholder until the owner pastes it.
+- [x] `app/llm.py`: optional `LLM_REASONING_EFFORT` (low/medium/high/xhigh), sent as `reasoning_effort`. New test. pytest 106 passed.
+- [x] `.env.example`, README env table, `scripts/llm_smoke.py` (one call, never prints the key).
+- [x] Owner pasted the Baseten key. Smoke test: HTTP 200 in 1.6 s, `reasoning_content` comes in its own field.
+- [x] Real `/triage` on Baseten (TestClient): DNS -> rb-07 high 6.1 s; AD lockout -> rb-02 high 3.7 s; VoIP -> escalate, no runbooks 2.8 s. Old Meta endpoint took 10 to 33 s.
+- [ ] Vercel env vars: set `LLM_BASE_URL`, `LLM_MODEL`, `LLM_API_KEY`, `LLM_REASONING_EFFORT`, then redeploy.
+- [ ] Commit (not done yet).
+
 ## Next
 - UI work is finished. Record the demo video (Standard mode; stop the stale server on port 8000 first if demoing locally). Submit by Nov 5, 08:00 Dhaka.
 - Optional, owner choice: fix `Clear-RecycleBin -Confirm` at `data/runbooks/02_ad_account_locked.md:22` (and the copy in `static/runbooks/`).
