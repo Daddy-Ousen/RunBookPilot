@@ -1,4077 +1,497 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="RunbookPilot: Grounded Windows and M365 IT ticket triage workbench with deterministic PowerShell risk classification." />
-  <title>RunbookPilot - Incident Triage Workbench</title>
+  <meta name="description" content="RunbookPilot: grounded Windows and M365 ticket triage with labelled, never-run PowerShell commands." />
+  <title>Triage · RunbookPilot</title>
   <link
     rel="icon"
     type="image/svg+xml"
-    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230a0a0b' stroke='%2327272a' stroke-width='2'/%3E%3Cpath d='M9 11l5 5-5 5M16 21h7' stroke='%23f4f4f5' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Ccircle cx='23' cy='10' r='2.5' fill='%23e54d2e'/%3E%3C/svg%3E"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2310141a'/%3E%3Cpath d='M9 11l5 5-5 5M16 21h7' stroke='%23e6e9ee' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Ccircle cx='23' cy='10' r='2.5' fill='%233d5ae0'/%3E%3C/svg%3E"
   />
+  <script>
+    /* Apply a saved theme before first paint. No saved theme: follow the system. */
+    try {
+      var savedTheme = localStorage.getItem("rbp_theme");
+      if (savedTheme === "light" || savedTheme === "dark") {
+        document.documentElement.setAttribute("data-theme", savedTheme);
+      }
+    } catch (_e) {}
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
-    href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap"
     rel="stylesheet"
   />
-  <style>
-    :root,
-    [data-theme="dark"] {
-      --bg: #0a0a0b;
-      --surface: #111113;
-      --surface-subtle: #161619;
-      --surface-hover: #1c1c20;
-      --surface-code: #070708;
-
-      --hairline: #222226;
-      --border-strong: #323238;
-
-      --text-primary: #f4f4f5;
-      --text-secondary: #a1a1aa;
-      --text-muted: #71717a;
-
-      --accent: #e54d2e;
-      --accent-soft: rgba(229, 77, 46, 0.12);
-      --accent-border: rgba(229, 77, 46, 0.36);
-
-      --cta-bg: #f4f4f5;
-      --cta-hover: #ffffff;
-      --cta-text: #09090b;
-
-      --ro-bg: rgba(46, 160, 67, 0.1);
-      --ro-text: #7ee787;
-      --ro-border: rgba(46, 160, 67, 0.32);
-
-      --na-bg: rgba(210, 153, 34, 0.11);
-      --na-text: #e3b341;
-      --na-border: rgba(210, 153, 34, 0.38);
-
-      --esc-bg: rgba(248, 81, 73, 0.11);
-      --esc-text: #ffa198;
-      --esc-border: rgba(248, 81, 73, 0.42);
-
-      --shimmer-a: #141417;
-      --shimmer-b: #1f1f24;
-    }
-
-    [data-theme="light"] {
-      --bg: #fafafa;
-      --surface: #ffffff;
-      --surface-subtle: #f4f4f5;
-      --surface-hover: #e4e4e7;
-      --surface-code: #111113;
-
-      --hairline: #e4e4e7;
-      --border-strong: #d4d4d8;
-
-      --text-primary: #09090b;
-      --text-secondary: #52525b;
-      --text-muted: #71717a;
-
-      --accent: #d93d1e;
-      --accent-soft: rgba(217, 61, 30, 0.08);
-      --accent-border: rgba(217, 61, 30, 0.28);
-
-      --cta-bg: #09090b;
-      --cta-hover: #27272a;
-      --cta-text: #fafafa;
-
-      --ro-bg: #eaf6ed;
-      --ro-text: #166534;
-      --ro-border: #b7e1c1;
-
-      --na-bg: #fef7e6;
-      --na-text: #854d0e;
-      --na-border: #f3d078;
-
-      --esc-bg: #fdecec;
-      --esc-text: #991b1b;
-      --esc-border: #f5b5b5;
-
-      --shimmer-a: #f1f1f3;
-      --shimmer-b: #e4e4e7;
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    html {
-      scroll-behavior: smooth;
-    }
-
-    body {
-      margin: 0;
-      min-height: 100dvh;
-      display: flex;
-      flex-direction: column;
-      font-family: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      font-size: 15px;
-      line-height: 1.55;
-      color: var(--text-primary);
-      background-color: var(--bg);
-      -webkit-font-smoothing: antialiased;
-    }
-
-    .mono {
-      font-family: "Geist Mono", "Cascadia Mono", Consolas, monospace;
-      font-variant-numeric: tabular-nums;
-    }
-
-    .tabular {
-      font-variant-numeric: tabular-nums;
-    }
-
-    .skip-link {
-      position: absolute;
-      left: -9999px;
-      top: 8px;
-      z-index: 100;
-      background: var(--cta-bg);
-      color: var(--cta-text);
-      padding: 6px 12px;
-      border-radius: 6px;
-      font-weight: 500;
-      text-decoration: none;
-    }
-
-    .skip-link:focus {
-      left: 16px;
-    }
-
-    :focus-visible {
-      outline: 2px solid var(--accent);
-      outline-offset: 2px;
-    }
-
-    /* Navigation Bar (56px height cap, single line) */
-    .topbar {
-      height: 56px;
-      border-bottom: 1px solid var(--hairline);
-      background: var(--bg);
-      position: sticky;
-      top: 0;
-      z-index: 30;
-    }
-
-    .topbar-inner {
-      max-width: 1440px;
-      height: 100%;
-      margin: 0 auto;
-      padding: 0 24px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      min-width: 0;
-    }
-
-    .brand-glyph {
-      width: 10px;
-      height: 10px;
-      background: var(--accent);
-      border-radius: 2px;
-      flex-shrink: 0;
-    }
-
-    .brand h1 {
-      margin: 0;
-      font-size: 0.95rem;
-      font-weight: 600;
-      letter-spacing: -0.02em;
-      color: var(--text-primary);
-    }
-
-    .brand-sep {
-      color: var(--border-strong);
-      user-select: none;
-    }
-
-    .brand-context {
-      font-size: 0.84rem;
-      color: var(--text-secondary);
-      font-weight: 400;
-      white-space: nowrap;
-    }
-
-    .topbar-controls {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      flex-shrink: 0;
-    }
-
-    .meta-stat {
-      font-size: 0.78rem;
-      color: var(--text-secondary);
-      white-space: nowrap;
-    }
-
-    .theme-btn {
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      height: 30px;
-      padding: 0 10px;
-      border-radius: 6px;
-      border: 1px solid var(--hairline);
-      background: var(--surface);
-      color: var(--text-secondary);
-      font-family: inherit;
-      font-size: 0.78rem;
-      font-weight: 500;
-      transition: color 160ms ease, border-color 160ms ease, background 160ms ease, transform 120ms ease;
-    }
-
-    .theme-btn:hover {
-      color: var(--text-primary);
-      border-color: var(--border-strong);
-      background: var(--surface-subtle);
-    }
-
-    .theme-btn:active {
-      transform: translateY(1px);
-    }
-
-    /* Full-Height Structural Split Workbench (No floating box cards) */
-    .workbench {
-      flex: 1;
-      width: 100%;
-      max-width: 1440px;
-      margin: 0 auto;
-      display: grid;
-      grid-template-columns: minmax(360px, 42%) minmax(0, 58%);
-      align-items: stretch;
-    }
-
-    .pane-intake {
-      border-right: 1px solid var(--hairline);
-      padding: 32px 28px 40px 24px;
-    }
-
-    .pane-output {
-      padding: 32px 24px 48px 32px;
-      min-width: 0;
-    }
-
-    @media (max-width: 960px) {
-      .workbench {
-        grid-template-columns: 1fr;
-      }
-
-      .pane-intake {
-        border-right: none;
-        border-bottom: 1px solid var(--hairline);
-        padding: 24px 16px 28px;
-      }
-
-      .pane-output {
-        padding: 28px 16px 40px;
-      }
-
-      .hide-mobile {
-        display: none;
-      }
-    }
-
-    /* Left Pane: Ticket Composer */
-    .pane-header {
-      margin-bottom: 20px;
-    }
-
-    .pane-title {
-      margin: 0 0 4px;
-      font-size: 1.15rem;
-      font-weight: 600;
-      letter-spacing: -0.02em;
-      color: var(--text-primary);
-    }
-
-    .pane-subtitle {
-      margin: 0;
-      font-size: 0.85rem;
-      color: var(--text-secondary);
-      max-width: 60ch;
-    }
-
-    .samples-bar {
-      display: flex;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-bottom: 12px;
-      padding-bottom: 12px;
-      border-bottom: 1px solid var(--hairline);
-    }
-
-    .samples-label {
-      font-size: 0.78rem;
-      color: var(--text-muted);
-      margin-right: 4px;
-    }
-
-    .sample-btn {
-      cursor: pointer;
-      font-family: inherit;
-      font-size: 0.77rem;
-      font-weight: 500;
-      padding: 4px 9px;
-      border-radius: 6px;
-      border: 1px solid var(--hairline);
-      background: var(--surface);
-      color: var(--text-secondary);
-      transition: color 150ms ease, border-color 150ms ease, background 150ms ease, transform 120ms ease;
-    }
-
-    .sample-btn:hover {
-      color: var(--text-primary);
-      border-color: var(--border-strong);
-      background: var(--surface-subtle);
-    }
-
-    .sample-btn:active {
-      transform: translateY(1px);
-    }
-
-    .sample-btn.is-active {
-      border-color: var(--accent-border);
-      background: var(--accent-soft);
-      color: var(--text-primary);
-    }
-
-    .field-label {
-      display: block;
-      font-size: 0.82rem;
-      font-weight: 500;
-      color: var(--text-secondary);
-      margin-bottom: 8px;
-    }
-
-    .composer-frame {
-      border: 1px solid var(--border-strong);
-      border-radius: 6px;
-      background: var(--surface);
-      overflow: hidden;
-      transition: border-color 150ms ease;
-    }
-
-    .composer-frame:focus-within {
-      border-color: var(--accent);
-    }
-
-    textarea {
-      display: block;
-      width: 100%;
-      min-height: 250px;
-      resize: vertical;
-      padding: 14px 15px;
-      border: none;
-      background: transparent;
-      color: var(--text-primary);
-      font-family: inherit;
-      font-size: 0.92rem;
-      line-height: 1.6;
-    }
-
-    textarea::placeholder {
-      color: var(--text-muted);
-    }
-
-    textarea:focus {
-      outline: none;
-    }
-
-    .composer-footer {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 10px 12px;
-      border-top: 1px solid var(--hairline);
-      background: var(--surface-subtle);
-    }
-
-    .composer-meta {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      font-size: 0.76rem;
-      color: var(--text-muted);
-    }
-
-    .char-limit-warn {
-      color: var(--na-text);
-    }
-
-    .char-limit-max {
-      color: var(--esc-text);
-      font-weight: 600;
-    }
-
-    .composer-actions {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .btn-clear {
-      cursor: pointer;
-      height: 34px;
-      padding: 0 11px;
-      border-radius: 6px;
-      border: 1px solid transparent;
-      background: transparent;
-      color: var(--text-secondary);
-      font-family: inherit;
-      font-size: 0.82rem;
-      font-weight: 500;
-      transition: color 150ms ease, background 150ms ease, transform 120ms ease;
-    }
-
-    .btn-clear:hover {
-      color: var(--text-primary);
-      background: var(--surface-hover);
-    }
-
-    .btn-clear:active {
-      transform: translateY(1px);
-    }
-
-    .btn-submit {
-      cursor: pointer;
-      height: 34px;
-      padding: 0 14px;
-      border-radius: 6px;
-      border: 1px solid transparent;
-      background: var(--cta-bg);
-      color: var(--cta-text);
-      font-family: inherit;
-      font-size: 0.83rem;
-      font-weight: 600;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      white-space: nowrap;
-      transition: background 150ms ease, opacity 150ms ease, transform 120ms ease;
-    }
-
-    .btn-submit:hover:not(:disabled) {
-      background: var(--cta-hover);
-    }
-
-    .btn-submit:active:not(:disabled) {
-      transform: translateY(1px);
-    }
-
-    .btn-submit:disabled {
-      opacity: 0.55;
-      cursor: not-allowed;
-    }
-
-    .kbd-tag {
-      font-size: 0.69rem;
-      font-weight: 500;
-      opacity: 0.72;
-    }
-
-    .intake-note {
-      margin: 10px 0 0;
-      font-size: 0.77rem;
-      color: var(--text-muted);
-    }
-
-    /* Callout Banners (Architectural left-border style) */
-    .banner {
-      padding: 12px 14px;
-      border-radius: 6px;
-      border: 1px solid;
-      border-left-width: 3px;
-      margin-bottom: 24px;
-      font-size: 0.86rem;
-      line-height: 1.5;
-    }
-
-    .banner strong {
-      display: block;
-      font-weight: 600;
-      margin-bottom: 2px;
-    }
-
-    .banner-escalate {
-      background: var(--esc-bg);
-      color: var(--esc-text);
-      border-color: var(--esc-border);
-    }
-
-    .banner-warning {
-      background: var(--na-bg);
-      color: var(--na-text);
-      border-color: var(--na-border);
-    }
-
-    .banner-error {
-      background: var(--esc-bg);
-      color: var(--esc-text);
-      border-color: var(--esc-border);
-      margin-top: 14px;
-      margin-bottom: 0;
-    }
-
-    .hidden {
-      display: none !important;
-    }
-
-    /* Right Pane: Composed Empty State & Runbook Index */
-    .empty-state {
-      padding-top: 4px;
-    }
-
-    .empty-intro {
-      padding-bottom: 24px;
-      border-bottom: 1px solid var(--hairline);
-      margin-bottom: 24px;
-    }
-
-    .empty-intro h3 {
-      margin: 0 0 6px;
-      font-size: 1.15rem;
-      font-weight: 600;
-      letter-spacing: -0.02em;
-      color: var(--text-primary);
-    }
-
-    .empty-intro p {
-      margin: 0;
-      font-size: 0.88rem;
-      color: var(--text-secondary);
-      max-width: 58ch;
-    }
-
-    .spec-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 16px 24px;
-      padding-bottom: 24px;
-      border-bottom: 1px solid var(--hairline);
-      margin-bottom: 24px;
-    }
-
-    @media (max-width: 600px) {
-      .spec-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .spec-item dt {
-      font-size: 0.76rem;
-      color: var(--text-muted);
-      margin-bottom: 3px;
-    }
-
-    .spec-item dd {
-      margin: 0;
-      font-size: 0.85rem;
-      color: var(--text-primary);
-      font-weight: 500;
-    }
-
-    .corpus-header {
-      display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-      margin-bottom: 12px;
-    }
-
-    .corpus-title {
-      margin: 0;
-      font-size: 0.88rem;
-      font-weight: 600;
-      color: var(--text-primary);
-    }
-
-    .corpus-count {
-      font-size: 0.76rem;
-      color: var(--text-muted);
-    }
-
-    .corpus-grid {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 6px 16px;
-    }
-
-    @media (max-width: 640px) {
-      .corpus-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .corpus-row {
-      display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 10px;
-      padding: 6px 0;
-      border-bottom: 1px solid var(--hairline);
-      font-size: 0.81rem;
-      color: var(--text-secondary);
-    }
-
-    .corpus-row-title {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .corpus-row-id {
-      font-size: 0.71rem;
-      color: var(--text-muted);
-      flex-shrink: 0;
-    }
-
-    /* Skeleton Loading State */
-    .loading-state {
-      padding-top: 4px;
-    }
-
-    .loading-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding-bottom: 16px;
-      margin-bottom: 24px;
-      border-bottom: 1px solid var(--hairline);
-      font-size: 0.85rem;
-      color: var(--text-secondary);
-    }
-
-    .skeleton-block {
-      margin-bottom: 28px;
-    }
-
-    .sk-bar {
-      height: 14px;
-      border-radius: 4px;
-      background: linear-gradient(90deg, var(--shimmer-a) 25%, var(--shimmer-b) 50%, var(--shimmer-a) 75%);
-      background-size: 200% 100%;
-      animation: sk-shimmer 1.4s infinite linear;
-      margin-bottom: 10px;
-    }
-
-    .sk-pane {
-      height: 76px;
-      border-radius: 6px;
-      background: linear-gradient(90deg, var(--shimmer-a) 25%, var(--shimmer-b) 50%, var(--shimmer-a) 75%);
-      background-size: 200% 100%;
-      animation: sk-shimmer 1.4s infinite linear;
-      margin-bottom: 12px;
-    }
-
-    @keyframes sk-shimmer {
-      0% {
-        background-position: 200% 0;
-      }
-      100% {
-        background-position: -200% 0;
-      }
-    }
-
-    @keyframes reveal-up {
-      from {
-        opacity: 0;
-        transform: translateY(6px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .reveal {
-      animation: reveal-up 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      *,
-      *::before,
-      *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-        scroll-behavior: auto !important;
-      }
-    }
-
-    /* Populated Triage Result */
-    .telemetry-strip {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding-bottom: 14px;
-      margin-bottom: 24px;
-      border-bottom: 1px solid var(--hairline);
-      font-size: 0.76rem;
-      color: var(--text-muted);
-    }
-
-    .result-block {
-      padding-bottom: 28px;
-      margin-bottom: 28px;
-      border-bottom: 1px solid var(--hairline);
-    }
-
-    .result-block:last-child {
-      padding-bottom: 0;
-      margin-bottom: 0;
-      border-bottom: none;
-    }
-
-    .block-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 12px;
-      flex-wrap: wrap;
-    }
-
-    .block-title {
-      margin: 0;
-      font-size: 0.92rem;
-      font-weight: 600;
-      letter-spacing: -0.01em;
-      color: var(--text-primary);
-    }
-
-    .cause-text {
-      margin: 0 0 18px;
-      font-size: 1.06rem;
-      font-weight: 500;
-      line-height: 1.55;
-      color: var(--text-primary);
-      max-width: 65ch;
-      text-wrap: pretty;
-    }
-
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      font-size: 0.73rem;
-      font-weight: 500;
-      padding: 3px 9px;
-      border-radius: 6px;
-      white-space: nowrap;
-    }
-
-    .conf-high,
-    .risk-read_only {
-      background: var(--ro-bg);
-      color: var(--ro-text);
-      border: 1px solid var(--ro-border);
-    }
-
-    .conf-medium,
-    .risk-needs_approval {
-      background: var(--na-bg);
-      color: var(--na-text);
-      border: 1px solid var(--na-border);
-    }
-
-    .conf-low {
-      background: var(--esc-bg);
-      color: var(--esc-text);
-      border: 1px solid var(--esc-border);
-    }
-
-    /* Matched Runbooks */
-    .matched-row {
-      display: flex;
-      align-items: baseline;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-
-    .matched-label {
-      font-size: 0.78rem;
-      color: var(--text-muted);
-      flex-shrink: 0;
-    }
-
-    .runbook-list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    .runbook-tag {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 4px 10px;
-      border-radius: 6px;
-      background: var(--surface);
-      border: 1px solid var(--border-strong);
-      font-size: 0.81rem;
-      color: var(--text-primary);
-    }
-
-    .runbook-tag-id {
-      font-size: 0.72rem;
-      color: var(--text-muted);
-    }
-
-    /* Ordered Steps (Hairline table-list, no individual card boxes) */
-    .steps-list {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-      counter-reset: step-idx;
-    }
-
-    .steps-list li {
-      counter-increment: step-idx;
-      display: grid;
-      grid-template-columns: 28px minmax(0, 1fr);
-      gap: 12px;
-      padding: 10px 0;
-      border-bottom: 1px solid var(--hairline);
-      font-size: 0.9rem;
-      color: var(--text-primary);
-      max-width: 68ch;
-    }
-
-    .steps-list li:first-child {
-      padding-top: 2px;
-    }
-
-    .steps-list li:last-child {
-      border-bottom: none;
-      padding-bottom: 0;
-    }
-
-    .steps-list li::before {
-      content: counter(step-idx, decimal-leading-zero);
-      font-family: "Geist Mono", Consolas, monospace;
-      font-size: 0.76rem;
-      color: var(--text-muted);
-      padding-top: 2px;
-    }
-
-    /* PowerShell Command Blocks */
-    .cmd-counter {
-      font-size: 0.76rem;
-      color: var(--text-muted);
-    }
-
-    .command-item {
-      border: 1px solid var(--border-strong);
-      border-radius: 6px;
-      margin-bottom: 14px;
-      overflow: hidden;
-      background: var(--surface);
-    }
-
-    .command-item:last-child {
-      margin-bottom: 0;
-    }
-
-    .command-item.is-needs-approval {
-      border-color: var(--na-border);
-    }
-
-    .command-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 8px 12px;
-      border-bottom: 1px solid var(--hairline);
-      background: var(--surface-subtle);
-      flex-wrap: wrap;
-    }
-
-    .command-purpose {
-      font-size: 0.83rem;
-      color: var(--text-secondary);
-      min-width: 180px;
-      flex: 1;
-    }
-
-    .command-actions {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-shrink: 0;
-    }
-
-    .btn-copy {
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      height: 26px;
-      padding: 0 9px;
-      border-radius: 6px;
-      border: 1px solid var(--border-strong);
-      background: var(--surface);
-      color: var(--text-primary);
-      font-family: inherit;
-      font-size: 0.74rem;
-      font-weight: 500;
-      transition: border-color 150ms ease, background 150ms ease, transform 120ms ease;
-    }
-
-    .btn-copy:hover {
-      border-color: var(--text-secondary);
-      background: var(--surface-hover);
-    }
-
-    .btn-copy:active {
-      transform: translateY(1px);
-    }
-
-    .btn-copy.is-copied {
-      border-color: var(--ro-border);
-      color: var(--ro-text);
-    }
-
-    pre.command-code {
-      margin: 0;
-      padding: 13px 14px;
-      background: var(--surface-code);
-      color: #f4f4f5;
-      font-size: 0.82rem;
-      line-height: 1.55;
-      overflow-x: auto;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-
-    pre.command-code code::before {
-      content: "PS> ";
-      color: var(--accent);
-      user-select: none;
-      font-weight: 600;
-    }
-
-    .muted-note {
-      margin: 0;
-      font-size: 0.84rem;
-      color: var(--text-muted);
-    }
-
-    /* Topbar View Navigation Tabs */
-    .nav-tabs {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      margin-left: 6px;
-    }
-
-    .nav-tab {
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      height: 30px;
-      padding: 0 10px;
-      border-radius: 6px;
-      border: 1px solid transparent;
-      background: transparent;
-      color: var(--text-secondary);
-      font-family: inherit;
-      font-size: 0.82rem;
-      font-weight: 500;
-      transition: color 150ms ease, background 150ms ease, border-color 150ms ease, transform 120ms ease;
-    }
-
-    .nav-tab:hover {
-      color: var(--text-primary);
-      background: var(--surface-subtle);
-    }
-
-    .nav-tab:active {
-      transform: translateY(1px);
-    }
-
-    .nav-tab.is-active {
-      color: var(--text-primary);
-      background: var(--surface);
-      border-color: var(--border-strong);
-    }
-
-    .nav-tab-count {
-      font-size: 0.7rem;
-      padding: 1px 5px;
-      border-radius: 4px;
-      background: var(--surface-subtle);
-      color: var(--text-muted);
-      border: 1px solid var(--hairline);
-    }
-
-    /* Integrations Settings Workbench */
-    .workbench-integrations {
-      grid-template-columns: minmax(340px, 38%) minmax(0, 62%);
-    }
-
-    @media (max-width: 960px) {
-      .workbench-integrations {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .directory-toolbar {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      padding-bottom: 14px;
-      margin-bottom: 8px;
-      border-bottom: 1px solid var(--hairline);
-    }
-
-    .directory-tabs {
-      display: flex;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-
-    .directory-search {
-      width: 100%;
-      height: 34px;
-      padding: 0 11px;
-      border-radius: 6px;
-      border: 1px solid var(--border-strong);
-      background: var(--surface);
-      color: var(--text-primary);
-      font-family: inherit;
-      font-size: 0.83rem;
-      transition: border-color 150ms ease;
-    }
-
-    .directory-search::placeholder {
-      color: var(--text-muted);
-    }
-
-    .directory-search:focus {
-      outline: none;
-      border-color: var(--accent);
-    }
-
-    .provider-list {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .provider-row {
-      cursor: pointer;
-      width: 100%;
-      text-align: left;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 11px 10px;
-      border: none;
-      border-bottom: 1px solid var(--hairline);
-      border-left: 2px solid transparent;
-      background: transparent;
-      color: var(--text-primary);
-      font-family: inherit;
-      transition: background 140ms ease, border-color 140ms ease;
-    }
-
-    .provider-row:hover {
-      background: var(--surface-subtle);
-    }
-
-    .provider-row.is-selected {
-      background: var(--surface-subtle);
-      border-left-color: var(--accent);
-    }
-
-    .provider-row-main {
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .provider-row-name {
-      font-size: 0.87rem;
-      font-weight: 600;
-      color: var(--text-primary);
-    }
-
-    .provider-row-meta {
-      font-size: 0.74rem;
-      color: var(--text-muted);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .status-staged {
-      background: var(--ro-bg);
-      color: var(--ro-text);
-      border: 1px solid var(--ro-border);
-    }
-
-    .status-paused {
-      background: var(--na-bg);
-      color: var(--na-text);
-      border: 1px solid var(--na-border);
-    }
-
-    .status-not_configured {
-      background: var(--surface);
-      color: var(--text-muted);
-      border: 1px solid var(--hairline);
-    }
-
-    .banner-standby {
-      background: var(--surface);
-      color: var(--text-secondary);
-      border-color: var(--border-strong);
-      border-left-color: var(--accent);
-    }
-
-    .banner-standby strong {
-      color: var(--text-primary);
-    }
-
-    .banner-ok {
-      background: var(--ro-bg);
-      color: var(--ro-text);
-      border-color: var(--ro-border);
-    }
-
-    .provider-heading-group {
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-    }
-
-    .webhook-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      padding: 9px 12px;
-      border-radius: 6px;
-      border: 1px solid var(--border-strong);
-      background: var(--surface);
-    }
-
-    .webhook-url {
-      font-size: 0.8rem;
-      color: var(--text-primary);
-      overflow-x: auto;
-      white-space: nowrap;
-    }
-
-    .cfg-mode-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 16px;
-      padding-bottom: 20px;
-      margin-bottom: 20px;
-      border-bottom: 1px solid var(--hairline);
-    }
-
-    @media (max-width: 680px) {
-      .cfg-mode-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .cfg-select,
-    .cfg-input {
-      width: 100%;
-      height: 36px;
-      padding: 0 11px;
-      border-radius: 6px;
-      border: 1px solid var(--border-strong);
-      background: var(--surface);
-      color: var(--text-primary);
-      font-family: inherit;
-      font-size: 0.85rem;
-      transition: border-color 150ms ease;
-    }
-
-    .cfg-input::placeholder {
-      color: var(--text-muted);
-    }
-
-    .cfg-select:focus,
-    .cfg-input:focus {
-      outline: none;
-      border-color: var(--accent);
-    }
-
-    .cfg-toggle-box {
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
-    }
-
-    .cfg-toggle-label {
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 9px;
-      height: 36px;
-      padding: 0 12px;
-      border-radius: 6px;
-      border: 1px solid var(--border-strong);
-      background: var(--surface);
-      font-size: 0.83rem;
-      font-weight: 500;
-      color: var(--text-primary);
-      user-select: none;
-    }
-
-    .cfg-toggle-label input[type="checkbox"] {
-      width: 15px;
-      height: 15px;
-      accent-color: var(--accent);
-      cursor: pointer;
-    }
-
-    .cfg-fields-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 16px 20px;
-      margin-bottom: 24px;
-    }
-
-    @media (max-width: 680px) {
-      .cfg-fields-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .cfg-field-item.is-wide {
-      grid-column: 1 / -1;
-    }
-
-    .cfg-field-top {
-      display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 8px;
-      margin-bottom: 6px;
-    }
-
-    .cfg-field-label {
-      font-size: 0.81rem;
-      font-weight: 500;
-      color: var(--text-primary);
-    }
-
-    .cfg-field-tag {
-      font-size: 0.71rem;
-      color: var(--text-muted);
-    }
-
-    .cfg-field-tag.is-stored {
-      color: var(--ro-text);
-    }
-
-    .cfg-help {
-      margin: 5px 0 0;
-      font-size: 0.74rem;
-      color: var(--text-muted);
-      line-height: 1.4;
-    }
-
-    .cfg-actions-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding-top: 16px;
-      border-top: 1px solid var(--hairline);
-      flex-wrap: wrap;
-    }
-
-    .cfg-actions-right {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .cfg-validate-btn {
-      height: 34px;
-      padding: 0 12px;
-      font-size: 0.82rem;
-    }
-
-    /* Workflow 1: Pending PSA & RMM Queue in Triage Intake */
-    .queue-panel {
-      margin-bottom: 18px;
-      padding-bottom: 14px;
-      border-bottom: 1px solid var(--hairline);
-    }
-
-    .queue-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      margin-bottom: 8px;
-      flex-wrap: wrap;
-    }
-
-    .queue-header-left {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .queue-title {
-      margin: 0;
-      font-size: 0.82rem;
-      font-weight: 600;
-      color: var(--text-primary);
-    }
-
-    .queue-header-actions {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .queue-list {
-      max-height: 215px;
-      overflow-y: auto;
-      border: 1px solid var(--hairline);
-      border-radius: 6px;
-      background: var(--surface);
-    }
-
-    .queue-item-row {
-      cursor: pointer;
-      width: 100%;
-      text-align: left;
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-      padding: 9px 11px;
-      border: none;
-      border-bottom: 1px solid var(--hairline);
-      border-left: 2px solid transparent;
-      background: transparent;
-      color: var(--text-primary);
-      font-family: inherit;
-      transition: background 140ms ease, border-color 140ms ease;
-    }
-
-    .queue-item-row:last-child {
-      border-bottom: none;
-    }
-
-    .queue-item-row:hover {
-      background: var(--surface-subtle);
-    }
-
-    .queue-item-row.is-selected {
-      background: var(--surface-subtle);
-      border-left-color: var(--accent);
-    }
-
-    .queue-item-top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      width: 100%;
-    }
-
-    .queue-item-meta {
-      font-size: 0.72rem;
-      color: var(--text-muted);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .queue-item-title {
-      font-size: 0.81rem;
-      font-weight: 500;
-      color: var(--text-primary);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .active-ticket-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      padding: 7px 10px;
-      margin-bottom: 10px;
-      border-radius: 6px;
-      border: 1px solid var(--accent-border);
-      background: var(--accent-soft);
-      font-size: 0.77rem;
-      color: var(--text-primary);
-    }
-
-    /* Workflow 2: RMM Endpoint Telemetry Bar */
-    .telemetry-panel {
-      margin-bottom: 24px;
-      padding: 14px 16px;
-      border-radius: 6px;
-      border: 1px solid var(--border-strong);
-      background: var(--surface);
-    }
-
-    .telemetry-panel-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      padding-bottom: 10px;
-      margin-bottom: 12px;
-      border-bottom: 1px solid var(--hairline);
-      flex-wrap: wrap;
-    }
-
-    .telemetry-host-title {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 0.86rem;
-      font-weight: 600;
-      color: var(--text-primary);
-    }
-
-    .telemetry-metrics-grid {
-      margin: 0;
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px 18px;
-    }
-
-    @media (max-width: 640px) {
-      .telemetry-metrics-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .telemetry-metric dt {
-      font-size: 0.71rem;
-      color: var(--text-muted);
-      margin-bottom: 2px;
-    }
-
-    .telemetry-metric dd {
-      margin: 0;
-      font-size: 0.79rem;
-      color: var(--text-primary);
-    }
-
-    /* Workflow 3: PSA Ticket Writeback Panel */
-    .writeback-panel {
-      margin-bottom: 24px;
-      padding: 12px 14px;
-      border-radius: 6px;
-      border: 1px solid var(--border-strong);
-      background: var(--surface);
-    }
-
-    .writeback-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-
-    .writeback-left {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .writeback-label {
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: var(--text-primary);
-    }
-
-    .writeback-select {
-      height: 30px;
-      padding: 0 9px;
-      border-radius: 6px;
-      border: 1px solid var(--border-strong);
-      background: var(--surface-subtle);
-      color: var(--text-primary);
-      font-family: inherit;
-      font-size: 0.78rem;
-    }
-
-    .writeback-actions {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .writeback-preview {
-      margin-top: 12px;
-      padding-top: 10px;
-      border-top: 1px solid var(--hairline);
-    }
-
-    /* Workflow 4: Safety-Gated RMM Command / Component Dispatch */
-    .rmm-approval-drawer {
-      padding: 10px 12px;
-      border-top: 1px solid var(--hairline);
-      background: var(--surface-subtle);
-    }
-
-    .rmm-approval-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-top: 6px;
-    }
-
-    .rmm-approval-input {
-      flex: 1;
-      min-width: 200px;
-      height: 30px;
-      font-size: 0.79rem;
-    }
-
-    .rmm-job-output {
-      margin: 0;
-      padding: 11px 14px;
-      border-top: 1px solid var(--hairline);
-      background: var(--surface-subtle);
-      color: var(--text-secondary);
-      font-size: 0.76rem;
-      line-height: 1.5;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-
-    /* Multimodal Screenshot, Reasoning Mode & Closed-Loop RMM Toolbar */
-    .multimodal-toolbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-bottom: 10px;
-    }
-
-    .multimodal-left,
-    .multimodal-right {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      flex-wrap: wrap;
-    }
-
-    .screenshot-preview-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 8px 10px;
-      margin-bottom: 10px;
-      border-radius: 6px;
-      border: 1px solid var(--border-strong);
-      background: var(--surface-subtle);
-    }
-
-    .screenshot-preview-left {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      min-width: 0;
-    }
-
-    .screenshot-thumb {
-      width: 58px;
-      height: 38px;
-      object-fit: cover;
-      border-radius: 4px;
-      border: 1px solid var(--border-strong);
-      background: var(--surface);
-      flex-shrink: 0;
-    }
-
-    .screenshot-meta {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      min-width: 0;
-    }
-
-    .screenshot-name {
-      font-size: 0.76rem;
-      color: var(--text-primary);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .rmm-loop-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      padding: 8px 10px;
-      margin-bottom: 10px;
-      border-radius: 6px;
-      border: 1px solid var(--ro-border);
-      background: var(--ro-bg);
-      color: var(--ro-text);
-      font-size: 0.76rem;
-    }
-
-    .rmm-loop-action-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      padding: 8px 12px;
-      border-top: 1px solid var(--hairline);
-      background: var(--surface);
-      font-size: 0.75rem;
-      color: var(--text-secondary);
-    }
-
-    .telemetry-strip-left,
-    .telemetry-strip-right {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-
-    /* Safety & Eval Inspector Table */
-    .eval-table-wrap {
-      border: 1px solid var(--border-strong);
-      border-radius: 6px;
-      overflow: hidden;
-      background: var(--surface);
-    }
-
-    .eval-row {
-      display: grid;
-      grid-template-columns: 76px minmax(150px, 1.1fr) minmax(180px, 1.4fr) 92px;
-      gap: 10px;
-      align-items: center;
-      padding: 9px 12px;
-      border-bottom: 1px solid var(--hairline);
-      font-size: 0.79rem;
-      cursor: pointer;
-      transition: background 130ms ease;
-    }
-
-    .eval-row:last-child {
-      border-bottom: none;
-    }
-
-    .eval-row:hover {
-      background: var(--surface-hover);
-    }
-
-    .eval-row-head {
-      background: var(--surface-subtle);
-      color: var(--text-muted);
-      font-size: 0.72rem;
-      font-weight: 500;
-      cursor: default;
-    }
-
-    .eval-row-head:hover {
-      background: var(--surface-subtle);
-    }
-
-    @media (max-width: 720px) {
-      .eval-row {
-        grid-template-columns: 1fr;
-        gap: 4px;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="/static/css/tokens.css" />
+  <link rel="stylesheet" href="/static/css/base.css" />
+  <link rel="stylesheet" href="/static/css/layout.css" />
+  <link rel="stylesheet" href="/static/css/components.css" />
+  <link rel="stylesheet" href="/static/css/views.css" />
+  <script type="module" src="/static/js/main.js"></script>
 </head>
 <body>
-  <a href="#main-workspace" class="skip-link">Skip to workspace</a>
+  <a href="#main" class="skip-link">Skip to content</a>
 
   <header class="topbar">
-    <div class="topbar-inner">
-      <div class="brand">
-        <span class="brand-glyph" aria-hidden="true"></span>
-        <h1>RunbookPilot</h1>
-        <span class="brand-sep">/</span>
-        <nav class="nav-tabs" aria-label="Workspace views">
-          <button type="button" id="nav-tab-triage" class="nav-tab is-active" data-view="triage" aria-current="page">
-            Triage
-          </button>
-          <button type="button" id="nav-tab-integrations" class="nav-tab" data-view="integrations">
-            <span>Integrations</span>
-            <span id="nav-integrations-badge" class="nav-tab-count mono">0/12</span>
-          </button>
-          <button type="button" id="nav-tab-eval" class="nav-tab" data-view="eval">
-            <span>Safety &amp; Eval</span>
-            <span id="nav-eval-badge" class="nav-tab-count mono">100%</span>
-          </button>
-        </nav>
-      </div>
+    <button type="button" id="menu-btn" class="btn btn-secondary btn-sm menu-btn" aria-expanded="false" aria-controls="app-nav">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      <span>Menu</span>
+    </button>
+    <a class="brand" href="#triage">
+      <span class="brand-glyph" aria-hidden="true"></span>
+      <span>RunbookPilot</span>
+    </a>
+    <span id="topbar-view" class="topbar-view" aria-hidden="true">· Triage</span>
 
-      <div class="topbar-controls">
-        <span id="topbar-model-pill" class="meta-stat mono hide-mobile">Meta Muse Spark 1.3</span>
-        <span id="health-label" class="meta-stat mono">Index loading...</span>
-        <span class="meta-stat mono hide-mobile">Display-only</span>
-        <button type="button" id="theme-toggle" class="theme-btn" aria-label="Switch color theme">
-          <svg id="theme-icon-sun" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="12" cy="12" r="4"></circle>
-            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>
-          </svg>
-          <svg id="theme-icon-moon" class="hidden" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
-          </svg>
-          <span id="theme-label">Light</span>
-        </button>
-      </div>
+    <div class="topbar-right">
+      <span class="model-badge badge">Model: <span class="js-model-name">Muse Spark 1.3</span></span>
+      <span id="index-status" class="index-status" data-state="loading" role="status">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span id="index-status-text" class="status-text">Loading runbooks…</span>
+        <button type="button" id="index-retry-btn" class="btn btn-quiet btn-sm" hidden>Retry</button>
+      </span>
+      <button type="button" id="theme-toggle" class="btn btn-secondary btn-icon" aria-label="Switch to dark theme">
+        <svg class="icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+        <svg class="icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </button>
     </div>
   </header>
 
-  <main id="main-workspace" class="workbench">
-    <!-- Left Column: Ticket Composer & Pending Integration Queue -->
-    <section class="pane-intake" aria-labelledby="ticket-heading">
-      <div class="pane-header">
-        <h2 id="ticket-heading" class="pane-title">Incident ticket</h2>
-        <p class="pane-subtitle">Select a pending ticket or RMM alert from the integration queue, attach an error screenshot, or paste raw incident text below.</p>
+  <div class="shell">
+    <nav id="app-nav" class="rail" aria-label="Main">
+      <ul class="rail-list">
+        <li>
+          <a class="rail-item" id="nav-tab-triage" href="#triage" data-route="triage">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H8l-4 4z"/><path d="M8 10h8"/></svg>
+            <span class="rail-label">Triage</span>
+          </a>
+        </li>
+        <li>
+          <a class="rail-item" href="#runbooks" data-route="runbooks">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/></svg>
+            <span class="rail-label">Runbooks</span>
+          </a>
+        </li>
+        <li>
+          <a class="rail-item" href="#safety" data-route="safety">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg>
+            <span class="rail-label">Safety lab</span>
+          </a>
+        </li>
+        <li>
+          <a class="rail-item" id="nav-tab-eval" href="#benchmark" data-route="benchmark">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+            <span class="rail-label">Benchmark</span>
+          </a>
+        </li>
+        <li>
+          <a class="rail-item" id="nav-tab-integrations" href="#integrations" data-route="integrations">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 7V3M15 7V3M7 7h10v4a5 5 0 0 1-10 0z"/><path d="M12 16v5"/></svg>
+            <span class="rail-label">Integrations</span>
+          </a>
+        </li>
+      </ul>
+      <div class="rail-footer">
+        <span class="badge">Model: <span class="js-model-name">Muse Spark 1.3</span></span>
       </div>
+    </nav>
 
-      <!-- Workflow 1: Pending PSA Tickets & RMM Alerts Queue -->
-      <div id="pending-queue-panel" class="queue-panel">
-        <div class="queue-header">
-          <div class="queue-header-left">
-            <h3 class="queue-title">Pending PSA &amp; RMM queue</h3>
-            <span id="queue-count-badge" class="corpus-count mono">6 items</span>
+    <main id="main" class="main" tabindex="-1">
+
+      <!-- Triage -->
+      <section id="view-triage" class="view" data-view="triage" aria-labelledby="triage-title">
+        <h1 id="triage-title" class="sr-only" tabindex="-1">Triage</h1>
+        <div class="columns">
+          <div class="triage-input">
+            <form id="triage-form" class="stack" novalidate>
+              <div class="field">
+                <label for="ticket-input" class="field-label">Ticket</label>
+                <div class="ticket-box">
+                  <textarea
+                    id="ticket-input"
+                    class="textarea ticket-textarea"
+                    rows="10"
+                    maxlength="4000"
+                    aria-describedby="char-count ticket-help"
+                    placeholder="Example: user01 changed their password yesterday and is locked out every 15 minutes. Event ID 4740 on dc-01."
+                  ></textarea>
+                  <div class="ticket-box-footer">
+                    <span id="char-count" class="counter" aria-live="off">0 / 4000</span>
+                    <div class="btn-row">
+                      <button type="button" id="clear-btn" class="btn btn-quiet">Clear</button>
+                      <button type="submit" id="submit-btn" class="btn btn-primary">Analyze ticket</button>
+                    </div>
+                  </div>
+                </div>
+                <p id="ticket-help" class="field-help">Ctrl+Enter also analyzes. RunbookPilot never runs commands.</p>
+              </div>
+
+              <div id="active-ticket-bar" class="notice notice-staged active-ticket" hidden>
+                <span id="active-ticket-label" class="wrap-anywhere"></span>
+                <div><button type="button" id="unlink-ticket-btn" class="btn btn-quiet btn-sm">Unlink</button></div>
+              </div>
+
+              <div id="rmm-loop-bar" class="notice notice-staged" hidden>
+                <span id="rmm-loop-summary" class="wrap-anywhere">RMM output attached for re-triage.</span>
+                <div><button type="button" id="btn-clear-rmm-loop" class="btn btn-quiet btn-sm">Remove RMM output</button></div>
+              </div>
+
+              <fieldset class="field mode-field" id="reasoning-mode-select">
+                <legend class="field-label">Mode</legend>
+                <div class="segmented" id="mode-control">
+                  <input type="radio" name="reasoning-mode" id="mode-standard" value="standard" checked />
+                  <label for="mode-standard">Standard</label>
+                  <input type="radio" name="reasoning-mode" id="mode-deep" value="deep" />
+                  <label for="mode-deep">Deep</label>
+                </div>
+                <p class="field-help">Deep: the model reasons longer. Slower, about 10 s.</p>
+              </fieldset>
+
+              <div class="field">
+                <span class="field-label" id="screenshot-label">Screenshot</span>
+                <div id="drop-zone" class="drop-zone">
+                  <input type="file" id="screenshot-file-input" class="sr-only" accept="image/png,image/jpeg,image/webp" aria-labelledby="screenshot-label attach-label" />
+                  <label for="screenshot-file-input" id="attach-label" class="btn btn-secondary">Attach screenshot</label>
+                  <span class="field-help">PNG, JPEG or WebP, up to 1.4 MB. Or drop a file here.</span>
+                </div>
+                <div class="btn-row">
+                  <button type="button" id="btn-sample-shot-rdp" class="btn btn-quiet btn-sm">Use sample RDP error</button>
+                  <button type="button" id="btn-sample-shot-vss" class="btn btn-quiet btn-sm">Use sample VSS error</button>
+                </div>
+                <div id="screenshot-preview" class="screenshot-preview" hidden>
+                  <img id="screenshot-thumb" class="screenshot-thumb" alt="Attached screenshot preview" />
+                  <div class="screenshot-meta">
+                    <span id="screenshot-name" class="mono wrap-anywhere"></span>
+                    <span id="screenshot-caption" class="field-help wrap-anywhere"></span>
+                  </div>
+                  <button type="button" id="btn-remove-screenshot" class="btn btn-quiet btn-sm">Remove</button>
+                </div>
+              </div>
+            </form>
+
+            <div id="error-region" aria-live="assertive"></div>
+
+            <section class="input-section" aria-labelledby="samples-title">
+              <h2 id="samples-title" class="section-title">Samples</h2>
+              <ul id="sample-list" class="list"></ul>
+            </section>
+
+            <section id="pending-queue-panel" class="input-section" aria-labelledby="queue-title">
+              <div class="section-head">
+                <h2 id="queue-title" class="section-title">
+                  Queue <span class="badge badge-staged">Sample data</span>
+                  <span id="queue-count" class="badge tabular">0</span>
+                </h2>
+                <div class="btn-row">
+                  <button type="button" id="queue-staged-filter-btn" class="btn btn-quiet btn-sm" aria-pressed="false">Staged connectors only</button>
+                  <button type="button" id="queue-refresh-btn" class="btn btn-secondary btn-sm">Refresh</button>
+                </div>
+              </div>
+              <ul id="pending-queue-list" class="list" aria-label="Queue tickets and alerts"></ul>
+            </section>
           </div>
-          <div class="queue-header-actions">
-            <button type="button" id="queue-staged-filter-btn" class="sample-btn" title="Toggle between all queued tickets and staged connectors only">
-              All connectors
-            </button>
-            <button type="button" id="queue-refresh-btn" class="sample-btn">Refresh</button>
-          </div>
-        </div>
-        <div id="pending-queue-list" class="queue-list" role="listbox" aria-label="Pending tickets and RMM alerts"></div>
-      </div>
 
-      <div class="samples-bar" id="preset-row">
-        <span class="samples-label">Quick sample:</span>
-        <button type="button" class="sample-btn" data-preset="lockout">AD lockout (4740)</button>
-        <button type="button" class="sample-btn" data-preset="backup">VSS backup stall</button>
-        <button type="button" class="sample-btn" data-preset="mail">M365 mail queue</button>
-        <button type="button" class="sample-btn" data-preset="escalate">Uncovered VoIP</button>
-      </div>
-
-      <div id="active-ticket-bar" class="active-ticket-bar hidden">
-        <span id="active-ticket-label" class="mono"></span>
-        <button type="button" id="unlink-ticket-btn" class="btn-copy">Unlink</button>
-      </div>
-
-      <form id="triage-form" novalidate>
-        <div class="multimodal-toolbar">
-          <div class="multimodal-left">
-            <label for="reasoning-mode-select" class="samples-label">Meta mode:</label>
-            <select id="reasoning-mode-select" class="writeback-select" aria-label="Meta Muse Spark reasoning mode">
-              <option value="standard">Standard reasoning</option>
-              <option value="deep">Deep reasoning (multi-hop)</option>
-            </select>
-          </div>
-          <div class="multimodal-right">
-            <input type="file" id="screenshot-file-input" accept="image/png,image/jpeg,image/webp" class="hidden" />
-            <button type="button" id="btn-attach-screenshot" class="sample-btn">Attach screenshot</button>
-            <button type="button" id="btn-sample-shot-rdp" class="sample-btn" title="Attach synthetic Windows RDP CredSSP error dialog screenshot">Sample RDP dialog PNG</button>
-            <button type="button" id="btn-sample-shot-vss" class="sample-btn" title="Attach synthetic Windows VSS 0x800423f4 error dialog screenshot">Sample VSS error PNG</button>
-          </div>
-        </div>
-
-        <div id="screenshot-preview-bar" class="screenshot-preview-bar hidden">
-          <div class="screenshot-preview-left">
-            <img id="screenshot-thumb" class="screenshot-thumb" alt="Attached error dialog preview" />
-            <div class="screenshot-meta">
-              <span id="screenshot-name-label" class="screenshot-name mono"></span>
-              <span id="screenshot-caption-label" class="cfg-help" style="margin-top: 0;"></span>
+          <div class="triage-output">
+            <h2 class="sr-only">Result</h2>
+            <div id="empty-state" class="empty-state">
+              <p class="t-md">Paste a ticket, pick a sample, or run the demo.</p>
+              <p class="text-2 prose">RunbookPilot matches the ticket to <span id="empty-runbook-count">18</span> runbooks and gives a fix plan with safe, labelled PowerShell commands.</p>
+              <div class="btn-row">
+                <button type="button" id="run-demo-btn" class="btn btn-primary">Run demo</button>
+                <span class="field-help">Loads the AD lockout sample and analyzes it.</span>
+              </div>
             </div>
-          </div>
-          <button type="button" id="btn-remove-screenshot" class="btn-copy">Remove</button>
-        </div>
 
-        <div id="rmm-loop-bar" class="rmm-loop-bar hidden">
-          <span id="rmm-loop-summary" class="mono">Closed-loop RMM diagnostic output attached for re-triage</span>
-          <button type="button" id="btn-clear-rmm-loop" class="btn-copy">Detach RMM output</button>
-        </div>
+            <div id="loading-state" class="loading-state" hidden>
+              <p class="t-sm text-2" aria-live="polite">Analyzing ticket… <span id="loading-timer" class="tabular">0.0 s</span></p>
+              <div class="skeleton" style="height: 64px"></div>
+              <div class="skeleton" style="height: 16px; width: 80%"></div>
+              <div class="skeleton" style="height: 16px; width: 64%"></div>
+              <div class="skeleton" style="height: 120px"></div>
+            </div>
 
-        <label for="ticket-input" class="field-label">Ticket description</label>
-        <div class="composer-frame">
-          <textarea
-            id="ticket-input"
-            maxlength="4000"
-            placeholder="Example: Standard user user01@corp.example.test changed their password yesterday and keeps getting locked out every 15 minutes. Event ID 4740 logged on dc-01.corp.example.test."
-            required
-          ></textarea>
-          <div class="composer-footer">
-            <div class="composer-meta">
-              <span id="char-count" class="mono">0 / 4000</span>
-            </div>
-            <div class="composer-actions">
-              <button type="button" id="clear-btn" class="btn-clear">Clear</button>
-              <button type="submit" id="submit-btn" class="btn-submit">
-                <span>Analyze ticket</span>
-                <span class="kbd-tag mono hide-mobile">Ctrl+Enter</span>
-              </button>
-            </div>
+            <div id="result-container" class="result" aria-live="polite" hidden></div>
           </div>
         </div>
-        <p class="intake-note">Commands are returned as plain text and are never executed by RunbookPilot.</p>
-      </form>
+      </section>
 
-      <div id="error-banner" class="banner banner-error hidden" role="alert"></div>
+      <!-- Runbooks -->
+      <section id="view-runbooks" class="view" data-view="runbooks" aria-labelledby="runbooks-title" hidden>
+        <div class="view-head">
+          <div>
+            <h1 id="runbooks-title" class="view-title" tabindex="-1">Runbooks</h1>
+            <p>The runbooks RunbookPilot searches when it triages a ticket.</p>
+          </div>
+        </div>
+        <div class="runbooks-tools">
+          <div class="field">
+            <label for="runbook-search" class="field-label">Search runbooks</label>
+            <input type="search" id="runbook-search" class="input" placeholder="Title or ID" autocomplete="off" />
+          </div>
+          <span id="runbook-count" class="t-sm text-2 tabular"></span>
+        </div>
+        <ul id="runbook-list" class="list runbook-list"></ul>
+      </section>
+
+      <!-- Safety lab -->
+      <section id="view-safety" class="view" data-view="safety" aria-labelledby="safety-title" hidden>
+        <div class="view-head">
+          <div>
+            <h1 id="safety-title" class="view-title" tabindex="-1">Safety lab</h1>
+            <p>Test how the safety rules label a PowerShell command. The command is never run.</p>
+          </div>
+        </div>
+        <div class="columns">
+          <div class="stack">
+            <form id="safety-inspect-form" class="stack" novalidate>
+              <div class="field">
+                <label for="safety-cmd-input" class="field-label">PowerShell command</label>
+                <input type="text" id="safety-cmd-input" class="input mono" value="Get-Service Spooler; Stop-Service Spooler -Force" maxlength="2000" spellcheck="false" autocomplete="off" />
+                <p class="field-help">Not run. RunbookPilot never runs commands.</p>
+              </div>
+              <div><button type="submit" id="btn-safety-inspect" class="btn btn-primary">Check command</button></div>
+            </form>
+            <section aria-labelledby="safety-presets-title">
+              <h2 id="safety-presets-title" class="section-title">Test commands</h2>
+              <ul id="safety-preset-list" class="list"></ul>
+            </section>
+          </div>
+          <section class="panel" aria-labelledby="safety-result-title" aria-live="polite">
+            <div class="section-head">
+              <h2 id="safety-result-title" class="section-title">Safety rule result</h2>
+              <span id="safety-verdict-badge" class="badge">Not checked yet</span>
+            </div>
+            <p id="safety-verdict-reason" class="text-2 prose"></p>
+            <h3 class="field-label stages-title">Pipeline stages</h3>
+            <ol id="safety-stages-list" class="stages-list"></ol>
+          </section>
+        </div>
+      </section>
+
+      <!-- Benchmark -->
+      <section id="eval-workspace" class="view" data-view="benchmark" aria-labelledby="benchmark-title" hidden>
+        <div class="view-head">
+          <div>
+            <h1 id="benchmark-title" class="view-title" tabindex="-1">Benchmark</h1>
+            <p>Retrieval and safety results over the 20 benchmark tickets and every runbook command.</p>
+          </div>
+          <button type="button" id="btn-refresh-eval" class="btn btn-secondary">Refresh</button>
+        </div>
+        <dl class="kv panel bench-metrics">
+          <div><dt>Right runbook in the top 3</dt><dd id="eval-metric-hitrate" class="tabular">…</dd></div>
+          <div><dt>Benchmark tickets</dt><dd id="eval-metric-split" class="tabular">…</dd></div>
+          <div><dt>Commands checked</dt><dd id="eval-metric-commands" class="tabular">…</dd></div>
+          <div><dt>Commands that change the system but marked read-only</dt><dd id="eval-metric-unsafe" class="tabular">…</dd></div>
+        </dl>
+        <div class="table-wrap">
+          <table class="table">
+            <caption class="sr-only">Benchmark tickets</caption>
+            <thead>
+              <tr><th scope="col">Ticket</th><th scope="col">Expected runbook</th><th scope="col">Top 3 matches</th><th scope="col">Result</th></tr>
+            </thead>
+            <tbody id="eval-rows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Integrations -->
+      <section id="integrations-workspace" class="view" data-view="integrations" aria-labelledby="integrations-title" hidden>
+        <div class="view-head">
+          <div>
+            <h1 id="integrations-title" class="view-title" tabindex="-1">Integrations</h1>
+            <p>PSA and RMM connectors.</p>
+          </div>
+          <span class="badge badge-staged">Staged, not live</span>
+        </div>
+        <div class="notice notice-staged integrations-banner">
+          <span class="notice-title">Staged, not live. Nothing is sent or received.</span>
+          <span>You can fill in and check settings. Ticket writeback is paused. RunbookPilot never runs commands on RMM devices.</span>
+        </div>
+        <div class="columns">
+          <div class="stack">
+            <div class="segmented" id="integration-category-bar" role="radiogroup" aria-label="Connector type">
+              <input type="radio" name="integration-cat" id="cat-all" value="all" checked />
+              <label for="cat-all">All</label>
+              <input type="radio" name="integration-cat" id="cat-ticketing" value="ticketing" />
+              <label for="cat-ticketing">PSA</label>
+              <input type="radio" name="integration-cat" id="cat-rmm" value="rmm" />
+              <label for="cat-rmm">RMM</label>
+            </div>
+            <div class="field">
+              <label for="integration-search-input" class="field-label">Filter connectors</label>
+              <input type="search" id="integration-search-input" class="input" placeholder="Name or protocol" autocomplete="off" />
+            </div>
+            <ul id="integration-provider-list" class="list" aria-label="Connectors"></ul>
+          </div>
+
+          <div id="integration-detail" class="stack">
+            <section class="section" aria-labelledby="cfg-provider-name">
+              <div class="section-head">
+                <div>
+                  <h2 id="cfg-provider-name" class="section-title">Connector</h2>
+                  <span id="cfg-provider-protocol" class="t-sm text-3"></span>
+                </div>
+                <span id="cfg-provider-status" class="badge">Not set up</span>
+              </div>
+              <p id="cfg-provider-desc" class="text-2 prose"></p>
+              <ul id="cfg-provider-capabilities" class="tag-list cap-list" aria-label="Capabilities"></ul>
+            </section>
+
+            <section class="section" aria-labelledby="webhook-title">
+              <div class="section-head">
+                <h3 id="webhook-title" class="section-title">Inbound webhook</h3>
+                <span class="badge badge-staged">Answers 202, staged</span>
+              </div>
+              <div class="webhook-bar">
+                <code id="cfg-webhook-url" class="mono wrap-anywhere"></code>
+                <button type="button" id="cfg-copy-webhook-btn" class="btn btn-secondary btn-sm">Copy URL</button>
+              </div>
+            </section>
+
+            <form id="integration-config-form" class="section stack" novalidate aria-labelledby="cfg-form-title">
+              <div class="section-head">
+                <h3 id="cfg-form-title" class="section-title">Connection settings</h3>
+                <span id="cfg-updated-at" class="t-sm text-3">Not saved yet</span>
+              </div>
+              <div class="cfg-grid">
+                <div class="field">
+                  <label for="cfg-sync-mode" class="field-label">Sync when live</label>
+                  <select id="cfg-sync-mode" class="select">
+                    <option value="draft_internal_note">Draft an internal note only</option>
+                    <option value="webhook_auto_triage">Triage webhook events</option>
+                    <option value="manual_pull">Look up tickets by ID</option>
+                  </select>
+                </div>
+                <label class="check-row" for="cfg-enabled-checkbox">
+                  <input type="checkbox" id="cfg-enabled-checkbox" />
+                  <span>Mark connector as ready</span>
+                </label>
+              </div>
+              <div id="cfg-fields-grid" class="cfg-grid"></div>
+              <div class="btn-row cfg-actions">
+                <button type="button" id="cfg-reset-btn" class="btn btn-quiet">Reset</button>
+                <span class="cfg-actions-spacer"></span>
+                <button type="button" id="cfg-fill-demo-btn" class="btn btn-secondary">Fill demo values</button>
+                <button type="button" id="cfg-test-btn" class="btn btn-secondary">Check settings</button>
+                <button type="submit" id="cfg-save-btn" class="btn btn-primary">Save settings</button>
+              </div>
+              <div id="cfg-feedback" role="status"></div>
+            </form>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Triage result skeleton. js/views/result.js clones it and fills it with textContent. -->
+  <template id="result-template">
+    <div class="cluster result-meta t-xs text-3" data-slot="meta"></div>
+
+    <section id="rmm-telemetry-panel" class="section" aria-labelledby="rmm-telemetry-title" hidden>
+      <div class="section-head">
+        <h3 id="rmm-telemetry-title" class="section-title">RMM device</h3>
+        <span class="badge badge-staged">Sample data</span>
+      </div>
+      <div class="cluster telemetry-head">
+        <span class="mono wrap-anywhere" data-slot="host"></span>
+        <span class="badge" data-slot="agent"></span>
+      </div>
+      <dl class="kv">
+        <div><dt>Operating system</dt><dd data-slot="os"></dd></div>
+        <div><dt>Resources</dt><dd class="tabular" data-slot="resources"></dd></div>
+        <div><dt>Last boot and IP</dt><dd class="wrap-anywhere" data-slot="boot"></dd></div>
+        <div><dt>RMM alert</dt><dd data-slot="alert"></dd></div>
+      </dl>
     </section>
 
-    <!-- Right Column: Triage Output & RMM Telemetry -->
-    <section class="pane-output" aria-labelledby="result-heading">
-      <h2 id="result-heading" class="skip-link">Diagnosis and remediation plan</h2>
-
-      <!-- Workflow 2: Read-Only RMM Endpoint Telemetry Bar -->
-      <div id="rmm-telemetry-panel" class="telemetry-panel hidden" aria-label="RMM endpoint telemetry">
-        <div class="telemetry-panel-head">
-          <div class="telemetry-host-title">
-            <span>RMM endpoint context:</span>
-            <span id="rmm-host-name" class="mono">dc-01.corp.example.test</span>
-          </div>
-          <span id="rmm-source-badge" class="badge mono status-staged">NinjaOne RMM / online</span>
+    <section id="psa-writeback-panel" class="section writeback" aria-label="Ticket writeback">
+      <div class="writeback-row">
+        <div class="field writeback-target">
+          <label class="field-label" for="writeback-provider-select">Send to</label>
+          <select id="writeback-provider-select" class="select">
+            <option value="connectwise_psa">ConnectWise PSA</option>
+            <option value="halopsa">HaloPSA</option>
+            <option value="autotask_psa">Datto Autotask PSA</option>
+            <option value="servicenow_itsm">ServiceNow ITSM</option>
+            <option value="jira_service_management">Jira Service Management</option>
+            <option value="freshservice">Freshservice</option>
+          </select>
         </div>
-        <dl class="telemetry-metrics-grid">
-          <div class="telemetry-metric">
-            <dt>Operating system</dt>
-            <dd id="rmm-os-version" class="mono"></dd>
-          </div>
-          <div class="telemetry-metric">
-            <dt>Resource telemetry</dt>
-            <dd id="rmm-resources" class="mono"></dd>
-          </div>
-          <div class="telemetry-metric">
-            <dt>Last boot &amp; IP</dt>
-            <dd id="rmm-boot-ip" class="mono"></dd>
-          </div>
-          <div class="telemetry-metric">
-            <dt>Triggered RMM monitor</dt>
-            <dd id="rmm-active-alert"></dd>
-          </div>
-        </dl>
-      </div>
-
-      <!-- 1. Idle Specification & Corpus View -->
-      <div id="empty-state" class="empty-state">
-        <div class="empty-intro">
-          <h3>No ticket loaded</h3>
-          <p>Select a pending ticket from the PSA/RMM queue on the left, pick a quick sample, or paste an incident report to run grounded triage.</p>
-        </div>
-
-        <dl class="spec-grid">
-          <div class="spec-item">
-            <dt>Retrieval index</dt>
-            <dd>BM25L over local Markdown runbooks (top 3)</dd>
-          </div>
-          <div class="spec-item">
-            <dt>Command safety</dt>
-            <dd>Deterministic allowlist override (read_only vs needs_approval)</dd>
-          </div>
-        </dl>
-
-        <div>
-          <div class="corpus-header">
-            <h4 class="corpus-title">Indexed runbook library</h4>
-            <span id="catalog-count-badge" class="corpus-count mono">18 runbooks</span>
-          </div>
-          <ul id="catalog-list" class="corpus-grid"></ul>
+        <div class="btn-row">
+          <button type="button" id="btn-writeback-note" class="btn btn-secondary">Post internal note</button>
+          <button type="button" id="btn-writeback-escalate" class="btn btn-secondary">Flag for Tier 3</button>
         </div>
       </div>
+      <p class="field-help">Staged, not sent to a live PSA. Target: <span class="mono" data-slot="target">manual-ticket</span></p>
+      <div id="writeback-feedback" class="stack writeback-feedback" role="status" hidden></div>
+    </section>
 
-      <!-- 2. Skeleton Loading State -->
-      <div id="loading-state" class="loading-state hidden" aria-live="polite">
-        <div class="loading-header">
-          <span>Matching runbooks and validating triage response...</span>
-          <span id="loading-timer" class="mono">0.0s</span>
-        </div>
-        <div class="skeleton-block">
-          <div class="sk-bar" style="width: 24%;"></div>
-          <div class="sk-pane"></div>
-        </div>
-        <div class="skeleton-block">
-          <div class="sk-bar" style="width: 30%;"></div>
-          <div class="sk-bar" style="width: 85%;"></div>
-          <div class="sk-bar" style="width: 72%;"></div>
-        </div>
-        <div class="skeleton-block">
-          <div class="sk-bar" style="width: 36%;"></div>
-          <div class="sk-pane" style="height: 88px;"></div>
-          <div class="sk-pane" style="height: 88px;"></div>
+    <section id="escalate-banner" class="section" hidden>
+      <div class="notice notice-danger" role="alert">
+        <span class="notice-title">Escalate to Tier 3</span>
+        <span data-slot="escalate-reason"></span>
+        <div class="btn-row notice-actions">
+          <button type="button" id="btn-draft-runbook" class="btn btn-primary">Draft a runbook</button>
+          <button type="button" id="btn-escalate-flag" class="btn btn-secondary">Flag for Tier 3</button>
         </div>
       </div>
-
-      <!-- 3. Populated Result View -->
-      <div id="result-container" class="hidden" aria-live="polite">
-        <div class="telemetry-strip mono">
-          <div class="telemetry-strip-left">
-            <span id="result-req-id">Request: local</span>
-            <span id="result-model-badge" class="badge mono status-staged">muse-spark-1.3 / standard</span>
-            <span id="result-safety-badge" class="badge mono risk-read_only">Safety audit: verified</span>
-          </div>
-          <div class="telemetry-strip-right">
-            <span id="result-latency">0.0s</span>
-          </div>
+      <div id="runbook-draft-panel" class="stack draft-panel" hidden>
+        <div class="cluster">
+          <span class="t-sm">Draft runbook</span>
+          <span class="badge mono" data-slot="draft-id"></span>
+          <span class="badge">Safety rules checked</span>
         </div>
-
-        <!-- Workflow 3: One-Click PSA Ticket Writeback & Escalation Bar -->
-        <div id="psa-writeback-panel" class="writeback-panel">
-          <div class="writeback-row">
-            <div class="writeback-left">
-              <span class="writeback-label">PSA ticket writeback:</span>
-              <select id="writeback-provider-select" class="writeback-select" aria-label="Target PSA integration">
-                <option value="connectwise_psa">ConnectWise PSA</option>
-                <option value="halopsa">HaloPSA</option>
-                <option value="autotask_psa">Datto Autotask PSA</option>
-                <option value="servicenow_itsm">ServiceNow ITSM</option>
-                <option value="jira_service_management">Jira Service Management</option>
-                <option value="freshservice">Freshservice</option>
-              </select>
-              <span id="writeback-ticket-badge" class="meta-stat mono">Target: manual-ticket</span>
-            </div>
-            <div class="writeback-actions">
-              <button type="button" id="btn-writeback-note" class="sample-btn">Post internal note</button>
-              <button type="button" id="btn-writeback-escalate" class="sample-btn">Flag for Tier 3 escalation</button>
-            </div>
-          </div>
-          <div id="writeback-feedback" class="writeback-preview hidden">
-            <div class="block-header" style="margin-bottom: 6px;">
-              <span id="writeback-status-msg" class="meta-stat" style="color: var(--ro-text);"></span>
-            </div>
-            <pre class="rmm-job-output mono" id="writeback-note-code" style="border-radius: 6px; border: 1px solid var(--hairline);"></pre>
-          </div>
-        </div>
-
-        <!-- Escalation Banner + Autonomous Runbook Generator -->
-        <div id="escalate-banner" class="banner banner-escalate hidden" role="alert">
-          <div class="block-header" style="margin-bottom: 4px;">
-            <strong>Escalation required (outside current runbook corpus)</strong>
-            <button type="button" id="btn-draft-runbook" class="btn-submit" style="height: 28px; font-size: 0.75rem;">
-              Draft new runbook with Muse Spark
-            </button>
-          </div>
-          <span id="escalate-reason-text"></span>
-        </div>
-
-        <!-- Synthesized Runbook Draft & Hot-Index Drawer -->
-        <div id="runbook-draft-panel" class="writeback-panel hidden" style="margin-bottom: 20px;">
-          <div class="block-header" style="margin-bottom: 8px;">
-            <div>
-              <strong style="font-size: 0.85rem; color: var(--text-primary);">Synthesized Markdown runbook (safety-verified)</strong>
-              <span id="draft-rb-id-badge" class="badge mono status-staged" style="margin-left: 8px;"></span>
-            </div>
-            <button type="button" id="btn-hot-index-runbook" class="btn-submit" style="height: 28px; font-size: 0.76rem;">
-              Hot-index runbook &amp; re-analyze ticket
-            </button>
-          </div>
-          <p id="draft-rb-status" class="cfg-help" style="margin-top: 0; margin-bottom: 8px;"></p>
-          <pre id="draft-rb-markdown" class="rmm-job-output mono" style="max-height: 240px; overflow-y: auto; border: 1px solid var(--hairline); border-radius: 6px;"></pre>
-        </div>
-
-        <!-- Approval Warning Banner -->
-        <div id="approval-warning-banner" class="banner banner-warning hidden" role="alert">
-          <strong>Approval required before execution</strong>
-          <span>One or more PowerShell commands below modify system state (<code>needs_approval</code>). Verify scope and change authorization before running manually.</span>
-        </div>
-
-        <!-- Diagnosis & Matched Runbooks -->
-        <div class="result-block">
-          <div class="block-header">
-            <h3 class="block-title">Diagnosis</h3>
-            <span id="confidence-badge" class="badge mono"></span>
-          </div>
-          <p id="likely-cause-text" class="cause-text"></p>
-
-          <div class="matched-row">
-            <span class="matched-label">Matched runbooks:</span>
-            <ul id="matched-runbooks-list" class="runbook-list"></ul>
-            <p id="no-runbooks-note" class="muted-note hidden">None (ticket outside runbook coverage)</p>
-          </div>
-        </div>
-
-        <!-- Ordered Remediation Steps -->
-        <div class="result-block">
-          <div class="block-header">
-            <h3 class="block-title">Remediation sequence</h3>
-          </div>
-          <ol id="steps-list" class="steps-list"></ol>
-          <p id="no-steps-note" class="muted-note hidden">No remediation steps returned.</p>
-        </div>
-
-        <!-- PowerShell Commands (with Workflow 4: Safety-Gated RMM Dispatch) -->
-        <div class="result-block">
-          <div class="block-header">
-            <h3 class="block-title">PowerShell commands &amp; RMM dispatch</h3>
-            <span id="cmd-summary-counts" class="cmd-counter mono"></span>
-          </div>
-          <div id="commands-list"></div>
-          <p id="no-commands-note" class="muted-note hidden">No PowerShell commands recommended for this ticket.</p>
+        <p class="t-sm text-2" data-slot="draft-status" role="status"></p>
+        <pre class="code code-scroll" data-slot="draft-markdown"></pre>
+        <div class="btn-row">
+          <button type="button" id="btn-hot-index-runbook" class="btn btn-primary">Add this runbook and re-run triage</button>
         </div>
       </div>
     </section>
-  </main>
 
-  <!-- Integrations Settings View (Ticketing/PSA & RMM Standby Connectors) -->
-  <section id="integrations-workspace" class="workbench workbench-integrations hidden" aria-labelledby="integrations-heading">
-    <!-- Left Column: Connector Directory -->
-    <div class="pane-intake">
-      <div class="pane-header">
-        <h2 id="integrations-heading" class="pane-title">Ticketing &amp; RMM integrations</h2>
-        <p class="pane-subtitle">Stage PSA service boards and RMM alert feeds. Connectors operate in standby mode until live worker sync is activated.</p>
+    <section class="section" aria-labelledby="cause-title">
+      <div class="section-head">
+        <h3 id="cause-title" class="section-title">Likely cause</h3>
+        <span id="confidence-badge" class="badge"></span>
       </div>
+      <p id="likely-cause-text" class="prose"></p>
+      <div class="stack source-runbooks">
+        <h4 class="field-label">Source runbooks</h4>
+        <ul id="matched-runbooks-list" class="tag-list"></ul>
+        <p class="t-sm text-3" data-slot="no-runbooks" hidden>None. No runbook covers this ticket.</p>
+      </div>
+    </section>
 
-      <div class="directory-toolbar">
-        <div id="integration-category-bar" class="directory-tabs" role="tablist" aria-label="Connector categories">
-          <button type="button" class="sample-btn is-active" data-category="all">All (12)</button>
-          <button type="button" class="sample-btn" data-category="ticketing">Ticketing &amp; PSA (6)</button>
-          <button type="button" class="sample-btn" data-category="rmm">RMM platforms (6)</button>
+    <section class="section" aria-labelledby="steps-title">
+      <div class="section-head">
+        <h3 id="steps-title" class="section-title">Steps</h3>
+      </div>
+      <ol id="steps-list" class="step-list"></ol>
+      <p class="t-sm text-3" data-slot="no-steps" hidden>No steps returned.</p>
+    </section>
+
+    <section class="section" aria-labelledby="commands-title">
+      <div class="section-head">
+        <h3 id="commands-title" class="section-title">Commands</h3>
+        <span class="t-sm text-3" data-slot="cmd-counts"></span>
+      </div>
+      <p class="t-sm text-3" data-slot="no-commands" hidden>No commands for this ticket.</p>
+      <div id="commands-list" class="stack">
+        <p class="t-sm text-2" data-slot="never-runs">RunbookPilot never runs commands. Copy and run them yourself.</p>
+        <h4 class="field-label" data-slot="ro-title"></h4>
+        <div class="stack" data-slot="ro-list"></div>
+        <div id="approval-warning-banner" class="notice notice-warning" role="note" hidden>
+          <span class="notice-title">Changes the system. Needs approval.</span>
+          <span data-slot="approval-text"></span>
         </div>
-        <input
-          type="search"
-          id="integration-search-input"
-          class="directory-search"
-          placeholder="Filter by provider name or protocol..."
-          aria-label="Filter integration providers"
-        />
+        <div class="stack" data-slot="na-list"></div>
       </div>
+    </section>
+  </template>
 
-      <div id="integration-provider-list" class="provider-list" role="listbox" aria-label="Integration providers"></div>
-      <p id="integration-empty-filter" class="muted-note hidden" style="padding-top: 12px;">No providers match the current filter.</p>
-    </div>
-
-    <!-- Right Column: Selected Provider Settings -->
-    <div class="pane-output">
-      <div class="banner banner-standby">
-        <strong>Standby mode (connectors staged, live polling inactive)</strong>
-        <span>Endpoint URLs, API credentials, sync behavior, and webhook routes can be configured and validated now. Outbound ticket writeback is paused, and remote command execution on RMM endpoints is permanently disabled.</span>
-      </div>
-
-      <div id="integration-detail-pane">
-        <!-- Provider Summary & Capabilities -->
-        <div class="result-block">
-          <div class="block-header">
-            <div class="provider-heading-group">
-              <h3 id="cfg-provider-name" class="pane-title" style="margin: 0;">ConnectWise PSA</h3>
-              <span id="cfg-provider-protocol" class="meta-stat mono"></span>
-            </div>
-            <span id="cfg-provider-status" class="badge mono status-not_configured">unconfigured</span>
-          </div>
-          <p id="cfg-provider-desc" class="pane-subtitle" style="margin-bottom: 16px;"></p>
-          <div class="matched-row">
-            <span class="matched-label">Capabilities:</span>
-            <ul id="cfg-provider-capabilities" class="runbook-list"></ul>
-          </div>
-        </div>
-
-        <!-- Inbound Webhook Standby Route -->
-        <div class="result-block">
-          <div class="block-header">
-            <h4 class="block-title">Inbound webhook receiver</h4>
-            <span class="meta-stat mono">HTTP 202 standby</span>
-          </div>
-          <div class="webhook-bar">
-            <code id="cfg-webhook-url" class="webhook-url mono">/integrations/webhooks/connectwise_psa</code>
-            <button type="button" id="cfg-copy-webhook-btn" class="btn-copy" aria-label="Copy inbound webhook URL"></button>
-          </div>
-          <p class="intake-note">Point your PSA ticket callout or RMM alert webhook to this URL. Requests receive a 202 Accepted standby response with privacy-safe request_id logging.</p>
-        </div>
-
-        <!-- Dynamic Connection Settings Form -->
-        <form id="integration-config-form" class="result-block" novalidate>
-          <div class="block-header">
-            <h4 class="block-title">Connection and sync settings</h4>
-            <span id="cfg-updated-at" class="meta-stat mono">Not saved yet</span>
-          </div>
-
-          <div class="cfg-mode-grid">
-            <div>
-              <label for="cfg-sync-mode" class="field-label">Sync behavior when active</label>
-              <select id="cfg-sync-mode" class="cfg-select">
-                <option value="draft_internal_note">Draft internal triage note only</option>
-                <option value="webhook_auto_triage">Auto-triage inbound webhook events</option>
-                <option value="manual_pull">Manual ticket lookup by ID</option>
-              </select>
-            </div>
-            <div class="cfg-toggle-box">
-              <span class="field-label">Readiness state</span>
-              <label class="cfg-toggle-label" for="cfg-enabled-checkbox">
-                <input type="checkbox" id="cfg-enabled-checkbox" />
-                <span>Stage connector as ready</span>
-              </label>
-            </div>
-          </div>
-
-          <div id="cfg-fields-grid" class="cfg-fields-grid"></div>
-
-          <div class="cfg-actions-bar">
-            <button type="button" id="cfg-reset-btn" class="btn-clear">Reset config</button>
-            <div class="cfg-actions-right">
-              <button type="button" id="cfg-fill-demo-btn" class="sample-btn cfg-validate-btn">Fill demo values</button>
-              <button type="button" id="cfg-test-btn" class="sample-btn cfg-validate-btn">Validate staged config</button>
-              <button type="submit" id="cfg-save-btn" class="btn-submit">Save settings</button>
-            </div>
-          </div>
-
-          <div id="cfg-feedback-banner" class="banner hidden" role="status" style="margin-top: 16px; margin-bottom: 0;"></div>
-        </form>
-      </div>
-    </div>
-  </section>
-
-  <!-- Safety & Eval Inspector View (Deterministic PowerShell Sandbox + Live BM25 Benchmark) -->
-  <section id="eval-workspace" class="workbench workbench-integrations hidden" aria-labelledby="eval-heading">
-    <!-- Left Column: Live Deterministic PowerShell Safety Sandbox -->
-    <div class="pane-intake">
-      <div class="pane-header">
-        <h2 id="eval-heading" class="pane-title">PowerShell safety sandbox</h2>
-        <p class="pane-subtitle">Inspect how RunbookPilot deterministically classifies PowerShell commands into read_only vs needs_approval and overrides any unsafe LLM risk labels.</p>
-      </div>
-
-      <div class="samples-bar" id="safety-preset-bar">
-        <span class="samples-label">Adversarial &amp; safe tests:</span>
-        <button type="button" class="sample-btn" data-safety-cmd="Get-ADUser -Identity user01 -Properties LockedOut, BadPwdCount, LastBadPasswordAttempt">Get-ADUser (Safe)</button>
-        <button type="button" class="sample-btn" data-safety-cmd="Get-Service Spooler; Stop-Service Spooler -Force">Semicolon ; injection</button>
-        <button type="button" class="sample-btn" data-safety-cmd="powershell.exe -NoProfile -EncodedCommand SQBFAFgA">-EncodedCommand trap</button>
-        <button type="button" class="sample-btn" data-safety-cmd="Write-Output $(Remove-Item C:\Temp\cache -Recurse)">$() subexpression</button>
-        <button type="button" class="sample-btn" data-safety-cmd="Get-Partition -DriveLetter D | Format-Volume -FileSystem NTFS">Format-Volume pipe</button>
-        <button type="button" class="sample-btn" data-safety-cmd="Get-WinEvent -FilterHashtable @{LogName='Security'; Id=4740} -MaxEvents 10">Get-WinEvent 4740 (Safe)</button>
-      </div>
-
-      <form id="safety-inspect-form" novalidate>
-        <label for="safety-cmd-input" class="field-label">PowerShell command string (never executed)</label>
-        <div class="composer-frame" style="margin-bottom: 14px;">
-          <input
-            type="text"
-            id="safety-cmd-input"
-            class="cfg-input mono"
-            style="border: none; height: 42px;"
-            value="Get-Service Spooler; Stop-Service Spooler -Force"
-            maxlength="2000"
-            required
-          />
-          <div class="composer-footer">
-            <span class="meta-stat mono">executed_on_host: false</span>
-            <button type="submit" id="btn-safety-inspect" class="btn-submit">Inspect command</button>
-          </div>
-        </div>
-      </form>
-
-      <div id="safety-inspect-result" class="writeback-panel">
-        <div class="block-header" style="margin-bottom: 8px;">
-          <span class="block-title">Deterministic classifier verdict</span>
-          <span id="safety-verdict-badge" class="badge mono risk-needs_approval">needs_approval</span>
-        </div>
-        <p id="safety-verdict-reason" class="pane-subtitle" style="margin-bottom: 12px;"></p>
-        <div>
-          <span class="field-label" style="margin-bottom: 6px;">Parsed pipeline stages</span>
-          <ol id="safety-stages-list" class="steps-list mono" style="font-size: 0.79rem;"></ol>
-        </div>
-      </div>
-    </div>
-
-    <!-- Right Column: Live 20-Ticket BM25 Retrieval & Corpus Safety Scorecard -->
-    <div class="pane-output">
-      <div class="block-header" style="margin-bottom: 16px;">
-        <div>
-          <h3 class="pane-title" style="margin: 0;">BM25 retrieval &amp; safety benchmark</h3>
-          <p class="pane-subtitle" style="margin-top: 4px;">Live evaluation across all 20 benchmark tickets in data/tickets_eval.json and every runbook command in the active index.</p>
-        </div>
-        <button type="button" id="btn-refresh-eval" class="sample-btn">Refresh benchmark</button>
-      </div>
-
-      <div class="telemetry-panel" style="margin-bottom: 20px;">
-        <dl class="telemetry-metrics-grid">
-          <div class="telemetry-metric">
-            <dt>BM25 top-3 hit rate</dt>
-            <dd id="eval-metric-hitrate" class="mono">17 / 17 (100.0%)</dd>
-          </div>
-          <div class="telemetry-metric">
-            <dt>Benchmark split</dt>
-            <dd id="eval-metric-split" class="mono">17 covered / 3 escalation</dd>
-          </div>
-          <div class="telemetry-metric">
-            <dt>Corpus commands audited</dt>
-            <dd id="eval-metric-commands" class="mono">18 runbooks</dd>
-          </div>
-          <div class="telemetry-metric">
-            <dt>Unsafe labeled read_only</dt>
-            <dd id="eval-metric-unsafe" class="mono" style="color: var(--ro-text);">0 (100% safe)</dd>
-          </div>
-        </dl>
-      </div>
-
-      <div class="eval-table-wrap">
-        <div class="eval-row eval-row-head mono">
-          <span>Ticket ID</span>
-          <span>Expected target</span>
-          <span>Top-3 BM25 matches (score)</span>
-          <span>Verdict</span>
-        </div>
-        <div id="eval-rows-list"></div>
-      </div>
-    </div>
-  </section>
-
-  <script>
-    (function () {
-      "use strict";
-
-      const MAX_CHARS = 4000;
-      const runbookTitlesById = new Map();
-      let loadingTimerId = null;
-
-      const SAMPLE_TICKETS = {
-        lockout:
-          "Standard user user01@corp.example.test changed their password yesterday and now gets 'The referenced account is currently locked out' every 15 minutes. Domain controller dc-01.corp.example.test logged Event ID 4740 from their docked workstation.",
-        backup:
-          "Alert on srv-app-01.corp.example.test: Last night's scheduled BCDR image backup failed at 02:15 AM with error 0x800423f4 and VSS Event ID 8193 snapshot timeout.",
-        mail:
-          "Users at tenant-alpha.test report outbound M365 emails to external partners are delayed by 40 minutes and sitting in Deferred status in Exchange Online after a gateway connector change.",
-        escalate:
-          "Desk SIP VoIP handset on PoE switch port Gi1/0/24 is stuck in a TFTP firmware bootloop and failing LLDP-MED voice VLAN 120 negotiation."
-      };
-
-      const rootHtml = document.documentElement;
-      const themeToggleBtn = document.getElementById("theme-toggle");
-      const themeIconSun = document.getElementById("theme-icon-sun");
-      const themeIconMoon = document.getElementById("theme-icon-moon");
-      const themeLabel = document.getElementById("theme-label");
-
-      const healthLabel = document.getElementById("health-label");
-      const catalogCountBadge = document.getElementById("catalog-count-badge");
-      const catalogList = document.getElementById("catalog-list");
-
-      const presetRow = document.getElementById("preset-row");
-      const form = document.getElementById("triage-form");
-      const ticketInput = document.getElementById("ticket-input");
-      const charCount = document.getElementById("char-count");
-      const submitBtn = document.getElementById("submit-btn");
-      const clearBtn = document.getElementById("clear-btn");
-      const errorBanner = document.getElementById("error-banner");
-
-      const emptyState = document.getElementById("empty-state");
-      const loadingState = document.getElementById("loading-state");
-      const loadingTimer = document.getElementById("loading-timer");
-      const resultContainer = document.getElementById("result-container");
-      const resultReqId = document.getElementById("result-req-id");
-      const resultLatency = document.getElementById("result-latency");
-
-      const escalateBanner = document.getElementById("escalate-banner");
-      const escalateReasonText = document.getElementById("escalate-reason-text");
-      const approvalWarningBanner = document.getElementById("approval-warning-banner");
-      const likelyCauseText = document.getElementById("likely-cause-text");
-      const confidenceBadge = document.getElementById("confidence-badge");
-      const matchedRunbooksList = document.getElementById("matched-runbooks-list");
-      const noRunbooksNote = document.getElementById("no-runbooks-note");
-      const stepsList = document.getElementById("steps-list");
-      const noStepsNote = document.getElementById("no-steps-note");
-      const cmdSummaryCounts = document.getElementById("cmd-summary-counts");
-      const commandsList = document.getElementById("commands-list");
-      const noCommandsNote = document.getElementById("no-commands-note");
-
-      const queueCountBadge = document.getElementById("queue-count-badge");
-      const queueStagedFilterBtn = document.getElementById("queue-staged-filter-btn");
-      const queueRefreshBtn = document.getElementById("queue-refresh-btn");
-      const pendingQueueList = document.getElementById("pending-queue-list");
-      const activeTicketBar = document.getElementById("active-ticket-bar");
-      const activeTicketLabel = document.getElementById("active-ticket-label");
-      const unlinkTicketBtn = document.getElementById("unlink-ticket-btn");
-
-      const rmmTelemetryPanel = document.getElementById("rmm-telemetry-panel");
-      const rmmHostName = document.getElementById("rmm-host-name");
-      const rmmSourceBadge = document.getElementById("rmm-source-badge");
-      const rmmOsVersion = document.getElementById("rmm-os-version");
-      const rmmResources = document.getElementById("rmm-resources");
-      const rmmBootIp = document.getElementById("rmm-boot-ip");
-      const rmmActiveAlert = document.getElementById("rmm-active-alert");
-
-      const writebackProviderSelect = document.getElementById("writeback-provider-select");
-      const writebackTicketBadge = document.getElementById("writeback-ticket-badge");
-      const btnWritebackNote = document.getElementById("btn-writeback-note");
-      const btnWritebackEscalate = document.getElementById("btn-writeback-escalate");
-      const writebackFeedback = document.getElementById("writeback-feedback");
-      const writebackStatusMsg = document.getElementById("writeback-status-msg");
-      const writebackNoteCode = document.getElementById("writeback-note-code");
-
-      const reasoningModeSelect = document.getElementById("reasoning-mode-select");
-      const screenshotFileInput = document.getElementById("screenshot-file-input");
-      const btnAttachScreenshot = document.getElementById("btn-attach-screenshot");
-      const btnSampleShotRdp = document.getElementById("btn-sample-shot-rdp");
-      const btnSampleShotVss = document.getElementById("btn-sample-shot-vss");
-      const screenshotPreviewBar = document.getElementById("screenshot-preview-bar");
-      const screenshotThumb = document.getElementById("screenshot-thumb");
-      const screenshotNameLabel = document.getElementById("screenshot-name-label");
-      const screenshotCaptionLabel = document.getElementById("screenshot-caption-label");
-      const btnRemoveScreenshot = document.getElementById("btn-remove-screenshot");
-
-      const rmmLoopBar = document.getElementById("rmm-loop-bar");
-      const rmmLoopSummary = document.getElementById("rmm-loop-summary");
-      const btnClearRmmLoop = document.getElementById("btn-clear-rmm-loop");
-
-      const resultModelBadge = document.getElementById("result-model-badge");
-      const resultSafetyBadge = document.getElementById("result-safety-badge");
-      const topbarModelPill = document.getElementById("topbar-model-pill");
-
-      const btnDraftRunbook = document.getElementById("btn-draft-runbook");
-      const runbookDraftPanel = document.getElementById("runbook-draft-panel");
-      const draftRbIdBadge = document.getElementById("draft-rb-id-badge");
-      const draftRbStatus = document.getElementById("draft-rb-status");
-      const draftRbMarkdown = document.getElementById("draft-rb-markdown");
-      const btnHotIndexRunbook = document.getElementById("btn-hot-index-runbook");
-
-      let queueItems = [];
-      let activeQueueItem = null;
-      let stagedOnlyQueueFilter = false;
-      let lastTriageResult = null;
-      let attachedScreenshotDataUrl = null;
-      let attachedScreenshotCaption = null;
-      let activeRmmLoopOutput = null;
-      let currentDraftMarkdown = null;
-
-      function setAttachedScreenshot(dataUrl, fileName, captionText) {
-        attachedScreenshotDataUrl = dataUrl;
-        attachedScreenshotCaption = captionText || fileName;
-        screenshotThumb.src = dataUrl;
-        screenshotNameLabel.textContent = "Multimodal vision input: " + fileName;
-        screenshotCaptionLabel.textContent = captionText || "Passed to Meta Muse Spark native vision";
-        screenshotPreviewBar.classList.remove("hidden");
-      }
-
-      function clearAttachedScreenshot() {
-        attachedScreenshotDataUrl = null;
-        attachedScreenshotCaption = null;
-        screenshotThumb.removeAttribute("src");
-        screenshotNameLabel.textContent = "";
-        screenshotCaptionLabel.textContent = "";
-        screenshotFileInput.value = "";
-        screenshotPreviewBar.classList.add("hidden");
-      }
-
-      function generateSyntheticDialogPng(titleText, codeLine, detailLine) {
-        const canvas = document.createElement("canvas");
-        canvas.width = 480;
-        canvas.height = 220;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) {
-          return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
-        }
-        ctx.fillStyle = "#18181b";
-        ctx.fillRect(0, 0, 480, 220);
-        ctx.strokeStyle = "#ef4444";
-        ctx.lineWidth = 2;
-        ctx.strokeRect(4, 4, 472, 212);
-        ctx.fillStyle = "#27272a";
-        ctx.fillRect(5, 5, 470, 34);
-        ctx.fillStyle = "#fafafa";
-        ctx.font = "600 13px sans-serif";
-        ctx.fillText(titleText, 16, 26);
-        ctx.fillStyle = "#f87171";
-        ctx.font = "600 14px monospace";
-        ctx.fillText(codeLine, 18, 76);
-        ctx.fillStyle = "#d4d4d8";
-        ctx.font = "12px monospace";
-        ctx.fillText(detailLine, 18, 110);
-        ctx.fillText("Host: srv-rds-01.corp.example.test / Timestamp: UTC", 18, 138);
-        ctx.fillStyle = "#3f3f46";
-        ctx.fillRect(370, 168, 86, 28);
-        ctx.fillStyle = "#fafafa";
-        ctx.font = "12px sans-serif";
-        ctx.fillText("OK", 404, 186);
-        return canvas.toDataURL("image/png");
-      }
-
-      function attachRmmLoopOutput(outputText, cmdStr) {
-        activeRmmLoopOutput = outputText;
-        rmmLoopSummary.textContent =
-          "Closed-loop RMM output attached (" + cmdStr.slice(0, 42) + ") for re-triage";
-        rmmLoopBar.classList.remove("hidden");
-      }
-
-      function clearRmmLoopOutput() {
-        activeRmmLoopOutput = null;
-        rmmLoopBar.classList.add("hidden");
-      }
-
-      function renderRmmTelemetry(device) {
-        if (!device) {
-          rmmTelemetryPanel.classList.add("hidden");
-          return;
-        }
-        rmmTelemetryPanel.classList.remove("hidden");
-        rmmHostName.textContent = device.hostname || "srv-win-01.corp.example.test";
-        const statusClass = device.agent_status === "online" ? "status-staged" : "status-paused";
-        rmmSourceBadge.className = "badge mono " + statusClass;
-        rmmSourceBadge.textContent = (device.rmm_provider_name || "RMM") + " / " + (device.agent_status || "online");
-        rmmOsVersion.textContent = device.os_version || "";
-        rmmResources.textContent =
-          "CPU " + device.cpu_percent + "% / RAM " + device.memory_percent + "% / Disk " + device.disk_free_gb + " GB free";
-        rmmBootIp.textContent = "Booted " + device.last_boot + " (" + device.ip_address + ")";
-        rmmActiveAlert.textContent = device.active_alert || "None";
-      }
-
-      function selectQueueItem(item) {
-        activeQueueItem = item;
-        clearActivePreset();
-        clearRmmLoopOutput();
-        ticketInput.value = item.ticket_text || "";
-        updateCharCount();
-        clearError();
-
-        const hostPart = item.device && item.device.hostname ? " / Host: " + item.device.hostname : "";
-        activeTicketLabel.textContent =
-          "Linked: " + item.external_ref + " (" + item.provider_name + ")" + hostPart;
-        activeTicketBar.classList.remove("hidden");
-
-        if (item.category === "ticketing") {
-          writebackProviderSelect.value = item.provider_id;
-        }
-        writebackTicketBadge.textContent = "Target: " + item.external_ref;
-
-        renderRmmTelemetry(item.device || null);
-        renderPendingQueue();
-      }
-
-      function unlinkQueueItem() {
-        activeQueueItem = null;
-        activeTicketBar.classList.add("hidden");
-        activeTicketLabel.textContent = "";
-        writebackTicketBadge.textContent = "Target: manual-ticket";
-        renderRmmTelemetry(null);
-        renderPendingQueue();
-      }
-
-      function renderPendingQueue() {
-        pendingQueueList.textContent = "";
-        queueCountBadge.textContent = queueItems.length + (queueItems.length === 1 ? " item" : " items");
-
-        if (queueItems.length === 0) {
-          const emptyDiv = document.createElement("div");
-          emptyDiv.style.padding = "12px";
-          emptyDiv.className = "muted-note";
-          emptyDiv.textContent = stagedOnlyQueueFilter
-            ? "No queued items from staged connectors yet. Stage a connector in Integrations or switch to All connectors."
-            : "No pending queue items.";
-          pendingQueueList.appendChild(emptyDiv);
-          return;
-        }
-
-        queueItems.forEach((item) => {
-          const row = document.createElement("button");
-          row.type = "button";
-          const isSelected = activeQueueItem && activeQueueItem.id === item.id;
-          row.className = "queue-item-row" + (isSelected ? " is-selected" : "");
-          row.setAttribute("role", "option");
-          row.setAttribute("aria-selected", isSelected ? "true" : "false");
-
-          const topLine = document.createElement("div");
-          topLine.className = "queue-item-top";
-
-          const metaSpan = document.createElement("span");
-          metaSpan.className = "queue-item-meta mono";
-          const hostStr = item.device && item.device.hostname ? " / " + item.device.hostname : "";
-          metaSpan.textContent = item.external_ref + " / " + item.provider_name + hostStr;
-
-          const badge = document.createElement("span");
-          if (item.status === "triaged") {
-            badge.className = "badge mono status-staged";
-            badge.textContent = "triaged";
-          } else if (item.status === "escalated") {
-            badge.className = "badge mono conf-low";
-            badge.textContent = "escalated";
-          } else {
-            const prioClass =
-              item.priority === "critical"
-                ? "conf-low"
-                : item.priority === "high"
-                  ? "conf-medium"
-                  : "status-not_configured";
-            badge.className = "badge mono " + prioClass;
-            badge.textContent = item.priority;
-          }
-
-          topLine.appendChild(metaSpan);
-          topLine.appendChild(badge);
-
-          const titleSpan = document.createElement("span");
-          titleSpan.className = "queue-item-title";
-          titleSpan.textContent = item.title;
-
-          row.appendChild(topLine);
-          row.appendChild(titleSpan);
-
-          row.addEventListener("click", () => {
-            selectQueueItem(item);
-          });
-
-          pendingQueueList.appendChild(row);
-        });
-      }
-
-      async function loadQueueItems() {
-        try {
-          const query = stagedOnlyQueueFilter ? "?staged_only=true" : "";
-          const resp = await fetch("/integrations/queue" + query);
-          if (!resp.ok) {
-            return;
-          }
-          const items = await resp.json();
-          if (Array.isArray(items)) {
-            queueItems = items;
-            if (activeQueueItem) {
-              const refreshed = queueItems.find((i) => i.id === activeQueueItem.id);
-              if (refreshed) {
-                activeQueueItem = refreshed;
-              }
-            }
-            renderPendingQueue();
-          }
-        } catch (_err) {
-          /* Ignore offline state */
-        }
-      }
-
-      async function dispatchRmmCommand(cmdItem, approved, approvalNote, outputPreEl, loopBarEl, triggerBtn) {
-        const device = activeQueueItem && activeQueueItem.device ? activeQueueItem.device : null;
-        const rmmProviderId = device ? device.rmm_provider_id : "ninjaone_rmm";
-        const hostname = device ? device.hostname : "srv-win-01.corp.example.test";
-        const ticketId = activeQueueItem ? activeQueueItem.id : "manual-ticket";
-
-        triggerBtn.disabled = true;
-        try {
-          const resp = await fetch("/integrations/rmm/dispatch", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              rmm_provider_id: rmmProviderId,
-              hostname: hostname,
-              command: cmdItem.command,
-              purpose: cmdItem.purpose,
-              ticket_id: ticketId,
-              approved_by_technician: approved,
-              approval_note: approvalNote
-            })
-          });
-          const data = await resp.json();
-          outputPreEl.classList.remove("hidden");
-          if (!resp.ok) {
-            outputPreEl.textContent = "RMM dispatch rejected: " + (data.detail || "Validation error");
-            return false;
-          }
-          outputPreEl.textContent = data.simulated_output || "RMM job staged.";
-          if (loopBarEl && data.simulated_output) {
-            loopBarEl.classList.remove("hidden");
-            loopBarEl.setAttribute("data-rmm-output", data.simulated_output);
-          }
-          triggerBtn.textContent = "Job staged (" + data.job_id + ")";
-          triggerBtn.classList.add("is-copied");
-          return true;
-        } catch (err) {
-          outputPreEl.classList.remove("hidden");
-          outputPreEl.textContent = "RMM dispatch failed: " + (err.message || "Network error");
-          return false;
-        } finally {
-          triggerBtn.disabled = false;
-        }
-      }
-
-      function applyTheme(theme) {
-        const normalized = theme === "light" ? "light" : "dark";
-        rootHtml.setAttribute("data-theme", normalized);
-        if (normalized === "dark") {
-          themeIconSun.classList.remove("hidden");
-          themeIconMoon.classList.add("hidden");
-          themeLabel.textContent = "Light";
-        } else {
-          themeIconSun.classList.add("hidden");
-          themeIconMoon.classList.remove("hidden");
-          themeLabel.textContent = "Dark";
-        }
-        try {
-          localStorage.setItem("rbp_theme", normalized);
-        } catch (_e) {
-          /* Ignore storage restrictions */
-        }
-      }
-
-      function initTheme() {
-        let saved = null;
-        try {
-          saved = localStorage.getItem("rbp_theme");
-        } catch (_e) {
-          saved = null;
-        }
-        if (saved === "light" || saved === "dark") {
-          applyTheme(saved);
-          return;
-        }
-        const prefersLight = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches;
-        applyTheme(prefersLight ? "light" : "dark");
-      }
-
-      themeToggleBtn.addEventListener("click", () => {
-        const current = rootHtml.getAttribute("data-theme") === "light" ? "light" : "dark";
-        applyTheme(current === "dark" ? "light" : "dark");
-      });
-
-      async function loadHealthAndRunbooks() {
-        try {
-          const [healthResp, rbResp] = await Promise.all([fetch("/health"), fetch("/runbooks")]);
-          if (healthResp.ok) {
-            const hData = await healthResp.json();
-            healthLabel.textContent = (hData.runbooks_loaded || 0) + " runbooks indexed";
-          } else {
-            healthLabel.textContent = "Index unavailable";
-          }
-
-          if (rbResp.ok) {
-            const items = await rbResp.json();
-            if (Array.isArray(items)) {
-              catalogList.textContent = "";
-              items.forEach((item) => {
-                if (item && typeof item.id === "string" && typeof item.title === "string") {
-                  runbookTitlesById.set(item.id, item.title);
-                  const li = document.createElement("li");
-                  li.className = "corpus-row";
-
-                  const titleSpan = document.createElement("span");
-                  titleSpan.className = "corpus-row-title";
-                  titleSpan.textContent = item.title;
-
-                  const idSpan = document.createElement("span");
-                  idSpan.className = "corpus-row-id mono";
-                  idSpan.textContent = item.id;
-
-                  li.appendChild(titleSpan);
-                  li.appendChild(idSpan);
-                  catalogList.appendChild(li);
-                }
-              });
-              catalogCountBadge.textContent = runbookTitlesById.size + " files";
-            }
-          }
-        } catch (_err) {
-          healthLabel.textContent = "API offline";
-        }
-      }
-
-      function updateCharCount() {
-        const len = ticketInput.value.length;
-        charCount.textContent = len + " / " + MAX_CHARS;
-        charCount.classList.toggle("char-limit-warn", len >= 3500 && len < MAX_CHARS);
-        charCount.classList.toggle("char-limit-max", len >= MAX_CHARS);
-      }
-
-      function showError(message) {
-        errorBanner.textContent = message;
-        errorBanner.classList.remove("hidden");
-      }
-
-      function clearError() {
-        errorBanner.textContent = "";
-        errorBanner.classList.add("hidden");
-      }
-
-      function clearActivePreset() {
-        const buttons = presetRow.querySelectorAll(".sample-btn");
-        buttons.forEach((b) => b.classList.remove("is-active"));
-      }
-
-      function startLoadingClock() {
-        const started = performance.now();
-        loadingTimer.textContent = "0.0s";
-        stopLoadingClock();
-        loadingTimerId = window.setInterval(() => {
-          const secs = ((performance.now() - started) / 1000).toFixed(1);
-          loadingTimer.textContent = secs + "s";
-        }, 100);
-      }
-
-      function stopLoadingClock() {
-        if (loadingTimerId !== null) {
-          window.clearInterval(loadingTimerId);
-          loadingTimerId = null;
-        }
-      }
-
-      function createSvgIcon(paths, size) {
-        const ns = "http://www.w3.org/2000/svg";
-        const svg = document.createElementNS(ns, "svg");
-        svg.setAttribute("width", String(size || 13));
-        svg.setAttribute("height", String(size || 13));
-        svg.setAttribute("viewBox", "0 0 24 24");
-        svg.setAttribute("fill", "none");
-        svg.setAttribute("stroke", "currentColor");
-        svg.setAttribute("stroke-width", "1.75");
-        svg.setAttribute("stroke-linecap", "round");
-        svg.setAttribute("stroke-linejoin", "round");
-        svg.setAttribute("aria-hidden", "true");
-        paths.forEach((d) => {
-          const path = document.createElementNS(ns, "path");
-          path.setAttribute("d", d);
-          svg.appendChild(path);
-        });
-        return svg;
-      }
-
-      function setCopyButtonState(btn, state) {
-        btn.textContent = "";
-        if (state === "copied") {
-          btn.classList.add("is-copied");
-          btn.appendChild(createSvgIcon(["M20 6L9 17l-5-5"], 12));
-          const span = document.createElement("span");
-          span.textContent = "Copied";
-          btn.appendChild(span);
-        } else if (state === "failed") {
-          btn.classList.remove("is-copied");
-          const span = document.createElement("span");
-          span.textContent = "Copy failed";
-          btn.appendChild(span);
-        } else {
-          btn.classList.remove("is-copied");
-          btn.appendChild(
-            createSvgIcon(
-              [
-                "M9 9h11a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2z",
-                "M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
-              ],
-              12
-            )
-          );
-          const span = document.createElement("span");
-          span.textContent = "Copy";
-          btn.appendChild(span);
-        }
-      }
-
-      async function copyTextToClipboard(text, buttonEl) {
-        try {
-          if (navigator.clipboard && window.isSecureContext) {
-            await navigator.clipboard.writeText(text);
-          } else {
-            const helper = document.createElement("textarea");
-            helper.value = text;
-            helper.style.position = "fixed";
-            helper.style.opacity = "0";
-            document.body.appendChild(helper);
-            helper.focus();
-            helper.select();
-            const ok = document.execCommand("copy");
-            document.body.removeChild(helper);
-            if (!ok) {
-              throw new Error("Copy failed");
-            }
-          }
-          setCopyButtonState(buttonEl, "copied");
-        } catch (_err) {
-          setCopyButtonState(buttonEl, "failed");
-        }
-        window.setTimeout(() => {
-          setCopyButtonState(buttonEl, "idle");
-        }, 1500);
-      }
-
-      function renderResult(data, meta) {
-        lastTriageResult = data;
-        writebackFeedback.classList.add("hidden");
-        runbookDraftPanel.classList.add("hidden");
-        currentDraftMarkdown = null;
-        writebackTicketBadge.textContent =
-          "Target: " + (activeQueueItem ? activeQueueItem.external_ref : "manual-ticket");
-
-        emptyState.classList.add("hidden");
-        loadingState.classList.add("hidden");
-        resultContainer.classList.remove("hidden");
-        resultContainer.classList.remove("reveal");
-        void resultContainer.offsetWidth;
-        resultContainer.classList.add("reveal");
-
-        resultReqId.textContent = "Request ID: " + (meta.requestId || "local");
-        resultLatency.textContent = meta.elapsedSeconds + "s";
-
-        const modelHeader = meta.metaModel || "muse-spark-1.3";
-        const modeHeader = meta.reasoningMode || "standard";
-        const visionTag = attachedScreenshotDataUrl ? " + vision" : "";
-        const loopTag = activeRmmLoopOutput ? " + RMM loop" : "";
-        resultModelBadge.textContent = modelHeader + " / " + modeHeader + visionTag + loopTag;
-        if (topbarModelPill) {
-          topbarModelPill.textContent = "Meta " + modelHeader;
-        }
-
-        const overridesCount = Number(meta.safetyOverrides || 0);
-        if (overridesCount > 0) {
-          resultSafetyBadge.className = "badge mono risk-needs_approval";
-          resultSafetyBadge.textContent =
-            "Safety override: " + overridesCount + " command(s) upgraded to needs_approval";
-        } else {
-          resultSafetyBadge.className = "badge mono risk-read_only";
-          resultSafetyBadge.textContent = "Safety audit: verified";
-        }
-
-        if (data.escalate) {
-          escalateReasonText.textContent = data.escalate_reason || "Ticket requires manual escalation.";
-          escalateBanner.classList.remove("hidden");
-        } else {
-          escalateReasonText.textContent = "";
-          escalateBanner.classList.add("hidden");
-        }
-
-        const commands = Array.isArray(data.commands) ? data.commands : [];
-        const roCount = commands.filter((c) => c && c.risk === "read_only").length;
-        const naCount = commands.length - roCount;
-
-        if (naCount > 0) {
-          approvalWarningBanner.classList.remove("hidden");
-        } else {
-          approvalWarningBanner.classList.add("hidden");
-        }
-
-        likelyCauseText.textContent = data.likely_cause || "";
-        const conf = ["low", "medium", "high"].includes(data.confidence) ? data.confidence : "low";
-        confidenceBadge.textContent = conf + " confidence";
-        confidenceBadge.className = "badge mono conf-" + conf;
-
-        matchedRunbooksList.textContent = "";
-        const matchedIds = Array.isArray(data.matched_runbooks) ? data.matched_runbooks : [];
-        const bm25Map = meta.bm25Scores || {};
-        if (matchedIds.length === 0) {
-          noRunbooksNote.classList.remove("hidden");
-        } else {
-          noRunbooksNote.classList.add("hidden");
-          matchedIds.forEach((id) => {
-            const li = document.createElement("li");
-            li.className = "runbook-tag";
-            const title = runbookTitlesById.get(id);
-
-            const titleNode = document.createElement("span");
-            titleNode.textContent = title || id;
-            li.appendChild(titleNode);
-
-            const idNode = document.createElement("span");
-            idNode.className = "runbook-tag-id mono";
-            const scoreVal = typeof bm25Map[id] === "number" ? " (BM25 " + bm25Map[id].toFixed(1) + ")" : "";
-            idNode.textContent = (title ? id : "") + scoreVal;
-            if (idNode.textContent) {
-              li.appendChild(idNode);
-            }
-
-            matchedRunbooksList.appendChild(li);
-          });
-        }
-
-        stepsList.textContent = "";
-        const steps = Array.isArray(data.steps) ? data.steps : [];
-        if (steps.length === 0) {
-          noStepsNote.classList.remove("hidden");
-        } else {
-          noStepsNote.classList.add("hidden");
-          steps.forEach((stepText) => {
-            const li = document.createElement("li");
-            const span = document.createElement("span");
-            span.textContent = stepText;
-            li.appendChild(span);
-            stepsList.appendChild(li);
-          });
-        }
-
-        commandsList.textContent = "";
-        if (commands.length === 0) {
-          cmdSummaryCounts.textContent = "0 commands";
-          noCommandsNote.classList.remove("hidden");
-        } else {
-          cmdSummaryCounts.textContent = roCount + " read_only, " + naCount + " needs_approval";
-          noCommandsNote.classList.add("hidden");
-
-          commands.forEach((item) => {
-            const risk = item.risk === "read_only" ? "read_only" : "needs_approval";
-
-            const card = document.createElement("div");
-            card.className = "command-item" + (risk === "needs_approval" ? " is-needs-approval" : "");
-
-            const topBar = document.createElement("div");
-            topBar.className = "command-bar";
-
-            const purposeSpan = document.createElement("span");
-            purposeSpan.className = "command-purpose";
-            purposeSpan.textContent = item.purpose || "";
-
-            const actions = document.createElement("div");
-            actions.className = "command-actions";
-
-            const badge = document.createElement("span");
-            badge.className = "badge mono risk-" + risk;
-            badge.textContent = risk;
-
-            const rmmBtn = document.createElement("button");
-            rmmBtn.type = "button";
-            rmmBtn.className = "btn-copy";
-            rmmBtn.textContent = risk === "read_only" ? "Queue RMM check" : "Request RMM change";
-
-            const copyBtn = document.createElement("button");
-            copyBtn.type = "button";
-            copyBtn.className = "btn-copy";
-            copyBtn.setAttribute("aria-label", "Copy PowerShell command");
-            setCopyButtonState(copyBtn, "idle");
-            copyBtn.addEventListener("click", () => {
-              copyTextToClipboard(item.command || "", copyBtn);
-            });
-
-            actions.appendChild(badge);
-            actions.appendChild(rmmBtn);
-            actions.appendChild(copyBtn);
-            topBar.appendChild(purposeSpan);
-            topBar.appendChild(actions);
-
-            const pre = document.createElement("pre");
-            pre.className = "command-code mono";
-            const code = document.createElement("code");
-            code.textContent = item.command || "";
-            pre.appendChild(code);
-
-            const outputPre = document.createElement("pre");
-            outputPre.className = "rmm-job-output mono hidden";
-
-            const loopActionBar = document.createElement("div");
-            loopActionBar.className = "rmm-loop-action-bar hidden";
-            const loopHint = document.createElement("span");
-            loopHint.textContent = "Feed RMM diagnostic telemetry back into Meta Muse Spark to narrow root cause:";
-            const loopBtn = document.createElement("button");
-            loopBtn.type = "button";
-            loopBtn.className = "sample-btn";
-            loopBtn.textContent = "Refine diagnosis with this RMM output";
-            loopBtn.addEventListener("click", () => {
-              const outStr = loopActionBar.getAttribute("data-rmm-output") || outputPre.textContent || "";
-              if (outStr) {
-                attachRmmLoopOutput(outStr, item.command || "RMM check");
-                form.requestSubmit();
-              }
-            });
-            loopActionBar.appendChild(loopHint);
-            loopActionBar.appendChild(loopBtn);
-
-            card.appendChild(topBar);
-            card.appendChild(pre);
-
-            if (risk === "read_only") {
-              rmmBtn.addEventListener("click", () => {
-                dispatchRmmCommand(item, false, null, outputPre, loopActionBar, rmmBtn);
-              });
-            } else {
-              const approvalDrawer = document.createElement("div");
-              approvalDrawer.className = "rmm-approval-drawer hidden";
-
-              const gateNote = document.createElement("div");
-              gateNote.className = "cfg-help";
-              gateNote.style.marginTop = "0";
-              gateNote.textContent =
-                "Safety gate: needs_approval commands require technician sign-off before queuing in RMM.";
-
-              const gateRow = document.createElement("div");
-              gateRow.className = "rmm-approval-row";
-
-              const approvalInput = document.createElement("input");
-              approvalInput.type = "text";
-              approvalInput.className = "cfg-input rmm-approval-input";
-              approvalInput.placeholder = "Approval note or change ID (for example CHG-1042 approved by Tier 2)";
-
-              const confirmBtn = document.createElement("button");
-              confirmBtn.type = "button";
-              confirmBtn.className = "btn-submit";
-              confirmBtn.style.height = "30px";
-              confirmBtn.style.fontSize = "0.77rem";
-              confirmBtn.textContent = "Approve & queue RMM job";
-
-              const cancelBtn = document.createElement("button");
-              cancelBtn.type = "button";
-              cancelBtn.className = "btn-clear";
-              cancelBtn.style.height = "30px";
-              cancelBtn.style.fontSize = "0.77rem";
-              cancelBtn.textContent = "Cancel";
-
-              gateRow.appendChild(approvalInput);
-              gateRow.appendChild(confirmBtn);
-              gateRow.appendChild(cancelBtn);
-              approvalDrawer.appendChild(gateNote);
-              approvalDrawer.appendChild(gateRow);
-              card.appendChild(approvalDrawer);
-
-              rmmBtn.addEventListener("click", () => {
-                approvalDrawer.classList.toggle("hidden");
-                if (!approvalDrawer.classList.contains("hidden")) {
-                  approvalInput.focus();
-                }
-              });
-
-              cancelBtn.addEventListener("click", () => {
-                approvalDrawer.classList.add("hidden");
-              });
-
-              confirmBtn.addEventListener("click", async () => {
-                const noteVal = approvalInput.value.trim();
-                if (!noteVal) {
-                  outputPre.classList.remove("hidden");
-                  outputPre.textContent = "Enter an approval note or change ticket reference before confirming.";
-                  approvalInput.focus();
-                  return;
-                }
-                const ok = await dispatchRmmCommand(item, true, noteVal, outputPre, loopActionBar, rmmBtn);
-                if (ok) {
-                  approvalDrawer.classList.add("hidden");
-                }
-              });
-            }
-
-            card.appendChild(outputPre);
-            card.appendChild(loopActionBar);
-            commandsList.appendChild(card);
-          });
-        }
-      }
-
-      btnAttachScreenshot.addEventListener("click", () => {
-        screenshotFileInput.click();
-      });
-
-      screenshotFileInput.addEventListener("change", () => {
-        const file = screenshotFileInput.files && screenshotFileInput.files[0];
-        if (!file) {
-          return;
-        }
-        if (file.size > 1400000) {
-          showError("Screenshot file exceeds 1.4 MB limit. Choose a smaller PNG, JPEG, or WebP image.");
-          screenshotFileInput.value = "";
-          return;
-        }
-        const reader = new FileReader();
-        reader.onload = () => {
-          if (typeof reader.result === "string") {
-            setAttachedScreenshot(
-              reader.result,
-              file.name,
-              "Uploaded error screenshot (" + file.name + ") for multimodal inspection"
-            );
-          }
-        };
-        reader.readAsDataURL(file);
-      });
-
-      btnSampleShotRdp.addEventListener("click", () => {
-        const dataUrl = generateSyntheticDialogPng(
-          "Remote Desktop Connection (mstsc.exe)",
-          "Error 0x80070005 / CredSSP & TermService Refused",
-          "Remote Desktop cannot connect to srv-rds-01.corp.example.test:3389 (TermService stopped)"
-        );
-        setAttachedScreenshot(
-          dataUrl,
-          "rdp_error_srv-rds-01.png",
-          "Windows Remote Desktop dialog showing Error 0x80070005 / TermService stopped on srv-rds-01.corp.example.test port 3389"
-        );
-        if (!ticketInput.value.trim()) {
-          ticketInput.value =
-            "Users cannot connect via Remote Desktop (mstsc) to srv-rds-01.corp.example.test after maintenance. See attached error dialog screenshot.";
-          updateCharCount();
-        }
-      });
-
-      btnSampleShotVss.addEventListener("click", () => {
-        const dataUrl = generateSyntheticDialogPng(
-          "Windows Server Backup / VSS Writer Monitor",
-          "BCDR Image Backup Failed: Error 0x800423f4 (Event ID 8193)",
-          "Volume Shadow Copy Service writer SqlServerWriter timed out on srv-app-01.corp.example.test"
-        );
-        setAttachedScreenshot(
-          dataUrl,
-          "vss_writer_0x800423f4.png",
-          "Windows Server Backup dialog showing Error 0x800423f4 and VSS Event ID 8193 writer timeout on srv-app-01.corp.example.test"
-        );
-        if (!ticketInput.value.trim()) {
-          ticketInput.value =
-            "Nightly image backup failed on srv-app-01.corp.example.test. See attached Windows Server Backup error dialog screenshot.";
-          updateCharCount();
-        }
-      });
-
-      btnRemoveScreenshot.addEventListener("click", () => {
-        clearAttachedScreenshot();
-      });
-
-      btnClearRmmLoop.addEventListener("click", () => {
-        clearRmmLoopOutput();
-      });
-
-      btnDraftRunbook.addEventListener("click", async () => {
-        const rawTicket = ticketInput.value.trim();
-        if (!rawTicket) {
-          return;
-        }
-        btnDraftRunbook.disabled = true;
-        btnDraftRunbook.textContent = "Synthesizing runbook...";
-        try {
-          const resp = await fetch("/runbooks/draft", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              ticket: rawTicket,
-              escalate_reason: lastTriageResult ? lastTriageResult.escalate_reason : null
-            })
-          });
-          const data = await resp.json();
-          runbookDraftPanel.classList.remove("hidden");
-          if (!resp.ok) {
-            draftRbIdBadge.textContent = "draft error";
-            draftRbStatus.textContent = data.detail || "Unable to draft runbook.";
-            draftRbMarkdown.textContent = "";
-            return;
-          }
-          currentDraftMarkdown = data.markdown || "";
-          draftRbIdBadge.textContent = data.id;
-          draftRbStatus.textContent =
-            "Synthesized '" +
-            data.title +
-            "' with " +
-            (data.checks ? data.checks.length : 0) +
-            " read_only check(s) and " +
-            (data.fixes ? data.fixes.length : 0) +
-            " needs_approval fix(es). Click Hot-index to add to BM25 and re-run triage.";
-          draftRbMarkdown.textContent = currentDraftMarkdown;
-        } catch (err) {
-          runbookDraftPanel.classList.remove("hidden");
-          draftRbIdBadge.textContent = "network error";
-          draftRbStatus.textContent = err.message || "Network error while calling /runbooks/draft.";
-        } finally {
-          btnDraftRunbook.disabled = false;
-          btnDraftRunbook.textContent = "Draft new runbook with Muse Spark";
-        }
-      });
-
-      btnHotIndexRunbook.addEventListener("click", async () => {
-        if (!currentDraftMarkdown) {
-          return;
-        }
-        btnHotIndexRunbook.disabled = true;
-        btnHotIndexRunbook.textContent = "Indexing...";
-        try {
-          const resp = await fetch("/runbooks/index", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ markdown: currentDraftMarkdown })
-          });
-          const data = await resp.json();
-          if (!resp.ok) {
-            draftRbStatus.textContent = "Hot-index failed: " + (data.detail || "Validation error");
-            return;
-          }
-          draftRbStatus.textContent = data.message;
-          await loadHealthAndRunbooks();
-          form.requestSubmit();
-        } catch (err) {
-          draftRbStatus.textContent = "Hot-index failed: " + (err.message || "Network error");
-        } finally {
-          btnHotIndexRunbook.disabled = false;
-          btnHotIndexRunbook.textContent = "Hot-index runbook & re-analyze ticket";
-        }
-      });
-
-      presetRow.addEventListener("click", (event) => {
-        const target = event.target.closest("[data-preset]");
-        if (!target) {
-          return;
-        }
-        const key = target.getAttribute("data-preset");
-        if (key && SAMPLE_TICKETS[key]) {
-          unlinkQueueItem();
-          clearActivePreset();
-          clearRmmLoopOutput();
-          target.classList.add("is-active");
-          ticketInput.value = SAMPLE_TICKETS[key];
-          updateCharCount();
-          clearError();
-          ticketInput.focus();
-        }
-      });
-
-      ticketInput.addEventListener("keydown", (event) => {
-        if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
-          event.preventDefault();
-          if (!submitBtn.disabled) {
-            form.requestSubmit();
-          }
-        }
-      });
-
-      ticketInput.addEventListener("input", () => {
-        clearActivePreset();
-        updateCharCount();
-      });
-
-      clearBtn.addEventListener("click", () => {
-        unlinkQueueItem();
-        clearActivePreset();
-        clearAttachedScreenshot();
-        clearRmmLoopOutput();
-        ticketInput.value = "";
-        updateCharCount();
-        clearError();
-        stopLoadingClock();
-        loadingState.classList.add("hidden");
-        resultContainer.classList.add("hidden");
-        emptyState.classList.remove("hidden");
-        ticketInput.focus();
-      });
-
-      form.addEventListener("submit", async (event) => {
-        event.preventDefault();
-        clearError();
-
-        const rawTicket = ticketInput.value;
-        if (!rawTicket.trim()) {
-          showError("Enter a support ticket description before running analysis.");
-          ticketInput.focus();
-          return;
-        }
-        if (rawTicket.length > MAX_CHARS) {
-          showError("Ticket exceeds the 4000-character limit.");
-          ticketInput.focus();
-          return;
-        }
-
-        if (runbookTitlesById.size === 0) {
-          await loadHealthAndRunbooks();
-        }
-
-        submitBtn.disabled = true;
-        emptyState.classList.add("hidden");
-        resultContainer.classList.add("hidden");
-        loadingState.classList.remove("hidden");
-        startLoadingClock();
-
-        const t0 = performance.now();
-
-        const requestBody = {
-          ticket: rawTicket,
-          reasoning_mode: reasoningModeSelect.value || "standard"
-        };
-        if (attachedScreenshotDataUrl) {
-          requestBody.screenshot_data_url = attachedScreenshotDataUrl;
-          if (attachedScreenshotCaption) {
-            requestBody.screenshot_caption = attachedScreenshotCaption;
-          }
-        }
-        if (activeRmmLoopOutput) {
-          requestBody.rmm_diagnostic_output = activeRmmLoopOutput;
-        }
-
-        try {
-          const response = await fetch("/triage", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(requestBody)
-          });
-
-          const reqId = response.headers.get("X-Request-ID");
-          const metaModel = response.headers.get("X-Meta-Model");
-          const reasoningMode = response.headers.get("X-Reasoning-Mode");
-          const safetyOverrides = response.headers.get("X-Safety-Overrides");
-          let bm25Scores = {};
-          try {
-            const rawScores = response.headers.get("X-BM25-Scores");
-            if (rawScores) {
-              bm25Scores = JSON.parse(rawScores);
-            }
-          } catch (_e) {
-            bm25Scores = {};
-          }
-
-          let payload = null;
-          try {
-            payload = await response.json();
-          } catch (_parseErr) {
-            payload = null;
-          }
-
-          if (!response.ok) {
-            let detail = "Request failed with HTTP " + response.status + ".";
-            if (payload && typeof payload.detail === "string") {
-              detail = payload.detail;
-            } else if (payload && Array.isArray(payload.detail) && payload.detail[0]?.msg) {
-              detail = payload.detail[0].msg;
-            }
-            if (reqId) {
-              detail += " (Request ID: " + reqId + ")";
-            }
-            loadingState.classList.add("hidden");
-            emptyState.classList.remove("hidden");
-            showError(detail);
-            return;
-          }
-
-          const elapsedSeconds = ((performance.now() - t0) / 1000).toFixed(1);
-          renderResult(payload, {
-            requestId: reqId,
-            elapsedSeconds: elapsedSeconds,
-            metaModel: metaModel,
-            reasoningMode: reasoningMode,
-            bm25Scores: bm25Scores,
-            safetyOverrides: safetyOverrides
-          });
-        } catch (networkErr) {
-          loadingState.classList.add("hidden");
-          emptyState.classList.remove("hidden");
-          showError("Connection failed while calling /triage: " + (networkErr.message || "Network error"));
-        } finally {
-          stopLoadingClock();
-          submitBtn.disabled = false;
-        }
-      });
-
-      /* -------------------------------------------------------------------
-       * Integrations Settings Controller (Ticketing/PSA & RMM Standby View)
-       * ------------------------------------------------------------------- */
-      const mainWorkspace = document.getElementById("main-workspace");
-      const integrationsWorkspace = document.getElementById("integrations-workspace");
-      const navTabTriage = document.getElementById("nav-tab-triage");
-      const navTabIntegrations = document.getElementById("nav-tab-integrations");
-      const navIntegrationsBadge = document.getElementById("nav-integrations-badge");
-
-      const categoryBar = document.getElementById("integration-category-bar");
-      const searchInput = document.getElementById("integration-search-input");
-      const providerListEl = document.getElementById("integration-provider-list");
-      const emptyFilterNote = document.getElementById("integration-empty-filter");
-
-      const cfgProviderName = document.getElementById("cfg-provider-name");
-      const cfgProviderProtocol = document.getElementById("cfg-provider-protocol");
-      const cfgProviderStatus = document.getElementById("cfg-provider-status");
-      const cfgProviderDesc = document.getElementById("cfg-provider-desc");
-      const cfgProviderCapabilities = document.getElementById("cfg-provider-capabilities");
-      const cfgWebhookUrl = document.getElementById("cfg-webhook-url");
-      const cfgCopyWebhookBtn = document.getElementById("cfg-copy-webhook-btn");
-
-      const cfgForm = document.getElementById("integration-config-form");
-      const cfgUpdatedAt = document.getElementById("cfg-updated-at");
-      const cfgSyncMode = document.getElementById("cfg-sync-mode");
-      const cfgEnabledCheckbox = document.getElementById("cfg-enabled-checkbox");
-      const cfgFieldsGrid = document.getElementById("cfg-fields-grid");
-      const cfgResetBtn = document.getElementById("cfg-reset-btn");
-      const cfgTestBtn = document.getElementById("cfg-test-btn");
-      const cfgSaveBtn = document.getElementById("cfg-save-btn");
-      const cfgFeedbackBanner = document.getElementById("cfg-feedback-banner");
-
-      let providersCatalog = [];
-      let activeCategoryFilter = "all";
-      let activeSearchQuery = "";
-      let selectedProviderId = null;
-
-      setCopyButtonState(cfgCopyWebhookBtn, "idle");
-
-      function formatStatusLabel(status) {
-        if (status === "staged") {
-          return "staged";
-        }
-        if (status === "paused") {
-          return "paused";
-        }
-        return "unconfigured";
-      }
-
-      function updateNavIntegrationsBadge() {
-        const total = providersCatalog.length || 12;
-        const stagedCount = providersCatalog.filter((p) => p.status === "staged").length;
-        navIntegrationsBadge.textContent = stagedCount + "/" + total;
-      }
-
-      function hideIntegrationFeedback() {
-        cfgFeedbackBanner.textContent = "";
-        cfgFeedbackBanner.className = "banner hidden";
-      }
-
-      function showIntegrationFeedback(kind, title, detail) {
-        cfgFeedbackBanner.textContent = "";
-        const variant = kind === "ok" ? "banner-ok" : "banner-escalate";
-        cfgFeedbackBanner.className = "banner " + variant;
-
-        const strong = document.createElement("strong");
-        strong.textContent = title;
-        const span = document.createElement("span");
-        span.textContent = detail;
-
-        cfgFeedbackBanner.appendChild(strong);
-        cfgFeedbackBanner.appendChild(span);
-      }
-
-      function getSelectedProvider() {
-        return providersCatalog.find((p) => p.id === selectedProviderId) || null;
-      }
-
-      function renderProviderDirectory() {
-        providerListEl.textContent = "";
-        const q = activeSearchQuery.trim().toLowerCase();
-
-        const filtered = providersCatalog.filter((item) => {
-          if (activeCategoryFilter !== "all" && item.category !== activeCategoryFilter) {
-            return false;
-          }
-          if (!q) {
-            return true;
-          }
-          const hay = (item.name + " " + item.protocol + " " + item.category + " " + item.description).toLowerCase();
-          return hay.includes(q);
-        });
-
-        if (filtered.length === 0) {
-          emptyFilterNote.classList.remove("hidden");
-          return;
-        }
-        emptyFilterNote.classList.add("hidden");
-
-        filtered.forEach((provider) => {
-          const btn = document.createElement("button");
-          btn.type = "button";
-          btn.className = "provider-row" + (provider.id === selectedProviderId ? " is-selected" : "");
-          btn.setAttribute("role", "option");
-          btn.setAttribute("aria-selected", provider.id === selectedProviderId ? "true" : "false");
-
-          const mainDiv = document.createElement("div");
-          mainDiv.className = "provider-row-main";
-
-          const nameSpan = document.createElement("span");
-          nameSpan.className = "provider-row-name";
-          nameSpan.textContent = provider.name;
-
-          const catPrefix = provider.category === "rmm" ? "RMM" : "Ticketing";
-          const metaSpan = document.createElement("span");
-          metaSpan.className = "provider-row-meta mono";
-          metaSpan.textContent = catPrefix + " / " + provider.protocol;
-
-          mainDiv.appendChild(nameSpan);
-          mainDiv.appendChild(metaSpan);
-
-          const badge = document.createElement("span");
-          const st = provider.status || "not_configured";
-          badge.className = "badge mono status-" + st;
-          badge.textContent = formatStatusLabel(st);
-
-          btn.appendChild(mainDiv);
-          btn.appendChild(badge);
-
-          btn.addEventListener("click", () => {
-            selectedProviderId = provider.id;
-            hideIntegrationFeedback();
-            renderProviderDirectory();
-            renderSelectedProvider();
-          });
-
-          providerListEl.appendChild(btn);
-        });
-      }
-
-      function renderSelectedProvider() {
-        const provider = getSelectedProvider();
-        if (!provider) {
-          return;
-        }
-
-        cfgProviderName.textContent = provider.name;
-        const catLabel = provider.category === "rmm" ? "RMM platform" : "Ticketing & PSA";
-        cfgProviderProtocol.textContent = catLabel + " / " + provider.protocol;
-
-        const st = provider.status || "not_configured";
-        cfgProviderStatus.className = "badge mono status-" + st;
-        cfgProviderStatus.textContent = formatStatusLabel(st);
-
-        cfgProviderDesc.textContent = provider.description || "";
-
-        cfgProviderCapabilities.textContent = "";
-        (provider.capabilities || []).forEach((cap) => {
-          const li = document.createElement("li");
-          li.className = "runbook-tag";
-          li.textContent = cap;
-          cfgProviderCapabilities.appendChild(li);
-        });
-
-        const origin = window.location && window.location.origin ? window.location.origin : "";
-        const fullWebhook = origin + (provider.webhook_path || ("/integrations/webhooks/" + provider.id));
-        cfgWebhookUrl.textContent = fullWebhook;
-
-        if (provider.updated_at) {
-          cfgUpdatedAt.textContent = "Updated " + provider.updated_at;
-        } else {
-          cfgUpdatedAt.textContent = "Not saved yet";
-        }
-
-        cfgSyncMode.value = provider.sync_mode || "draft_internal_note";
-        cfgEnabledCheckbox.checked = Boolean(provider.enabled);
-
-        cfgFieldsGrid.textContent = "";
-        const fields = Array.isArray(provider.fields) ? provider.fields : [];
-        const configuredValues = provider.configured_values || {};
-        const savedSecrets = provider.has_saved_secrets || {};
-
-        fields.forEach((fSpec, idx) => {
-          const wrapper = document.createElement("div");
-          const isWide = fSpec.field_type === "url" || (fields.length % 2 === 1 && idx === fields.length - 1);
-          wrapper.className = "cfg-field-item" + (isWide ? " is-wide" : "");
-
-          const topRow = document.createElement("div");
-          topRow.className = "cfg-field-top";
-
-          const inputId = "cfg-input-" + provider.id + "-" + fSpec.key;
-          const labelEl = document.createElement("label");
-          labelEl.className = "cfg-field-label";
-          labelEl.setAttribute("for", inputId);
-          labelEl.textContent = fSpec.label;
-
-          const tagEl = document.createElement("span");
-          tagEl.className = "cfg-field-tag mono";
-          if (fSpec.field_type === "secret" && savedSecrets[fSpec.key]) {
-            tagEl.classList.add("is-stored");
-            tagEl.textContent = "secret stored";
-          } else {
-            tagEl.textContent = fSpec.required ? "required" : "optional";
-          }
-
-          topRow.appendChild(labelEl);
-          topRow.appendChild(tagEl);
-
-          const inputEl = document.createElement("input");
-          inputEl.id = inputId;
-          inputEl.className = "cfg-input" + (fSpec.field_type === "url" ? " mono" : "");
-          inputEl.setAttribute("data-field-key", fSpec.key);
-          inputEl.type = fSpec.field_type === "secret" ? "password" : fSpec.field_type === "url" ? "url" : "text";
-          inputEl.placeholder = fSpec.placeholder || "";
-          inputEl.autocomplete = "off";
-          inputEl.spellcheck = false;
-          inputEl.value = configuredValues[fSpec.key] || "";
-
-          const helpP = document.createElement("p");
-          helpP.className = "cfg-help";
-          helpP.textContent = fSpec.help_text || "";
-
-          wrapper.appendChild(topRow);
-          wrapper.appendChild(inputEl);
-          wrapper.appendChild(helpP);
-          cfgFieldsGrid.appendChild(wrapper);
-        });
-      }
-
-      function collectFormValues() {
-        const values = {};
-        const inputs = cfgFieldsGrid.querySelectorAll("[data-field-key]");
-        inputs.forEach((el) => {
-          const key = el.getAttribute("data-field-key");
-          if (key) {
-            values[key] = el.value.trim();
-          }
-        });
-        return values;
-      }
-
-      function replaceProviderInCatalog(updatedView) {
-        providersCatalog = providersCatalog.map((p) => (p.id === updatedView.id ? updatedView : p));
-        updateNavIntegrationsBadge();
-        renderProviderDirectory();
-        renderSelectedProvider();
-      }
-
-      async function loadIntegrations() {
-        try {
-          const resp = await fetch("/integrations");
-          if (!resp.ok) {
-            return;
-          }
-          const list = await resp.json();
-          if (Array.isArray(list) && list.length > 0) {
-            providersCatalog = list;
-            if (!selectedProviderId || !providersCatalog.some((p) => p.id === selectedProviderId)) {
-              selectedProviderId = providersCatalog[0].id;
-            }
-            updateNavIntegrationsBadge();
-            renderProviderDirectory();
-            renderSelectedProvider();
-          }
-        } catch (_err) {
-          /* Ignore offline state during startup */
-        }
-      }
-
-      const evalWorkspace = document.getElementById("eval-workspace");
-      const navTabEval = document.getElementById("nav-tab-eval");
-      const navEvalBadge = document.getElementById("nav-eval-badge");
-
-      const safetyPresetBar = document.getElementById("safety-preset-bar");
-      const safetyInspectForm = document.getElementById("safety-inspect-form");
-      const safetyCmdInput = document.getElementById("safety-cmd-input");
-      const safetyVerdictBadge = document.getElementById("safety-verdict-badge");
-      const safetyVerdictReason = document.getElementById("safety-verdict-reason");
-      const safetyStagesList = document.getElementById("safety-stages-list");
-
-      const btnRefreshEval = document.getElementById("btn-refresh-eval");
-      const evalMetricHitrate = document.getElementById("eval-metric-hitrate");
-      const evalMetricSplit = document.getElementById("eval-metric-split");
-      const evalMetricCommands = document.getElementById("eval-metric-commands");
-      const evalMetricUnsafe = document.getElementById("eval-metric-unsafe");
-      const evalRowsList = document.getElementById("eval-rows-list");
-
-      async function runSafetyInspect(cmdText) {
-        try {
-          const resp = await fetch("/safety/inspect", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ command: cmdText })
-          });
-          if (!resp.ok) {
-            return;
-          }
-          const data = await resp.json();
-          const risk = data.risk === "read_only" ? "read_only" : "needs_approval";
-          safetyVerdictBadge.className = "badge mono risk-" + risk;
-          safetyVerdictBadge.textContent = risk;
-          safetyVerdictReason.textContent = data.reason || "";
-          safetyStagesList.textContent = "";
-          const stages = Array.isArray(data.stages) && data.stages.length > 0 ? data.stages : ["(empty command)"];
-          stages.forEach((st) => {
-            const li = document.createElement("li");
-            const span = document.createElement("span");
-            span.textContent = st;
-            li.appendChild(span);
-            safetyStagesList.appendChild(li);
-          });
-        } catch (_err) {
-          /* Ignore offline state */
-        }
-      }
-
-      async function loadEvalSummary() {
-        try {
-          const resp = await fetch("/eval/summary");
-          if (!resp.ok) {
-            return;
-          }
-          const data = await resp.json();
-          const hitRateStr = Number(data.bm25_top3_hit_rate || 0).toFixed(1) + "%";
-          navEvalBadge.textContent = hitRateStr;
-          evalMetricHitrate.textContent =
-            data.bm25_top3_hits + " / " + data.covered_tickets + " (" + hitRateStr + ")";
-          evalMetricSplit.textContent =
-            data.covered_tickets + " covered / " + data.escalation_tickets + " escalation";
-          evalMetricCommands.textContent =
-            data.runbooks_audited + " runbooks / " + data.commands_audited + " commands";
-          evalMetricUnsafe.textContent =
-            data.mislabeled_needs_approval + " mislabeled (100% deterministic override)";
-
-          evalRowsList.textContent = "";
-          (data.rows || []).forEach((row) => {
-            const div = document.createElement("div");
-            div.className = "eval-row";
-
-            const idSpan = document.createElement("span");
-            idSpan.className = "mono";
-            idSpan.style.color = "var(--text-primary)";
-            idSpan.textContent = row.ticket_id;
-
-            const expSpan = document.createElement("span");
-            expSpan.className = "mono";
-            expSpan.style.color = "var(--text-secondary)";
-            expSpan.textContent = row.expected_runbook_id || "escalate=true (uncovered)";
-
-            const matchesSpan = document.createElement("span");
-            matchesSpan.className = "mono";
-            matchesSpan.style.color = "var(--text-muted)";
-            const topList = (row.top_matches || []).map((m) => m.id + " (" + m.score + ")");
-            matchesSpan.textContent = topList.join(", ") || "none";
-
-            const verdictBadge = document.createElement("span");
-            if (row.expected_escalate && !row.expected_runbook_id) {
-              verdictBadge.className = "badge mono status-paused";
-              verdictBadge.textContent = "ESCALATE";
-            } else if (row.retrieval_hit) {
-              verdictBadge.className = "badge mono risk-read_only";
-              verdictBadge.textContent = "TOP-3 HIT";
-            } else {
-              verdictBadge.className = "badge mono conf-low";
-              verdictBadge.textContent = "MISS";
-            }
-
-            div.appendChild(idSpan);
-            div.appendChild(expSpan);
-            div.appendChild(matchesSpan);
-            div.appendChild(verdictBadge);
-            evalRowsList.appendChild(div);
-          });
-        } catch (_err) {
-          /* Ignore offline state */
-        }
-      }
-
-      if (safetyPresetBar) {
-        safetyPresetBar.addEventListener("click", (event) => {
-          const btn = event.target.closest("[data-safety-cmd]");
-          if (!btn) {
-            return;
-          }
-          const cmd = btn.getAttribute("data-safety-cmd") || "";
-          safetyCmdInput.value = cmd;
-          runSafetyInspect(cmd);
-        });
-      }
-
-      if (safetyInspectForm) {
-        safetyInspectForm.addEventListener("submit", (event) => {
-          event.preventDefault();
-          runSafetyInspect(safetyCmdInput.value);
-        });
-      }
-
-      if (btnRefreshEval) {
-        btnRefreshEval.addEventListener("click", () => {
-          loadEvalSummary();
-        });
-      }
-
-      function switchWorkspaceView(viewName, updateHash) {
-        mainWorkspace.classList.add("hidden");
-        integrationsWorkspace.classList.add("hidden");
-        evalWorkspace.classList.add("hidden");
-
-        navTabTriage.classList.remove("is-active");
-        navTabTriage.removeAttribute("aria-current");
-        navTabIntegrations.classList.remove("is-active");
-        navTabIntegrations.removeAttribute("aria-current");
-        navTabEval.classList.remove("is-active");
-        navTabEval.removeAttribute("aria-current");
-
-        if (viewName === "integrations") {
-          integrationsWorkspace.classList.remove("hidden");
-          navTabIntegrations.classList.add("is-active");
-          navTabIntegrations.setAttribute("aria-current", "page");
-          if (providersCatalog.length === 0) {
-            loadIntegrations();
-          }
-          if (updateHash && window.location.hash !== "#integrations") {
-            history.replaceState(null, "", "#integrations");
-          }
-        } else if (viewName === "eval") {
-          evalWorkspace.classList.remove("hidden");
-          navTabEval.classList.add("is-active");
-          navTabEval.setAttribute("aria-current", "page");
-          runSafetyInspect(safetyCmdInput.value);
-          loadEvalSummary();
-          if (updateHash && window.location.hash !== "#eval") {
-            history.replaceState(null, "", "#eval");
-          }
-        } else {
-          mainWorkspace.classList.remove("hidden");
-          navTabTriage.classList.add("is-active");
-          navTabTriage.setAttribute("aria-current", "page");
-          loadQueueItems();
-          if (updateHash && (window.location.hash === "#integrations" || window.location.hash === "#eval")) {
-            history.replaceState(null, "", window.location.pathname + window.location.search);
-          }
-        }
-      }
-
-      const cfgFillDemoBtn = document.getElementById("cfg-fill-demo-btn");
-      if (cfgFillDemoBtn) {
-        cfgFillDemoBtn.addEventListener("click", () => {
-          const provider = getSelectedProvider();
-          if (!provider) {
-            return;
-          }
-          hideIntegrationFeedback();
-          const fields = Array.isArray(provider.fields) ? provider.fields : [];
-          fields.forEach((fSpec) => {
-            const el = cfgFieldsGrid.querySelector('[data-field-key="' + fSpec.key + '"]');
-            if (el) {
-              if (fSpec.field_type === "secret") {
-                el.value = "demo_secret_" + provider.id + "_token";
-              } else {
-                el.value = fSpec.placeholder || "demo_value";
-              }
-            }
-          });
-          cfgEnabledCheckbox.checked = true;
-          showIntegrationFeedback(
-            "ok",
-            "Demo values populated",
-            "Click Save settings to stage " + provider.name + " as ready."
-          );
-        });
-      }
-
-      queueStagedFilterBtn.addEventListener("click", () => {
-        stagedOnlyQueueFilter = !stagedOnlyQueueFilter;
-        queueStagedFilterBtn.classList.toggle("is-active", stagedOnlyQueueFilter);
-        queueStagedFilterBtn.textContent = stagedOnlyQueueFilter ? "Staged only" : "All connectors";
-        loadQueueItems();
-      });
-
-      queueRefreshBtn.addEventListener("click", () => {
-        loadQueueItems();
-      });
-
-      unlinkTicketBtn.addEventListener("click", () => {
-        unlinkQueueItem();
-      });
-
-      async function submitTicketWriteback(actionType) {
-        if (!lastTriageResult) {
-          return;
-        }
-        const targetTicketId = activeQueueItem ? activeQueueItem.id : "manual-ticket";
-        const providerId = writebackProviderSelect.value || "connectwise_psa";
-
-        btnWritebackNote.disabled = true;
-        btnWritebackEscalate.disabled = true;
-
-        try {
-          const resp = await fetch(
-            "/integrations/tickets/" + encodeURIComponent(targetTicketId) + "/writeback",
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                provider_id: providerId,
-                action: actionType,
-                likely_cause: lastTriageResult.likely_cause || "Diagnosis recorded",
-                confidence: lastTriageResult.confidence || "medium",
-                matched_runbooks: Array.isArray(lastTriageResult.matched_runbooks)
-                  ? lastTriageResult.matched_runbooks
-                  : [],
-                steps: Array.isArray(lastTriageResult.steps) ? lastTriageResult.steps : [],
-                commands: Array.isArray(lastTriageResult.commands) ? lastTriageResult.commands : [],
-                escalate_reason: lastTriageResult.escalate_reason || null
-              })
-            }
-          );
-          const data = await resp.json();
-          writebackFeedback.classList.remove("hidden");
-          if (!resp.ok) {
-            writebackStatusMsg.style.color = "var(--esc-text)";
-            writebackStatusMsg.textContent = "Writeback error: " + (data.detail || "Request failed");
-            writebackNoteCode.textContent = "";
-            return;
-          }
-          writebackStatusMsg.style.color = "var(--ro-text)";
-          writebackStatusMsg.textContent = data.message;
-          writebackNoteCode.textContent = data.note_preview || "";
-          await loadQueueItems();
-        } catch (err) {
-          writebackFeedback.classList.remove("hidden");
-          writebackStatusMsg.style.color = "var(--esc-text)";
-          writebackStatusMsg.textContent = "Writeback connection error: " + (err.message || "Network error");
-        } finally {
-          btnWritebackNote.disabled = false;
-          btnWritebackEscalate.disabled = false;
-        }
-      }
-
-      btnWritebackNote.addEventListener("click", () => {
-        submitTicketWriteback("internal_note");
-      });
-
-      btnWritebackEscalate.addEventListener("click", () => {
-        submitTicketWriteback("escalate");
-      });
-
-      navTabTriage.addEventListener("click", () => {
-        switchWorkspaceView("triage", true);
-      });
-
-      navTabIntegrations.addEventListener("click", () => {
-        switchWorkspaceView("integrations", true);
-      });
-
-      navTabEval.addEventListener("click", () => {
-        switchWorkspaceView("eval", true);
-      });
-
-      window.addEventListener("hashchange", () => {
-        if (window.location.hash === "#integrations") {
-          switchWorkspaceView("integrations", false);
-        } else if (window.location.hash === "#eval") {
-          switchWorkspaceView("eval", false);
-        } else {
-          switchWorkspaceView("triage", false);
-        }
-      });
-
-      categoryBar.addEventListener("click", (event) => {
-        const btn = event.target.closest("[data-category]");
-        if (!btn) {
-          return;
-        }
-        const cat = btn.getAttribute("data-category") || "all";
-        activeCategoryFilter = cat;
-        categoryBar.querySelectorAll("[data-category]").forEach((el) => {
-          el.classList.toggle("is-active", el === btn);
-        });
-        renderProviderDirectory();
-      });
-
-      searchInput.addEventListener("input", () => {
-        activeSearchQuery = searchInput.value;
-        renderProviderDirectory();
-      });
-
-      cfgCopyWebhookBtn.addEventListener("click", () => {
-        copyTextToClipboard(cfgWebhookUrl.textContent || "", cfgCopyWebhookBtn);
-      });
-
-      cfgTestBtn.addEventListener("click", async () => {
-        const provider = getSelectedProvider();
-        if (!provider) {
-          return;
-        }
-        hideIntegrationFeedback();
-        cfgTestBtn.disabled = true;
-
-        try {
-          const resp = await fetch("/integrations/" + encodeURIComponent(provider.id) + "/test", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              sync_mode: cfgSyncMode.value,
-              values: collectFormValues()
-            })
-          });
-          const data = await resp.json();
-          if (!resp.ok) {
-            showIntegrationFeedback("error", "Validation request failed", data.detail || "Unable to validate config.");
-            return;
-          }
-          if (data.ok) {
-            showIntegrationFeedback("ok", "Staged dry-run passed", data.message);
-          } else {
-            showIntegrationFeedback("error", "Validation incomplete", data.message);
-          }
-        } catch (err) {
-          showIntegrationFeedback("error", "Connection error", err.message || "Could not reach /integrations test endpoint.");
-        } finally {
-          cfgTestBtn.disabled = false;
-        }
-      });
-
-      cfgForm.addEventListener("submit", async (event) => {
-        event.preventDefault();
-        const provider = getSelectedProvider();
-        if (!provider) {
-          return;
-        }
-        hideIntegrationFeedback();
-        cfgSaveBtn.disabled = true;
-
-        try {
-          const resp = await fetch("/integrations/" + encodeURIComponent(provider.id), {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              enabled: cfgEnabledCheckbox.checked,
-              sync_mode: cfgSyncMode.value,
-              values: collectFormValues()
-            })
-          });
-          const data = await resp.json();
-          if (!resp.ok) {
-            let msg = "Unable to save integration settings.";
-            if (typeof data.detail === "string") {
-              msg = data.detail;
-            } else if (Array.isArray(data.detail) && data.detail[0]?.msg) {
-              msg = data.detail[0].msg;
-            }
-            showIntegrationFeedback("error", "Configuration error", msg);
-            return;
-          }
-
-          replaceProviderInCatalog(data);
-          const modeLabel = data.status === "staged"
-            ? "Connector is staged as ready in standby mode."
-            : data.status === "paused"
-              ? "Draft settings saved (connector paused)."
-              : "Connector settings cleared.";
-          showIntegrationFeedback("ok", "Settings saved for " + data.name, modeLabel);
-        } catch (err) {
-          showIntegrationFeedback("error", "Save failed", err.message || "Network error while saving settings.");
-        } finally {
-          cfgSaveBtn.disabled = false;
-        }
-      });
-
-      cfgResetBtn.addEventListener("click", async () => {
-        const provider = getSelectedProvider();
-        if (!provider) {
-          return;
-        }
-        hideIntegrationFeedback();
-        cfgResetBtn.disabled = true;
-
-        try {
-          const resp = await fetch("/integrations/" + encodeURIComponent(provider.id), {
-            method: "DELETE"
-          });
-          if (resp.ok) {
-            const data = await resp.json();
-            replaceProviderInCatalog(data);
-            showIntegrationFeedback("ok", "Configuration reset", data.name + " has been reset to unconfigured.");
-          }
-        } catch (err) {
-          showIntegrationFeedback("error", "Reset failed", err.message || "Network error while resetting connector.");
-        } finally {
-          cfgResetBtn.disabled = false;
-        }
-      });
-
-      initTheme();
-      updateCharCount();
-      loadHealthAndRunbooks();
-      loadIntegrations();
-      loadQueueItems();
-      if (window.location.hash === "#integrations") {
-        switchWorkspaceView("integrations", false);
-      } else if (window.location.hash === "#eval") {
-        switchWorkspaceView("eval", false);
-      }
-    })();
-  </script>
+  <div id="toast-region" class="toast-region" role="status" aria-live="polite"></div>
 </body>
 </html>
