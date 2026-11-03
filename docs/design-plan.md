@@ -1,7 +1,9 @@
 # RunbookPilot design plan (Phase 1)
 
 Date: 2026-11-03. Branch `ui-redesign`. Input: `UI_REDESIGN_PLAN.md` sections 3 to 8, `docs/ui-audit.md`, `docs/audit/*.png`.
-Status: draft. Waits for the owner's OK before Phase 2.
+Status: APPROVED by the owner on 2026-11-03, with 2 tweaks (already applied below):
+1. "Re-run with RMM output" stays visible below the commands, not inside the collapsed Details. It is a main demo feature.
+2. Fonts stay on the existing Google Fonts link (`display=swap`). No self-hosted font files, no npm download.
 
 **Direction in one line:** keep the calm hairline Geist look the audit liked, move it to a cool slate base, take the red-orange accent away from branding, and spend all the visual weight on one thing: the command block with its risk tab.
 
@@ -75,7 +77,7 @@ One known non-text gap: the light amber tab fill `#f2b530` on white is 1.8:1. Fi
 ## 3. Type
 
 - **UI sans:** Geist (variable, 400 to 600). **Mono:** Geist Mono (400, 500). Mono only for commands, event IDs, hex codes, ticket IDs, host names and request IDs. Not for labels, chips, counters or scores.
-- **Loading:** self-host `static/fonts/Geist-Variable.woff2` and `GeistMono-Variable.woff2` (OFL licence, from the `geist` npm package files) with `@font-face { font-display: swap; }` and one `<link rel="preload">` for the sans. Fallback stacks: `"Geist", "Segoe UI", system-ui, sans-serif` and `"Geist Mono", "Cascadia Mono", Consolas, monospace`. If vendoring fails, keep the Google Fonts link (it already uses `display=swap`).
+- **Loading (owner tweak 2):** keep the existing Google Fonts `<link>` for Geist and Geist Mono with `display=swap`, plus `preconnect`. No self-hosted files. Fallback stacks: `"Geist", "Segoe UI", system-ui, sans-serif` and `"Geist Mono", "Cascadia Mono", Consolas, monospace`.
 - **Numbers:** `font-variant-numeric: tabular-nums` on timers, counts, confidence.
 - **Measure:** prose blocks `max-width: 72ch`.
 
@@ -196,6 +198,11 @@ Commands                       RunbookPilot never runs commands. Copy and run th
  [COMMAND BLOCK, amber]
  [COMMAND BLOCK, amber]
 
+Check results from RMM                                    [Sample data]
+ Paste the output of the read-only checks, then re-run triage with it.
+ [ output textarea ]                       [Re-run triage with this output]
+ (owner tweak 1: visible, not in Details. Hidden when there are no commands.)
+
 Source runbooks
  ▸ Locked Active Directory user account                         rb-02
  ▸ Active Directory forgotten or expired password               rb-16
@@ -208,7 +215,7 @@ Source runbooks
 
 ▸ Details  (collapsed)
    Request ID · Model · Mode · Time 9.9 s · Retrieval scores (BM25L) ·
-   Safety overrides · RMM device telemetry [Sample data] · Re-run with RMM output
+   Safety overrides · RMM device telemetry [Sample data]
 
 ┌ WRITEBACK BAR (sticky to bottom of the result column on desktop) ───────────┐
 │ Send to  [ConnectWise PSA ▾]   [Post internal note]  [Flag for Tier 3]       │
@@ -333,8 +340,7 @@ Every row stacks; no fixed widths over 358 px. Long IDs and hosts use `overflow-
 ```
 static/
   index.html            shell: top bar, rail, 5 <section data-view> blocks, <template>s
-  fonts/                Geist-Variable.woff2, GeistMono-Variable.woff2
-  css/tokens.css        @font-face, color tokens light/dark, type, space, radius, motion
+  css/tokens.css        color tokens light/dark, type, space, radius, motion (fonts: Google Fonts link in index.html)
   css/base.css          reset, body, type roles, focus, skip link, reduced motion, .sr-only
   css/layout.css        shell grid, top bar, rail, menu sheet, columns, breakpoints
   css/components.css    the table above

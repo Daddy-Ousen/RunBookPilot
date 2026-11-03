@@ -13,9 +13,9 @@ Source plan: `UI_REDESIGN_PLAN.md` (repo root). Follow it phase by phase. Stop a
 
 ## Phases
 - [x] Phase 0: Audit (done 2026-11-03; `docs/ui-audit.md` + 21 PNG in `docs/audit/`). Screenshots at 1440/768/390 for every view. `docs/ui-audit.md` with 10 worst problems. **Checkpoint: show audit.**
-- [ ] Phase 1: Design plan. `docs/design-plan.md`. **Checkpoint: wait for owner OK.**
+- [x] Phase 1: Design plan (approved 2026-11-03 with 2 owner tweaks). `docs/design-plan.md`. **Checkpoint: wait for owner OK.**
   - [x] Draft written 2026-11-03 (`docs/design-plan.md`). Contrast pairs checked with a script: all AA, light and dark.
-  - [ ] Owner OK. Phase 2 must not start before it.
+  - [x] Owner OK, with tweaks: (1) RMM re-triage stays visible below commands; (2) keep Google Fonts link, no self-hosted fonts.
 - [ ] Phase 2: Foundation. Split `static/index.html` into `static/css/*.css` + `static/js/*.js` (ES modules), tokens, themes, base components, shell, left rail, hash router. **Checkpoint: shell works, old features run.**
 - [ ] Phase 3: Triage view (plan section 6, all states). **Checkpoint: all samples, uncovered, screenshot, RMM re-triage.**
 - [ ] Phase 4: Runbooks, Safety lab, Benchmark, Integrations views.
@@ -44,8 +44,8 @@ Source plan: `UI_REDESIGN_PLAN.md` (repo root). Follow it phase by phase. Stop a
 - UI never executes a command. `textContent` only for dynamic text.
 - Label sample/staged data. No build step. No framework.
 
-## Design decisions (Phase 1 draft, pending owner OK)
-- Keep hairline Geist look. Move to cool slate neutrals. Self-host Geist + Geist Mono (`font-display: swap`).
+## Design decisions (Phase 1, approved)
+- Keep hairline Geist look. Move to cool slate neutrals. Geist + Geist Mono via existing Google Fonts link (`display=swap`). No self-hosting.
 - Brand accent: cobalt `#2b4acb` (light) / `#3d5ae0` fill, `#9aabff` text (dark). Red-orange removed (clashed with escalate red).
 - Risk: teal read-only, amber needs approval, red escalate. Confidence and queue priority are neutral.
 - 7-size type scale, 13 px floor. 4 px spacing base. 40 px targets. No shadows except toast/menu sheet.
@@ -53,7 +53,7 @@ Source plan: `UI_REDESIGN_PLAN.md` (repo root). Follow it phase by phase. Stop a
 - File split: `static/css/{tokens,base,layout,components,views}.css`, `static/js/{main,router,dom,api,copy,theme,toast,store}.js` + `static/js/views/*.js`.
 
 ## Blockers
-- Waiting for owner OK on `docs/design-plan.md`.
+- None.
 
 ## Backend issues seen (report only, do not fix)
 - LLM paired step "Clear cached credentials" with `Clear-RecycleBin -Confirm` (lockout sample). Wrong command, label is right.
