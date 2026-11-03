@@ -1,0 +1,142 @@
+[
+  {
+    "id": "eval-01",
+    "ticket": "Alert on srv-app-01.corp.example.test: Last night's scheduled BCDR image backup failed at 02:15 AM with error 0x800423f4 and VSS Event ID 8193 snapshot timeout.",
+    "expected_runbook_id": "rb-01-bcdr-backup-failed",
+    "expected_cause_keywords": ["vss", "shadow", "backup"],
+    "expected_escalate": false
+  },
+  {
+    "id": "eval-02",
+    "ticket": "Standard user user01@corp.example.test changed their password yesterday and now gets 'The referenced account is currently locked out' every 15 minutes. DC dc-01 logged Event ID 4740 from their docked workstation.",
+    "expected_runbook_id": "rb-02-ad-account-locked",
+    "expected_cause_keywords": ["locked", "lockout", "credential", "password"],
+    "expected_escalate": false
+  },
+  {
+    "id": "eval-03",
+    "ticket": "Guest virtual machine vm-erp-01 on standalone host hv-host-01.corp.example.test will not power on after a maintenance window. Hyper-V Manager says 'Failed to change state' with error 0x80070070.",
+    "expected_runbook_id": "rb-03-hyperv-vm-wont-start",
+    "expected_cause_keywords": ["disk", "space", "storage", "memory", "vmms", "vhdx"],
+    "expected_escalate": false
+  },
+  {
+    "id": "eval-04",
+    "ticket": "Users at tenant-alpha.test report outbound M365 emails to external partners are delayed by 40 minutes and sitting in Deferred status in Exchange Online after a gateway connector change.",
+    "expected_runbook_id": "rb-04-m365-mail-flow-delay",
+    "expected_cause_keywords": ["connector", "exchange", "deferred", "mail", "routing", "tls"],
+    "expected_escalate": false
+  },
+  {
+    "id": "eval-05",
+    "ticket": "RMM critical alert on Windows file server srv-file-01.corp.example.test: C: volume has less than 1.1 GB (2%) free disk space remaining after heavy temp and CBS log growth.",
+    "expected_runbook_id": "rb-05-fileserver-disk-full",
+    "expected_cause_keywords": ["temp", "log", "cbs", "disk", "space"],
+    "expected_escalate": false
+  },
+  {
+    "id": "eval-06",
+    "ticket": "Workstation wks-acct-04.corp.example.test has been stuck on monthly Windows Update 'Downloading - 0%' for 6 hours and reports error 0x8024001e in WindowsUpdateClient logs.",
+    "expected_runbook_id": "rb-06-windows-update-stuck",
+    "expected_cause_keywords": ["softwaredistribution", "wuauserv", "bits", "cache", "update"],
+    "expected_escalate": false
+  },
+  {
+    "id": "eval-07",
+    "ticket": "Workstation wks-fin-03.corp.example.test cannot open internal shares by hostname srv-file-01.corp.example.test and browsers show DNS_PROBE_FINISHED_NXDOMAIN, although ping 10.20.0.10 works fine.",
+    "expected_runbook_id": "rb-07-dns-resolution-failure",
+    "expected_cause_keywords": ["dns", "cache", "resolver", "nic", "server"],
+    "expected_escalate": false
+  },
+  {
+    "id": "eval-08",
+    "ticket": "Remote employee user06 reports their Windows IKEv2 VPN connection Corp-SplitVPN to vpn-gw.tenant-alpha.test disconnects every 10 minutes with RasClient Event ID 829.",
+    "expected_runbook_id": "rb-08-vpn-tunnel-drops",
+    "expected_cause_keywords": ["vpn", "mtu", "rasman", "keepalive", "nat", "fragmentation"],
+    "expected_escalate": false
+  },
+  {
+    "id": "eval-09",
+    "ticket": "Nobody on the second floor can print to shared printer PRN-FL2-01. Six print jobs are queued behind a document stuck in 'Deleting' status.",
+    "expected_runbook_id": "rb-09-printer-queue-stuck",
+    "expected_cause_keywords": ["spooler", "spool", "print", "corrupt"],
+    "expected_escalate": false
+  },
+  {
+    "id": "eval-10",
+    "ticket": "Newly imaged Windows 11 laptop wks-mkt-11 failed automatic Intune MDM enrollment; user has a valid Intune license, and dmwappushservice appears stopped on the endpoint.",
+    "expected_runbook_id": "rb-10-intune-enrollment-fail",
+    "expected_cause_keywords": ["intune", "mdm", "dmwappushservice", "enrollment"],
+    "expected_escalate": false
+  },
+  {
+    "id": "eval-11",
+    "ticket": "Employees opening https://portal.tenant-alpha.test on IIS host srv-web-01.corp.example.test get NET::ERR_CERT_DATE_INVALID. The renewed SSL certificate was imported to LocalMachine\\My yesterday.",
+    "expected_runbook_id": "rb-11-expired-tls-certificate",
+    "expected_cause_keywords": ["certificate", "binding", "thumbprint", "iis", "expired", "tls"],
+    "expected_escalate": false
+  },
+  {
+    "id": "eval-12",
+    "ticket": "Monitoring alert: srv-app-02.corp.example.test CPU utilization has stayed at 98% for 25 minutes due to a runaway IIS w3wp.exe worker process.",
+    "expected_runbook_id": "rb-12-server-high-cpu",
+    "expected_cause_keywords": ["cpu", "w3wp", "process", "worker", "runaway"],
+    "expected_escalate": false
+  },
+  {
+    "id": "eval-13",
+    "ticket": "Cannot connect via Remote Desktop (mstsc) to srv-rds-01.corp.example.test on port 3389 after maintenance. The server replies to ping, and out-of-band console shows TermService is stopped.",
+    "expected_runbook_id": "rb-13-rdp-connection-refused",
+    "expected_cause_keywords": ["termservice", "rdp", "3389", "firewall", "fdenytsconnections"],
+    "expected_escalate": false
+  },
+  {
+    "id": "eval-14",
+    "ticket": "Cloud web server az-vm-web-01 in Azure resource group rg-prod-alpha is completely unreachable over HTTPS and private VNet IP 10.50.1.15 after last night's shutdown script.",
+    "expected_runbook_id": "rb-14-azure-vm-unreachable",
+    "expected_cause_keywords": ["deallocated", "stopped", "power", "nsg", "azure"],
+    "expected_escalate": false
+  },
+  {
+    "id": "eval-15",
+    "ticket": "User user05@tenant-alpha.test has written department manager approval to access and send from shared mailbox billing@tenant-alpha.test in Outlook, currently getting permission denied.",
+    "expected_runbook_id": "rb-15-shared-mailbox-access",
+    "expected_cause_keywords": ["fullaccess", "sendas", "permission", "shared", "mailbox"],
+    "expected_escalate": false
+  },
+  {
+    "id": "eval-16",
+    "ticket": "Verified standard user user08@corp.example.test (MFA callback completed) cannot log into their domain laptop because their 90-day Active Directory password expired.",
+    "expected_runbook_id": "rb-16-ad-password-reset",
+    "expected_cause_keywords": ["password", "expired", "age", "reset"],
+    "expected_escalate": false
+  },
+  {
+    "id": "eval-17",
+    "ticket": "Workstation wks-ops-09.corp.example.test takes 7 minutes at 'Applying user settings' during login for user09 because of a stale session SMB drive mapping to decommissioned server \\\\srv-legacy-01\\archive.",
+    "expected_runbook_id": "rb-17-slow-domain-logon",
+    "expected_cause_keywords": ["mapped", "drive", "smb", "unc", "group policy", "gpo", "logon"],
+    "expected_escalate": false
+  },
+  {
+    "id": "eval-18",
+    "ticket": "Desk SIP VoIP handset on PoE switch port Gi1/0/24 is stuck in a TFTP firmware bootloop and failing LLDP-MED voice VLAN 120 negotiation.",
+    "expected_runbook_id": null,
+    "expected_cause_keywords": [],
+    "expected_escalate": true
+  },
+  {
+    "id": "eval-19",
+    "ticket": "Executive Apple MacBook Pro M3 running macOS Sonoma kernel panics at boot after a FileVault institutional recovery key rotation in Jamf Pro.",
+    "expected_runbook_id": null,
+    "expected_cause_keywords": [],
+    "expected_escalate": true
+  },
+  {
+    "id": "eval-20",
+    "ticket": "Ubuntu 24.04 PostgreSQL 16 standby node has fallen 90 GB behind primary due to an orphaned logical replication slot and Corosync/Pacemaker VIP split-brain.",
+    "expected_runbook_id": null,
+    "expected_cause_keywords": [],
+    "expected_escalate": true
+  }
+]
