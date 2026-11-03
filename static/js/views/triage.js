@@ -166,8 +166,8 @@ function showState(which) {
 // One column: bring the result column into view when work starts.
 function revealOutput() {
   if (DESKTOP.matches) return;
-  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  ui.output.scrollIntoView({ block: "start", behavior: reduce ? "auto" : "smooth" });
+  ui.samplesPanel.open = false;
+  ui.output.scrollIntoView({ block: "start" });
 }
 
 function startTimer() {

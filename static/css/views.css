@@ -185,10 +185,21 @@
   min-width: 0;
 }
 
+/* Scroll targets clear the sticky top bar */
+.triage-output,
+.ticket-textarea {
+  scroll-margin-top: calc(var(--topbar-h) + var(--sp-3));
+}
+
 @media (min-width: 960px) {
   .triage-output {
     min-height: 560px;
   }
+}
+
+/* An older result stays under an error, dimmed so it does not read as new */
+.triage-output[data-state="error"] .result {
+  opacity: 0.5;
 }
 
 .error-region:not(:empty) {
@@ -832,6 +843,11 @@
   .verdict-word {
     font-size: var(--fs-lg);
     line-height: var(--lh-lg);
+  }
+
+  .verdict-fact + .verdict-fact {
+    padding-left: 0;
+    border-left: none;
   }
 
   .cause {

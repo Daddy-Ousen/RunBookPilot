@@ -69,7 +69,7 @@
 }
 
 /* Touch screens: every button keeps the 40 px target */
-@media (max-width: 767px), (pointer: coarse) {
+@media (max-width: 959px), (pointer: coarse) {
   .btn-sm {
     min-height: var(--target);
   }
@@ -251,7 +251,7 @@
 .segmented label {
   display: inline-flex;
   align-items: center;
-  min-height: 34px;
+  min-height: var(--target);
   padding: 0 var(--sp-4);
   border-radius: 4px;
   font-size: var(--fs-sm);
