@@ -1,8 +1,28 @@
 # RunbookPilot
 
-RunbookPilot is a lightweight IT ticket triage web application for Windows Managed Service Providers (MSPs). An IT support engineer pastes a support ticket, and RunbookPilot retrieves matching Markdown runbooks, generates a grounded diagnosis and remediation plan using a **Meta Llama** model, deterministically classifies every suggested PowerShell command by risk (`read_only` vs `needs_approval`), and displays the plan in a browser console.
+**Live Demo:** [https://runbookpilot.rhasan.online](https://runbookpilot.rhasan.online)  
+**Built for the Meta Global AI Developer Hackathon** — Powered by **Meta Muse Spark 1.3** (`muse-spark-1.3`) and **Meta Llama**.
 
-**RunbookPilot NEVER executes any PowerShell or system command.** All commands are displayed as plain text for human review.
+RunbookPilot is a grounded, multimodal IT incident triage and runbook automation workbench for Windows Managed Service Providers (MSPs). An IT support engineer selects a pending ticket/RMM alert (or attaches a Windows error screenshot), and RunbookPilot retrieves matching Markdown runbooks via BM25L, synthesizes a grounded diagnosis and remediation plan using **Meta Muse Spark 1.3**, deterministically classifies every suggested PowerShell command by risk (`read_only` vs `needs_approval`), and provides closed-loop RMM diagnostic re-triage, PSA ticket writeback, and autonomous runbook generation for uncovered incidents.
+
+**RunbookPilot NEVER executes any PowerShell or system command.** All commands are displayed as plain text or staged in a read-only RMM simulation queue for human review.
+
+---
+
+## Key Meta AI Hackathon Capabilities
+
+1. **Multimodal Error Screenshot Triage (`muse-spark-1.3` Native Vision)**:
+   - Technicians can attach or generate sample Windows error dialog screenshots (`data:image/png;base64,...`) alongside tickets in `POST /triage`.
+   - `app/llm.py` dispatches OpenAI-compatible multimodal `image_url` blocks + visual context to `muse-spark-1.3` to extract hex error codes (`0x800423f4`, `0x80070005`), Event IDs, and failing service names directly from screenshots.
+2. **Closed-Loop Agentic RMM Re-Triage**:
+   - After queuing a `read_only` PowerShell diagnostic check via the RMM integration (`POST /integrations/rmm/dispatch`), technicians can click **"Refine diagnosis with this RMM output"** to feed the diagnostic telemetry (`rmm_diagnostic_output`) back into `POST /triage` so `muse-spark-1.3` narrows the root cause and remediation steps.
+3. **Autonomous Runbook Synthesis & Hot-Indexing (`POST /runbooks/draft` & `POST /runbooks/index`)**:
+   - When an incident falls outside the 18-runbook corpus (`escalate=true`), technicians can click **"Draft new runbook with Muse Spark"** to synthesize a structured Markdown runbook (`RunbookDraftResult`) with every PowerShell command deterministically classified via `app/safety.py`, then click **"Hot-index runbook & re-analyze ticket"** to add it to the active BM25L index (`18 -> 19 runbooks`) and resolve the ticket immediately.
+4. **Interactive Safety & Eval Inspector (`/#eval`)**:
+   - **Deterministic PowerShell Safety Sandbox (`POST /safety/inspect`)**: Test safe and adversarial PowerShell strings (`Get-ADUser`, `;` pipeline injection, `-EncodedCommand`, `$()` subexpressions, `Format-Volume`) with stage-by-stage explanations.
+   - **Live 20-Ticket BM25 & Safety Benchmark Scorecard (`GET /eval/summary`)**: Real-time verification of 100% top-3 retrieval hit rate (`17/17` covered tickets) and `0` mislabeled `needs_approval` commands across the entire runbook corpus.
+5. **Meta Model Telemetry & Reasoning Mode Control (`Standard` vs `Deep`)**:
+   - Toggle between `standard` and `deep` multi-hop reasoning modes and inspect `X-Meta-Model`, `X-Reasoning-Mode`, `X-BM25-Scores`, and `X-Safety-Overrides` telemetry headers directly in the UI.
 
 ---
 

@@ -279,3 +279,14 @@ class RunbookIndex:
         ]
         scored.sort(key=lambda item: (-item.score, item.runbook.id))
         return scored[:limit]
+
+    def add_or_replace_runbook(self, runbook: Runbook) -> None:
+        """Hot-index a validated Runbook into the in-memory BM25 corpus."""
+        updated = [rb for rb in self.runbooks if rb.id != runbook.id]
+        if len(updated) >= 50:
+            raise ValueError("Maximum session runbook index capacity (50) reached.")
+        updated.append(runbook)
+        rebuilt = RunbookIndex(updated)
+        self.runbooks = rebuilt.runbooks
+        self.by_id = rebuilt.by_id
+        self._bm25 = rebuilt._bm25

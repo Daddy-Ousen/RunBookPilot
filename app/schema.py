@@ -15,9 +15,17 @@ IntegrationFieldType = Literal["url", "text", "secret"]
 QueueItemStatus = Literal["pending", "triaged", "escalated"]
 QueueItemPriority = Literal["critical", "high", "medium", "low"]
 TicketWritebackAction = Literal["internal_note", "escalate"]
+ReasoningMode = Literal["standard", "deep"]
 
 MAX_TICKET_CHARS = 4000
 MAX_INTEGRATION_FIELD_CHARS = 512
+MAX_SCREENSHOT_DATA_URL_CHARS = 700_000
+_ALLOWED_IMAGE_PREFIXES = (
+    "data:image/png;base64,",
+    "data:image/jpeg;base64,",
+    "data:image/jpg;base64,",
+    "data:image/webp;base64,",
+)
 
 
 class CommandItem(BaseModel):
@@ -79,6 +87,25 @@ class TriageRequest(BaseModel):
         max_length=MAX_TICKET_CHARS,
         description="Support ticket text (max 4000 characters).",
     )
+    screenshot_data_url: str | None = Field(
+        default=None,
+        max_length=MAX_SCREENSHOT_DATA_URL_CHARS,
+        description="Optional base64 data:image/... URL of an error screenshot for multimodal triage.",
+    )
+    screenshot_caption: str | None = Field(
+        default=None,
+        max_length=500,
+        description="Optional visual summary or label for the attached screenshot.",
+    )
+    rmm_diagnostic_output: str | None = Field(
+        default=None,
+        max_length=MAX_TICKET_CHARS,
+        description="Optional RMM diagnostic output fed back for closed-loop re-triage.",
+    )
+    reasoning_mode: ReasoningMode = Field(
+        default="standard",
+        description="Reasoning mode for Meta Muse Spark / Llama inference.",
+    )
 
     @field_validator("ticket", mode="before")
     @classmethod
@@ -90,6 +117,25 @@ class TriageRequest(BaseModel):
         stripped = value.strip()
         if not stripped:
             raise ValueError("ticket must not be empty or whitespace only.")
+        return stripped
+
+    @field_validator("screenshot_data_url", mode="before")
+    @classmethod
+    def _validate_screenshot_data_url(cls, value: object) -> object:
+        if value is None:
+            return None
+        if not isinstance(value, str):
+            raise ValueError("screenshot_data_url must be a string.")
+        stripped = value.strip()
+        if not stripped:
+            return None
+        if len(stripped) > MAX_SCREENSHOT_DATA_URL_CHARS:
+            raise ValueError("screenshot_data_url exceeds maximum allowed size.")
+        lowered = stripped.lower()
+        if not any(lowered.startswith(prefix) for prefix in _ALLOWED_IMAGE_PREFIXES):
+            raise ValueError(
+                "screenshot_data_url must be a base64 data URI (image/png, image/jpeg, or image/webp)."
+            )
         return stripped
 
 
@@ -311,3 +357,95 @@ class RMMJobRecord(BaseModel):
     status: Literal["queued_staged"] = "queued_staged"
     simulated_output: str
     created_at: str
+
+
+class SafetyInspectRequest(BaseModel):
+    """Payload for live deterministic PowerShell command inspection."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    command: str = Field(..., max_length=2000)
+
+
+class SafetyInspectResponse(BaseModel):
+    """Detailed explanation of deterministic PowerShell command classification."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    command: str
+    risk: CommandRisk
+    reason: str
+    stages: list[str]
+    executed_on_host: Literal[False] = False
+
+
+class RunbookDraftRequest(BaseModel):
+    """Payload for drafting a new Markdown runbook from an uncovered/escalated ticket."""
+
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    ticket: str = Field(..., min_length=1, max_length=MAX_TICKET_CHARS)
+    escalate_reason: str | None = Field(default=None, max_length=1000)
+
+
+class RunbookDraftResult(BaseModel):
+    """Structured runbook synthesized by the Meta model and safety-verified on the server."""
+
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    id: str = Field(..., min_length=3, max_length=80)
+    title: str = Field(..., min_length=3, max_length=160)
+    tags: list[str] = Field(..., min_length=1)
+    symptoms: list[str] = Field(..., min_length=1)
+    checks: list[CommandItem] = Field(default_factory=list)
+    fixes: list[CommandItem] = Field(default_factory=list)
+    escalation_rule: str = Field(..., min_length=3, max_length=500)
+    markdown: str = Field(default="")
+
+
+class RunbookHotIndexRequest(BaseModel):
+    """Payload for hot-indexing a validated Markdown runbook into the active session index."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    markdown: str = Field(..., min_length=20, max_length=16000)
+
+
+class RunbookHotIndexResponse(BaseModel):
+    """Confirmation returned after hot-indexing a Markdown runbook into BM25."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    title: str
+    tags: list[str]
+    total_runbooks_indexed: int
+    message: str
+
+
+class EvalTicketRow(BaseModel):
+    """Single row of the live BM25 evaluation benchmark."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    ticket_id: str
+    expected_runbook_id: str | None = None
+    expected_escalate: bool
+    top_matches: list[dict[str, object]]
+    retrieval_hit: bool
+
+
+class EvalSummaryResponse(BaseModel):
+    """Aggregate live BM25 retrieval and safety verification scorecard."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    total_tickets: int
+    covered_tickets: int
+    escalation_tickets: int
+    bm25_top3_hits: int
+    bm25_top3_hit_rate: float
+    runbooks_audited: int
+    commands_audited: int
+    mislabeled_needs_approval: int
+    rows: list[EvalTicketRow]

@@ -230,3 +230,62 @@ def apply_safety_overrides(result: TriageResult) -> TriageResult:
         for item in result.commands
     ]
     return result.model_copy(update={"commands": updated_commands})
+
+
+def explain_command_classification(command: str) -> tuple[CommandRisk, str, list[str]]:
+    """Return (risk, human_readable_reason, parsed_pipeline_stages) for the Safety Inspector."""
+    stripped = command.strip()
+    if not stripped:
+        return "needs_approval", "Empty command defaults to needs_approval (fail-closed).", []
+    if "\n" in stripped or "\r" in stripped:
+        return "needs_approval", "Blocked: multi-line script chaining is not permitted for read_only.", []
+    if "`" in stripped:
+        return "needs_approval", "Blocked: backtick (`) escape/obfuscation character detected.", []
+    if "$(" in stripped:
+        return "needs_approval", "Blocked: PowerShell $() subexpression execution detected.", []
+    if "frombase64string" in stripped.lower():
+        return "needs_approval", "Blocked: Base64 payload decoding (FromBase64String) detected.", []
+
+    stages = _split_pipeline_and_tokenize(stripped)
+    if not stages:
+        return (
+            "needs_approval",
+            "Blocked: contains unquoted shell metacharacters (; & > < ( ) { } ||) or unbalanced quotes.",
+            [],
+        )
+
+    stage_strings = [" ".join(stage) for stage in stages]
+    for idx, stage in enumerate(stages, start=1):
+        if not _is_stage_read_only(stage):
+            cmd = stage[0] if stage else "<empty>"
+            cmd_lower = cmd.lower()
+            if cmd_lower in _BLOCKED_CMDLETS:
+                return (
+                    "needs_approval",
+                    f"Blocked in pipeline stage {idx}: '{cmd}' is on the explicit destructive/exec blocklist.",
+                    stage_strings,
+                )
+            for arg in stage[1:]:
+                if _ENCODED_FLAG_RE.match(arg.lower()):
+                    return (
+                        "needs_approval",
+                        f"Blocked in pipeline stage {idx}: encoded command switch '{arg}' detected.",
+                        stage_strings,
+                    )
+                if arg.lower().split(":", 1)[0] in _BLOCKED_PARAM_FLAGS:
+                    return (
+                        "needs_approval",
+                        f"Blocked in pipeline stage {idx}: state-mutating switch '{arg}' detected.",
+                        stage_strings,
+                    )
+            return (
+                "needs_approval",
+                f"Blocked in pipeline stage {idx}: '{cmd}' is not an allowlisted read-only cmdlet or utility.",
+                stage_strings,
+            )
+
+    return (
+        "read_only",
+        f"Verified read_only: all {len(stages)} pipeline stage(s) use allowlisted diagnostic cmdlets with safe flags.",
+        stage_strings,
+    )

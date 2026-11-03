@@ -1577,6 +1577,149 @@
       white-space: pre-wrap;
       word-break: break-word;
     }
+
+    /* Multimodal Screenshot, Reasoning Mode & Closed-Loop RMM Toolbar */
+    .multimodal-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    .multimodal-left,
+    .multimodal-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .screenshot-preview-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px 10px;
+      margin-bottom: 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border-strong);
+      background: var(--surface-subtle);
+    }
+
+    .screenshot-preview-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .screenshot-thumb {
+      width: 58px;
+      height: 38px;
+      object-fit: cover;
+      border-radius: 4px;
+      border: 1px solid var(--border-strong);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+
+    .screenshot-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .screenshot-name {
+      font-size: 0.76rem;
+      color: var(--text-primary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .rmm-loop-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 10px;
+      margin-bottom: 10px;
+      border-radius: 6px;
+      border: 1px solid var(--ro-border);
+      background: var(--ro-bg);
+      color: var(--ro-text);
+      font-size: 0.76rem;
+    }
+
+    .rmm-loop-action-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 12px;
+      border-top: 1px solid var(--hairline);
+      background: var(--surface);
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    .telemetry-strip-left,
+    .telemetry-strip-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    /* Safety & Eval Inspector Table */
+    .eval-table-wrap {
+      border: 1px solid var(--border-strong);
+      border-radius: 6px;
+      overflow: hidden;
+      background: var(--surface);
+    }
+
+    .eval-row {
+      display: grid;
+      grid-template-columns: 76px minmax(150px, 1.1fr) minmax(180px, 1.4fr) 92px;
+      gap: 10px;
+      align-items: center;
+      padding: 9px 12px;
+      border-bottom: 1px solid var(--hairline);
+      font-size: 0.79rem;
+      cursor: pointer;
+      transition: background 130ms ease;
+    }
+
+    .eval-row:last-child {
+      border-bottom: none;
+    }
+
+    .eval-row:hover {
+      background: var(--surface-hover);
+    }
+
+    .eval-row-head {
+      background: var(--surface-subtle);
+      color: var(--text-muted);
+      font-size: 0.72rem;
+      font-weight: 500;
+      cursor: default;
+    }
+
+    .eval-row-head:hover {
+      background: var(--surface-subtle);
+    }
+
+    @media (max-width: 720px) {
+      .eval-row {
+        grid-template-columns: 1fr;
+        gap: 4px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -1596,10 +1739,15 @@
             <span>Integrations</span>
             <span id="nav-integrations-badge" class="nav-tab-count mono">0/12</span>
           </button>
+          <button type="button" id="nav-tab-eval" class="nav-tab" data-view="eval">
+            <span>Safety &amp; Eval</span>
+            <span id="nav-eval-badge" class="nav-tab-count mono">100%</span>
+          </button>
         </nav>
       </div>
 
       <div class="topbar-controls">
+        <span id="topbar-model-pill" class="meta-stat mono hide-mobile">Meta Muse Spark 1.3</span>
         <span id="health-label" class="meta-stat mono">Index loading...</span>
         <span class="meta-stat mono hide-mobile">Display-only</span>
         <button type="button" id="theme-toggle" class="theme-btn" aria-label="Switch color theme">
@@ -1621,7 +1769,7 @@
     <section class="pane-intake" aria-labelledby="ticket-heading">
       <div class="pane-header">
         <h2 id="ticket-heading" class="pane-title">Incident ticket</h2>
-        <p class="pane-subtitle">Select a pending ticket or RMM alert from the integration queue, or paste raw incident text below.</p>
+        <p class="pane-subtitle">Select a pending ticket or RMM alert from the integration queue, attach an error screenshot, or paste raw incident text below.</p>
       </div>
 
       <!-- Workflow 1: Pending PSA Tickets & RMM Alerts Queue -->
@@ -1655,6 +1803,38 @@
       </div>
 
       <form id="triage-form" novalidate>
+        <div class="multimodal-toolbar">
+          <div class="multimodal-left">
+            <label for="reasoning-mode-select" class="samples-label">Meta mode:</label>
+            <select id="reasoning-mode-select" class="writeback-select" aria-label="Meta Muse Spark reasoning mode">
+              <option value="standard">Standard reasoning</option>
+              <option value="deep">Deep reasoning (multi-hop)</option>
+            </select>
+          </div>
+          <div class="multimodal-right">
+            <input type="file" id="screenshot-file-input" accept="image/png,image/jpeg,image/webp" class="hidden" />
+            <button type="button" id="btn-attach-screenshot" class="sample-btn">Attach screenshot</button>
+            <button type="button" id="btn-sample-shot-rdp" class="sample-btn" title="Attach synthetic Windows RDP CredSSP error dialog screenshot">Sample RDP dialog PNG</button>
+            <button type="button" id="btn-sample-shot-vss" class="sample-btn" title="Attach synthetic Windows VSS 0x800423f4 error dialog screenshot">Sample VSS error PNG</button>
+          </div>
+        </div>
+
+        <div id="screenshot-preview-bar" class="screenshot-preview-bar hidden">
+          <div class="screenshot-preview-left">
+            <img id="screenshot-thumb" class="screenshot-thumb" alt="Attached error dialog preview" />
+            <div class="screenshot-meta">
+              <span id="screenshot-name-label" class="screenshot-name mono"></span>
+              <span id="screenshot-caption-label" class="cfg-help" style="margin-top: 0;"></span>
+            </div>
+          </div>
+          <button type="button" id="btn-remove-screenshot" class="btn-copy">Remove</button>
+        </div>
+
+        <div id="rmm-loop-bar" class="rmm-loop-bar hidden">
+          <span id="rmm-loop-summary" class="mono">Closed-loop RMM diagnostic output attached for re-triage</span>
+          <button type="button" id="btn-clear-rmm-loop" class="btn-copy">Detach RMM output</button>
+        </div>
+
         <label for="ticket-input" class="field-label">Ticket description</label>
         <div class="composer-frame">
           <textarea
@@ -1767,8 +1947,14 @@
       <!-- 3. Populated Result View -->
       <div id="result-container" class="hidden" aria-live="polite">
         <div class="telemetry-strip mono">
-          <span id="result-req-id">Request: local</span>
-          <span id="result-latency">0.0s</span>
+          <div class="telemetry-strip-left">
+            <span id="result-req-id">Request: local</span>
+            <span id="result-model-badge" class="badge mono status-staged">muse-spark-1.3 / standard</span>
+            <span id="result-safety-badge" class="badge mono risk-read_only">Safety audit: verified</span>
+          </div>
+          <div class="telemetry-strip-right">
+            <span id="result-latency">0.0s</span>
+          </div>
         </div>
 
         <!-- Workflow 3: One-Click PSA Ticket Writeback & Escalation Bar -->
@@ -1799,10 +1985,30 @@
           </div>
         </div>
 
-        <!-- Escalation Banner -->
+        <!-- Escalation Banner + Autonomous Runbook Generator -->
         <div id="escalate-banner" class="banner banner-escalate hidden" role="alert">
-          <strong>Escalation required</strong>
+          <div class="block-header" style="margin-bottom: 4px;">
+            <strong>Escalation required (outside current runbook corpus)</strong>
+            <button type="button" id="btn-draft-runbook" class="btn-submit" style="height: 28px; font-size: 0.75rem;">
+              Draft new runbook with Muse Spark
+            </button>
+          </div>
           <span id="escalate-reason-text"></span>
+        </div>
+
+        <!-- Synthesized Runbook Draft & Hot-Index Drawer -->
+        <div id="runbook-draft-panel" class="writeback-panel hidden" style="margin-bottom: 20px;">
+          <div class="block-header" style="margin-bottom: 8px;">
+            <div>
+              <strong style="font-size: 0.85rem; color: var(--text-primary);">Synthesized Markdown runbook (safety-verified)</strong>
+              <span id="draft-rb-id-badge" class="badge mono status-staged" style="margin-left: 8px;"></span>
+            </div>
+            <button type="button" id="btn-hot-index-runbook" class="btn-submit" style="height: 28px; font-size: 0.76rem;">
+              Hot-index runbook &amp; re-analyze ticket
+            </button>
+          </div>
+          <p id="draft-rb-status" class="cfg-help" style="margin-top: 0; margin-bottom: 8px;"></p>
+          <pre id="draft-rb-markdown" class="rmm-job-output mono" style="max-height: 240px; overflow-y: auto; border: 1px solid var(--hairline); border-radius: 6px;"></pre>
         </div>
 
         <!-- Approval Warning Banner -->
@@ -1955,6 +2161,100 @@
     </div>
   </section>
 
+  <!-- Safety & Eval Inspector View (Deterministic PowerShell Sandbox + Live BM25 Benchmark) -->
+  <section id="eval-workspace" class="workbench workbench-integrations hidden" aria-labelledby="eval-heading">
+    <!-- Left Column: Live Deterministic PowerShell Safety Sandbox -->
+    <div class="pane-intake">
+      <div class="pane-header">
+        <h2 id="eval-heading" class="pane-title">PowerShell safety sandbox</h2>
+        <p class="pane-subtitle">Inspect how RunbookPilot deterministically classifies PowerShell commands into read_only vs needs_approval and overrides any unsafe LLM risk labels.</p>
+      </div>
+
+      <div class="samples-bar" id="safety-preset-bar">
+        <span class="samples-label">Adversarial &amp; safe tests:</span>
+        <button type="button" class="sample-btn" data-safety-cmd="Get-ADUser -Identity user01 -Properties LockedOut, BadPwdCount, LastBadPasswordAttempt">Get-ADUser (Safe)</button>
+        <button type="button" class="sample-btn" data-safety-cmd="Get-Service Spooler; Stop-Service Spooler -Force">Semicolon ; injection</button>
+        <button type="button" class="sample-btn" data-safety-cmd="powershell.exe -NoProfile -EncodedCommand SQBFAFgA">-EncodedCommand trap</button>
+        <button type="button" class="sample-btn" data-safety-cmd="Write-Output $(Remove-Item C:\Temp\cache -Recurse)">$() subexpression</button>
+        <button type="button" class="sample-btn" data-safety-cmd="Get-Partition -DriveLetter D | Format-Volume -FileSystem NTFS">Format-Volume pipe</button>
+        <button type="button" class="sample-btn" data-safety-cmd="Get-WinEvent -FilterHashtable @{LogName='Security'; Id=4740} -MaxEvents 10">Get-WinEvent 4740 (Safe)</button>
+      </div>
+
+      <form id="safety-inspect-form" novalidate>
+        <label for="safety-cmd-input" class="field-label">PowerShell command string (never executed)</label>
+        <div class="composer-frame" style="margin-bottom: 14px;">
+          <input
+            type="text"
+            id="safety-cmd-input"
+            class="cfg-input mono"
+            style="border: none; height: 42px;"
+            value="Get-Service Spooler; Stop-Service Spooler -Force"
+            maxlength="2000"
+            required
+          />
+          <div class="composer-footer">
+            <span class="meta-stat mono">executed_on_host: false</span>
+            <button type="submit" id="btn-safety-inspect" class="btn-submit">Inspect command</button>
+          </div>
+        </div>
+      </form>
+
+      <div id="safety-inspect-result" class="writeback-panel">
+        <div class="block-header" style="margin-bottom: 8px;">
+          <span class="block-title">Deterministic classifier verdict</span>
+          <span id="safety-verdict-badge" class="badge mono risk-needs_approval">needs_approval</span>
+        </div>
+        <p id="safety-verdict-reason" class="pane-subtitle" style="margin-bottom: 12px;"></p>
+        <div>
+          <span class="field-label" style="margin-bottom: 6px;">Parsed pipeline stages</span>
+          <ol id="safety-stages-list" class="steps-list mono" style="font-size: 0.79rem;"></ol>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Live 20-Ticket BM25 Retrieval & Corpus Safety Scorecard -->
+    <div class="pane-output">
+      <div class="block-header" style="margin-bottom: 16px;">
+        <div>
+          <h3 class="pane-title" style="margin: 0;">BM25 retrieval &amp; safety benchmark</h3>
+          <p class="pane-subtitle" style="margin-top: 4px;">Live evaluation across all 20 benchmark tickets in data/tickets_eval.json and every runbook command in the active index.</p>
+        </div>
+        <button type="button" id="btn-refresh-eval" class="sample-btn">Refresh benchmark</button>
+      </div>
+
+      <div class="telemetry-panel" style="margin-bottom: 20px;">
+        <dl class="telemetry-metrics-grid">
+          <div class="telemetry-metric">
+            <dt>BM25 top-3 hit rate</dt>
+            <dd id="eval-metric-hitrate" class="mono">17 / 17 (100.0%)</dd>
+          </div>
+          <div class="telemetry-metric">
+            <dt>Benchmark split</dt>
+            <dd id="eval-metric-split" class="mono">17 covered / 3 escalation</dd>
+          </div>
+          <div class="telemetry-metric">
+            <dt>Corpus commands audited</dt>
+            <dd id="eval-metric-commands" class="mono">18 runbooks</dd>
+          </div>
+          <div class="telemetry-metric">
+            <dt>Unsafe labeled read_only</dt>
+            <dd id="eval-metric-unsafe" class="mono" style="color: var(--ro-text);">0 (100% safe)</dd>
+          </div>
+        </dl>
+      </div>
+
+      <div class="eval-table-wrap">
+        <div class="eval-row eval-row-head mono">
+          <span>Ticket ID</span>
+          <span>Expected target</span>
+          <span>Top-3 BM25 matches (score)</span>
+          <span>Verdict</span>
+        </div>
+        <div id="eval-rows-list"></div>
+      </div>
+    </div>
+  </section>
+
   <script>
     (function () {
       "use strict";
@@ -2036,10 +2336,104 @@
       const writebackStatusMsg = document.getElementById("writeback-status-msg");
       const writebackNoteCode = document.getElementById("writeback-note-code");
 
+      const reasoningModeSelect = document.getElementById("reasoning-mode-select");
+      const screenshotFileInput = document.getElementById("screenshot-file-input");
+      const btnAttachScreenshot = document.getElementById("btn-attach-screenshot");
+      const btnSampleShotRdp = document.getElementById("btn-sample-shot-rdp");
+      const btnSampleShotVss = document.getElementById("btn-sample-shot-vss");
+      const screenshotPreviewBar = document.getElementById("screenshot-preview-bar");
+      const screenshotThumb = document.getElementById("screenshot-thumb");
+      const screenshotNameLabel = document.getElementById("screenshot-name-label");
+      const screenshotCaptionLabel = document.getElementById("screenshot-caption-label");
+      const btnRemoveScreenshot = document.getElementById("btn-remove-screenshot");
+
+      const rmmLoopBar = document.getElementById("rmm-loop-bar");
+      const rmmLoopSummary = document.getElementById("rmm-loop-summary");
+      const btnClearRmmLoop = document.getElementById("btn-clear-rmm-loop");
+
+      const resultModelBadge = document.getElementById("result-model-badge");
+      const resultSafetyBadge = document.getElementById("result-safety-badge");
+      const topbarModelPill = document.getElementById("topbar-model-pill");
+
+      const btnDraftRunbook = document.getElementById("btn-draft-runbook");
+      const runbookDraftPanel = document.getElementById("runbook-draft-panel");
+      const draftRbIdBadge = document.getElementById("draft-rb-id-badge");
+      const draftRbStatus = document.getElementById("draft-rb-status");
+      const draftRbMarkdown = document.getElementById("draft-rb-markdown");
+      const btnHotIndexRunbook = document.getElementById("btn-hot-index-runbook");
+
       let queueItems = [];
       let activeQueueItem = null;
       let stagedOnlyQueueFilter = false;
       let lastTriageResult = null;
+      let attachedScreenshotDataUrl = null;
+      let attachedScreenshotCaption = null;
+      let activeRmmLoopOutput = null;
+      let currentDraftMarkdown = null;
+
+      function setAttachedScreenshot(dataUrl, fileName, captionText) {
+        attachedScreenshotDataUrl = dataUrl;
+        attachedScreenshotCaption = captionText || fileName;
+        screenshotThumb.src = dataUrl;
+        screenshotNameLabel.textContent = "Multimodal vision input: " + fileName;
+        screenshotCaptionLabel.textContent = captionText || "Passed to Meta Muse Spark native vision";
+        screenshotPreviewBar.classList.remove("hidden");
+      }
+
+      function clearAttachedScreenshot() {
+        attachedScreenshotDataUrl = null;
+        attachedScreenshotCaption = null;
+        screenshotThumb.removeAttribute("src");
+        screenshotNameLabel.textContent = "";
+        screenshotCaptionLabel.textContent = "";
+        screenshotFileInput.value = "";
+        screenshotPreviewBar.classList.add("hidden");
+      }
+
+      function generateSyntheticDialogPng(titleText, codeLine, detailLine) {
+        const canvas = document.createElement("canvas");
+        canvas.width = 480;
+        canvas.height = 220;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+        }
+        ctx.fillStyle = "#18181b";
+        ctx.fillRect(0, 0, 480, 220);
+        ctx.strokeStyle = "#ef4444";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(4, 4, 472, 212);
+        ctx.fillStyle = "#27272a";
+        ctx.fillRect(5, 5, 470, 34);
+        ctx.fillStyle = "#fafafa";
+        ctx.font = "600 13px sans-serif";
+        ctx.fillText(titleText, 16, 26);
+        ctx.fillStyle = "#f87171";
+        ctx.font = "600 14px monospace";
+        ctx.fillText(codeLine, 18, 76);
+        ctx.fillStyle = "#d4d4d8";
+        ctx.font = "12px monospace";
+        ctx.fillText(detailLine, 18, 110);
+        ctx.fillText("Host: srv-rds-01.corp.example.test / Timestamp: UTC", 18, 138);
+        ctx.fillStyle = "#3f3f46";
+        ctx.fillRect(370, 168, 86, 28);
+        ctx.fillStyle = "#fafafa";
+        ctx.font = "12px sans-serif";
+        ctx.fillText("OK", 404, 186);
+        return canvas.toDataURL("image/png");
+      }
+
+      function attachRmmLoopOutput(outputText, cmdStr) {
+        activeRmmLoopOutput = outputText;
+        rmmLoopSummary.textContent =
+          "Closed-loop RMM output attached (" + cmdStr.slice(0, 42) + ") for re-triage";
+        rmmLoopBar.classList.remove("hidden");
+      }
+
+      function clearRmmLoopOutput() {
+        activeRmmLoopOutput = null;
+        rmmLoopBar.classList.add("hidden");
+      }
 
       function renderRmmTelemetry(device) {
         if (!device) {
@@ -2061,6 +2455,7 @@
       function selectQueueItem(item) {
         activeQueueItem = item;
         clearActivePreset();
+        clearRmmLoopOutput();
         ticketInput.value = item.ticket_text || "";
         updateCharCount();
         clearError();
@@ -2178,7 +2573,7 @@
         }
       }
 
-      async function dispatchRmmCommand(cmdItem, approved, approvalNote, outputPreEl, triggerBtn) {
+      async function dispatchRmmCommand(cmdItem, approved, approvalNote, outputPreEl, loopBarEl, triggerBtn) {
         const device = activeQueueItem && activeQueueItem.device ? activeQueueItem.device : null;
         const rmmProviderId = device ? device.rmm_provider_id : "ninjaone_rmm";
         const hostname = device ? device.hostname : "srv-win-01.corp.example.test";
@@ -2206,6 +2601,10 @@
             return false;
           }
           outputPreEl.textContent = data.simulated_output || "RMM job staged.";
+          if (loopBarEl && data.simulated_output) {
+            loopBarEl.classList.remove("hidden");
+            loopBarEl.setAttribute("data-rmm-output", data.simulated_output);
+          }
           triggerBtn.textContent = "Job staged (" + data.job_id + ")";
           triggerBtn.classList.add("is-copied");
           return true;
@@ -2417,6 +2816,8 @@
       function renderResult(data, meta) {
         lastTriageResult = data;
         writebackFeedback.classList.add("hidden");
+        runbookDraftPanel.classList.add("hidden");
+        currentDraftMarkdown = null;
         writebackTicketBadge.textContent =
           "Target: " + (activeQueueItem ? activeQueueItem.external_ref : "manual-ticket");
 
@@ -2429,6 +2830,25 @@
 
         resultReqId.textContent = "Request ID: " + (meta.requestId || "local");
         resultLatency.textContent = meta.elapsedSeconds + "s";
+
+        const modelHeader = meta.metaModel || "muse-spark-1.3";
+        const modeHeader = meta.reasoningMode || "standard";
+        const visionTag = attachedScreenshotDataUrl ? " + vision" : "";
+        const loopTag = activeRmmLoopOutput ? " + RMM loop" : "";
+        resultModelBadge.textContent = modelHeader + " / " + modeHeader + visionTag + loopTag;
+        if (topbarModelPill) {
+          topbarModelPill.textContent = "Meta " + modelHeader;
+        }
+
+        const overridesCount = Number(meta.safetyOverrides || 0);
+        if (overridesCount > 0) {
+          resultSafetyBadge.className = "badge mono risk-needs_approval";
+          resultSafetyBadge.textContent =
+            "Safety override: " + overridesCount + " command(s) upgraded to needs_approval";
+        } else {
+          resultSafetyBadge.className = "badge mono risk-read_only";
+          resultSafetyBadge.textContent = "Safety audit: verified";
+        }
 
         if (data.escalate) {
           escalateReasonText.textContent = data.escalate_reason || "Ticket requires manual escalation.";
@@ -2455,6 +2875,7 @@
 
         matchedRunbooksList.textContent = "";
         const matchedIds = Array.isArray(data.matched_runbooks) ? data.matched_runbooks : [];
+        const bm25Map = meta.bm25Scores || {};
         if (matchedIds.length === 0) {
           noRunbooksNote.classList.remove("hidden");
         } else {
@@ -2468,10 +2889,11 @@
             titleNode.textContent = title || id;
             li.appendChild(titleNode);
 
-            if (title) {
-              const idNode = document.createElement("span");
-              idNode.className = "runbook-tag-id mono";
-              idNode.textContent = id;
+            const idNode = document.createElement("span");
+            idNode.className = "runbook-tag-id mono";
+            const scoreVal = typeof bm25Map[id] === "number" ? " (BM25 " + bm25Map[id].toFixed(1) + ")" : "";
+            idNode.textContent = (title ? id : "") + scoreVal;
+            if (idNode.textContent) {
               li.appendChild(idNode);
             }
 
@@ -2551,12 +2973,30 @@
             const outputPre = document.createElement("pre");
             outputPre.className = "rmm-job-output mono hidden";
 
+            const loopActionBar = document.createElement("div");
+            loopActionBar.className = "rmm-loop-action-bar hidden";
+            const loopHint = document.createElement("span");
+            loopHint.textContent = "Feed RMM diagnostic telemetry back into Meta Muse Spark to narrow root cause:";
+            const loopBtn = document.createElement("button");
+            loopBtn.type = "button";
+            loopBtn.className = "sample-btn";
+            loopBtn.textContent = "Refine diagnosis with this RMM output";
+            loopBtn.addEventListener("click", () => {
+              const outStr = loopActionBar.getAttribute("data-rmm-output") || outputPre.textContent || "";
+              if (outStr) {
+                attachRmmLoopOutput(outStr, item.command || "RMM check");
+                form.requestSubmit();
+              }
+            });
+            loopActionBar.appendChild(loopHint);
+            loopActionBar.appendChild(loopBtn);
+
             card.appendChild(topBar);
             card.appendChild(pre);
 
             if (risk === "read_only") {
               rmmBtn.addEventListener("click", () => {
-                dispatchRmmCommand(item, false, null, outputPre, rmmBtn);
+                dispatchRmmCommand(item, false, null, outputPre, loopActionBar, rmmBtn);
               });
             } else {
               const approvalDrawer = document.createElement("div");
@@ -2616,7 +3056,7 @@
                   approvalInput.focus();
                   return;
                 }
-                const ok = await dispatchRmmCommand(item, true, noteVal, outputPre, rmmBtn);
+                const ok = await dispatchRmmCommand(item, true, noteVal, outputPre, loopActionBar, rmmBtn);
                 if (ok) {
                   approvalDrawer.classList.add("hidden");
                 }
@@ -2624,10 +3064,155 @@
             }
 
             card.appendChild(outputPre);
+            card.appendChild(loopActionBar);
             commandsList.appendChild(card);
           });
         }
       }
+
+      btnAttachScreenshot.addEventListener("click", () => {
+        screenshotFileInput.click();
+      });
+
+      screenshotFileInput.addEventListener("change", () => {
+        const file = screenshotFileInput.files && screenshotFileInput.files[0];
+        if (!file) {
+          return;
+        }
+        if (file.size > 1400000) {
+          showError("Screenshot file exceeds 1.4 MB limit. Choose a smaller PNG, JPEG, or WebP image.");
+          screenshotFileInput.value = "";
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = () => {
+          if (typeof reader.result === "string") {
+            setAttachedScreenshot(
+              reader.result,
+              file.name,
+              "Uploaded error screenshot (" + file.name + ") for multimodal inspection"
+            );
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+
+      btnSampleShotRdp.addEventListener("click", () => {
+        const dataUrl = generateSyntheticDialogPng(
+          "Remote Desktop Connection (mstsc.exe)",
+          "Error 0x80070005 / CredSSP & TermService Refused",
+          "Remote Desktop cannot connect to srv-rds-01.corp.example.test:3389 (TermService stopped)"
+        );
+        setAttachedScreenshot(
+          dataUrl,
+          "rdp_error_srv-rds-01.png",
+          "Windows Remote Desktop dialog showing Error 0x80070005 / TermService stopped on srv-rds-01.corp.example.test port 3389"
+        );
+        if (!ticketInput.value.trim()) {
+          ticketInput.value =
+            "Users cannot connect via Remote Desktop (mstsc) to srv-rds-01.corp.example.test after maintenance. See attached error dialog screenshot.";
+          updateCharCount();
+        }
+      });
+
+      btnSampleShotVss.addEventListener("click", () => {
+        const dataUrl = generateSyntheticDialogPng(
+          "Windows Server Backup / VSS Writer Monitor",
+          "BCDR Image Backup Failed: Error 0x800423f4 (Event ID 8193)",
+          "Volume Shadow Copy Service writer SqlServerWriter timed out on srv-app-01.corp.example.test"
+        );
+        setAttachedScreenshot(
+          dataUrl,
+          "vss_writer_0x800423f4.png",
+          "Windows Server Backup dialog showing Error 0x800423f4 and VSS Event ID 8193 writer timeout on srv-app-01.corp.example.test"
+        );
+        if (!ticketInput.value.trim()) {
+          ticketInput.value =
+            "Nightly image backup failed on srv-app-01.corp.example.test. See attached Windows Server Backup error dialog screenshot.";
+          updateCharCount();
+        }
+      });
+
+      btnRemoveScreenshot.addEventListener("click", () => {
+        clearAttachedScreenshot();
+      });
+
+      btnClearRmmLoop.addEventListener("click", () => {
+        clearRmmLoopOutput();
+      });
+
+      btnDraftRunbook.addEventListener("click", async () => {
+        const rawTicket = ticketInput.value.trim();
+        if (!rawTicket) {
+          return;
+        }
+        btnDraftRunbook.disabled = true;
+        btnDraftRunbook.textContent = "Synthesizing runbook...";
+        try {
+          const resp = await fetch("/runbooks/draft", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              ticket: rawTicket,
+              escalate_reason: lastTriageResult ? lastTriageResult.escalate_reason : null
+            })
+          });
+          const data = await resp.json();
+          runbookDraftPanel.classList.remove("hidden");
+          if (!resp.ok) {
+            draftRbIdBadge.textContent = "draft error";
+            draftRbStatus.textContent = data.detail || "Unable to draft runbook.";
+            draftRbMarkdown.textContent = "";
+            return;
+          }
+          currentDraftMarkdown = data.markdown || "";
+          draftRbIdBadge.textContent = data.id;
+          draftRbStatus.textContent =
+            "Synthesized '" +
+            data.title +
+            "' with " +
+            (data.checks ? data.checks.length : 0) +
+            " read_only check(s) and " +
+            (data.fixes ? data.fixes.length : 0) +
+            " needs_approval fix(es). Click Hot-index to add to BM25 and re-run triage.";
+          draftRbMarkdown.textContent = currentDraftMarkdown;
+        } catch (err) {
+          runbookDraftPanel.classList.remove("hidden");
+          draftRbIdBadge.textContent = "network error";
+          draftRbStatus.textContent = err.message || "Network error while calling /runbooks/draft.";
+        } finally {
+          btnDraftRunbook.disabled = false;
+          btnDraftRunbook.textContent = "Draft new runbook with Muse Spark";
+        }
+      });
+
+      btnHotIndexRunbook.addEventListener("click", async () => {
+        if (!currentDraftMarkdown) {
+          return;
+        }
+        btnHotIndexRunbook.disabled = true;
+        btnHotIndexRunbook.textContent = "Indexing...";
+        try {
+          const resp = await fetch("/runbooks/index", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ markdown: currentDraftMarkdown })
+          });
+          const data = await resp.json();
+          if (!resp.ok) {
+            draftRbStatus.textContent = "Hot-index failed: " + (data.detail || "Validation error");
+            return;
+          }
+          draftRbStatus.textContent = data.message;
+          await loadHealthAndRunbooks();
+          form.requestSubmit();
+        } catch (err) {
+          draftRbStatus.textContent = "Hot-index failed: " + (err.message || "Network error");
+        } finally {
+          btnHotIndexRunbook.disabled = false;
+          btnHotIndexRunbook.textContent = "Hot-index runbook & re-analyze ticket";
+        }
+      });
 
       presetRow.addEventListener("click", (event) => {
         const target = event.target.closest("[data-preset]");
@@ -2638,6 +3223,7 @@
         if (key && SAMPLE_TICKETS[key]) {
           unlinkQueueItem();
           clearActivePreset();
+          clearRmmLoopOutput();
           target.classList.add("is-active");
           ticketInput.value = SAMPLE_TICKETS[key];
           updateCharCount();
@@ -2663,6 +3249,8 @@
       clearBtn.addEventListener("click", () => {
         unlinkQueueItem();
         clearActivePreset();
+        clearAttachedScreenshot();
+        clearRmmLoopOutput();
         ticketInput.value = "";
         updateCharCount();
         clearError();
@@ -2701,14 +3289,41 @@
 
         const t0 = performance.now();
 
+        const requestBody = {
+          ticket: rawTicket,
+          reasoning_mode: reasoningModeSelect.value || "standard"
+        };
+        if (attachedScreenshotDataUrl) {
+          requestBody.screenshot_data_url = attachedScreenshotDataUrl;
+          if (attachedScreenshotCaption) {
+            requestBody.screenshot_caption = attachedScreenshotCaption;
+          }
+        }
+        if (activeRmmLoopOutput) {
+          requestBody.rmm_diagnostic_output = activeRmmLoopOutput;
+        }
+
         try {
           const response = await fetch("/triage", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ ticket: rawTicket })
+            body: JSON.stringify(requestBody)
           });
 
           const reqId = response.headers.get("X-Request-ID");
+          const metaModel = response.headers.get("X-Meta-Model");
+          const reasoningMode = response.headers.get("X-Reasoning-Mode");
+          const safetyOverrides = response.headers.get("X-Safety-Overrides");
+          let bm25Scores = {};
+          try {
+            const rawScores = response.headers.get("X-BM25-Scores");
+            if (rawScores) {
+              bm25Scores = JSON.parse(rawScores);
+            }
+          } catch (_e) {
+            bm25Scores = {};
+          }
+
           let payload = null;
           try {
             payload = await response.json();
@@ -2733,7 +3348,14 @@
           }
 
           const elapsedSeconds = ((performance.now() - t0) / 1000).toFixed(1);
-          renderResult(payload, { requestId: reqId, elapsedSeconds: elapsedSeconds });
+          renderResult(payload, {
+            requestId: reqId,
+            elapsedSeconds: elapsedSeconds,
+            metaModel: metaModel,
+            reasoningMode: reasoningMode,
+            bm25Scores: bm25Scores,
+            safetyOverrides: safetyOverrides
+          });
         } catch (networkErr) {
           loadingState.classList.add("hidden");
           emptyState.classList.remove("hidden");
@@ -3013,13 +3635,154 @@
         }
       }
 
+      const evalWorkspace = document.getElementById("eval-workspace");
+      const navTabEval = document.getElementById("nav-tab-eval");
+      const navEvalBadge = document.getElementById("nav-eval-badge");
+
+      const safetyPresetBar = document.getElementById("safety-preset-bar");
+      const safetyInspectForm = document.getElementById("safety-inspect-form");
+      const safetyCmdInput = document.getElementById("safety-cmd-input");
+      const safetyVerdictBadge = document.getElementById("safety-verdict-badge");
+      const safetyVerdictReason = document.getElementById("safety-verdict-reason");
+      const safetyStagesList = document.getElementById("safety-stages-list");
+
+      const btnRefreshEval = document.getElementById("btn-refresh-eval");
+      const evalMetricHitrate = document.getElementById("eval-metric-hitrate");
+      const evalMetricSplit = document.getElementById("eval-metric-split");
+      const evalMetricCommands = document.getElementById("eval-metric-commands");
+      const evalMetricUnsafe = document.getElementById("eval-metric-unsafe");
+      const evalRowsList = document.getElementById("eval-rows-list");
+
+      async function runSafetyInspect(cmdText) {
+        try {
+          const resp = await fetch("/safety/inspect", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ command: cmdText })
+          });
+          if (!resp.ok) {
+            return;
+          }
+          const data = await resp.json();
+          const risk = data.risk === "read_only" ? "read_only" : "needs_approval";
+          safetyVerdictBadge.className = "badge mono risk-" + risk;
+          safetyVerdictBadge.textContent = risk;
+          safetyVerdictReason.textContent = data.reason || "";
+          safetyStagesList.textContent = "";
+          const stages = Array.isArray(data.stages) && data.stages.length > 0 ? data.stages : ["(empty command)"];
+          stages.forEach((st) => {
+            const li = document.createElement("li");
+            const span = document.createElement("span");
+            span.textContent = st;
+            li.appendChild(span);
+            safetyStagesList.appendChild(li);
+          });
+        } catch (_err) {
+          /* Ignore offline state */
+        }
+      }
+
+      async function loadEvalSummary() {
+        try {
+          const resp = await fetch("/eval/summary");
+          if (!resp.ok) {
+            return;
+          }
+          const data = await resp.json();
+          const hitRateStr = Number(data.bm25_top3_hit_rate || 0).toFixed(1) + "%";
+          navEvalBadge.textContent = hitRateStr;
+          evalMetricHitrate.textContent =
+            data.bm25_top3_hits + " / " + data.covered_tickets + " (" + hitRateStr + ")";
+          evalMetricSplit.textContent =
+            data.covered_tickets + " covered / " + data.escalation_tickets + " escalation";
+          evalMetricCommands.textContent =
+            data.runbooks_audited + " runbooks / " + data.commands_audited + " commands";
+          evalMetricUnsafe.textContent =
+            data.mislabeled_needs_approval + " mislabeled (100% deterministic override)";
+
+          evalRowsList.textContent = "";
+          (data.rows || []).forEach((row) => {
+            const div = document.createElement("div");
+            div.className = "eval-row";
+
+            const idSpan = document.createElement("span");
+            idSpan.className = "mono";
+            idSpan.style.color = "var(--text-primary)";
+            idSpan.textContent = row.ticket_id;
+
+            const expSpan = document.createElement("span");
+            expSpan.className = "mono";
+            expSpan.style.color = "var(--text-secondary)";
+            expSpan.textContent = row.expected_runbook_id || "escalate=true (uncovered)";
+
+            const matchesSpan = document.createElement("span");
+            matchesSpan.className = "mono";
+            matchesSpan.style.color = "var(--text-muted)";
+            const topList = (row.top_matches || []).map((m) => m.id + " (" + m.score + ")");
+            matchesSpan.textContent = topList.join(", ") || "none";
+
+            const verdictBadge = document.createElement("span");
+            if (row.expected_escalate && !row.expected_runbook_id) {
+              verdictBadge.className = "badge mono status-paused";
+              verdictBadge.textContent = "ESCALATE";
+            } else if (row.retrieval_hit) {
+              verdictBadge.className = "badge mono risk-read_only";
+              verdictBadge.textContent = "TOP-3 HIT";
+            } else {
+              verdictBadge.className = "badge mono conf-low";
+              verdictBadge.textContent = "MISS";
+            }
+
+            div.appendChild(idSpan);
+            div.appendChild(expSpan);
+            div.appendChild(matchesSpan);
+            div.appendChild(verdictBadge);
+            evalRowsList.appendChild(div);
+          });
+        } catch (_err) {
+          /* Ignore offline state */
+        }
+      }
+
+      if (safetyPresetBar) {
+        safetyPresetBar.addEventListener("click", (event) => {
+          const btn = event.target.closest("[data-safety-cmd]");
+          if (!btn) {
+            return;
+          }
+          const cmd = btn.getAttribute("data-safety-cmd") || "";
+          safetyCmdInput.value = cmd;
+          runSafetyInspect(cmd);
+        });
+      }
+
+      if (safetyInspectForm) {
+        safetyInspectForm.addEventListener("submit", (event) => {
+          event.preventDefault();
+          runSafetyInspect(safetyCmdInput.value);
+        });
+      }
+
+      if (btnRefreshEval) {
+        btnRefreshEval.addEventListener("click", () => {
+          loadEvalSummary();
+        });
+      }
+
       function switchWorkspaceView(viewName, updateHash) {
-        const isIntegrations = viewName === "integrations";
-        if (isIntegrations) {
-          mainWorkspace.classList.add("hidden");
+        mainWorkspace.classList.add("hidden");
+        integrationsWorkspace.classList.add("hidden");
+        evalWorkspace.classList.add("hidden");
+
+        navTabTriage.classList.remove("is-active");
+        navTabTriage.removeAttribute("aria-current");
+        navTabIntegrations.classList.remove("is-active");
+        navTabIntegrations.removeAttribute("aria-current");
+        navTabEval.classList.remove("is-active");
+        navTabEval.removeAttribute("aria-current");
+
+        if (viewName === "integrations") {
           integrationsWorkspace.classList.remove("hidden");
-          navTabTriage.classList.remove("is-active");
-          navTabTriage.removeAttribute("aria-current");
           navTabIntegrations.classList.add("is-active");
           navTabIntegrations.setAttribute("aria-current", "page");
           if (providersCatalog.length === 0) {
@@ -3028,15 +3791,21 @@
           if (updateHash && window.location.hash !== "#integrations") {
             history.replaceState(null, "", "#integrations");
           }
+        } else if (viewName === "eval") {
+          evalWorkspace.classList.remove("hidden");
+          navTabEval.classList.add("is-active");
+          navTabEval.setAttribute("aria-current", "page");
+          runSafetyInspect(safetyCmdInput.value);
+          loadEvalSummary();
+          if (updateHash && window.location.hash !== "#eval") {
+            history.replaceState(null, "", "#eval");
+          }
         } else {
-          integrationsWorkspace.classList.add("hidden");
           mainWorkspace.classList.remove("hidden");
-          navTabIntegrations.classList.remove("is-active");
-          navTabIntegrations.removeAttribute("aria-current");
           navTabTriage.classList.add("is-active");
           navTabTriage.setAttribute("aria-current", "page");
           loadQueueItems();
-          if (updateHash && window.location.hash === "#integrations") {
+          if (updateHash && (window.location.hash === "#integrations" || window.location.hash === "#eval")) {
             history.replaceState(null, "", window.location.pathname + window.location.search);
           }
         }
@@ -3153,9 +3922,15 @@
         switchWorkspaceView("integrations", true);
       });
 
+      navTabEval.addEventListener("click", () => {
+        switchWorkspaceView("eval", true);
+      });
+
       window.addEventListener("hashchange", () => {
         if (window.location.hash === "#integrations") {
           switchWorkspaceView("integrations", false);
+        } else if (window.location.hash === "#eval") {
+          switchWorkspaceView("eval", false);
         } else {
           switchWorkspaceView("triage", false);
         }
@@ -3293,6 +4068,8 @@
       loadQueueItems();
       if (window.location.hash === "#integrations") {
         switchWorkspaceView("integrations", false);
+      } else if (window.location.hash === "#eval") {
+        switchWorkspaceView("eval", false);
       }
     })();
   </script>
