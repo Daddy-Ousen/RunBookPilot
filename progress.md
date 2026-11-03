@@ -92,13 +92,13 @@ Source plan: `UI_REDESIGN_PLAN.md` (repo root). Follow it phase by phase. Stop a
   - Screenshots: `docs/phase7/` (`empty-1440-light.jpg`, `result-1440-light.jpg`, `result-1440-dark.jpg`, `commands-1440-dark.jpg`, `escalate-1440-light.jpg`, `result-390-light.jpg`; built-in browser, 1440 shots scaled to 800 px wide).
   - Not done: Lighthouse and axe not re-run; keyboard-only pass not re-run (no DOM order change except the hero `<div>`, which has no focus stop). At >= 1200 the nav sits after the theme button in Tab order (DOM order) but shows in the middle of the bar. No Vercel preview yet.
 
-## Baseten LLM switch (2026-11-04, works locally)
+## Baseten LLM switch (2026-11-04, DONE, live)
 - [x] Local `.env` points to Baseten (`https://inference.baseten.co/v1`, model `meta-models/muse-spark-open-1026`, `LLM_REASONING_EFFORT=medium`). Old Meta lines kept as comments. Key is a placeholder until the owner pastes it.
 - [x] `app/llm.py`: optional `LLM_REASONING_EFFORT` (low/medium/high/xhigh), sent as `reasoning_effort`. New test. pytest 106 passed.
 - [x] `.env.example`, README env table, `scripts/llm_smoke.py` (one call, never prints the key).
 - [x] Owner pasted the Baseten key. Smoke test: HTTP 200 in 1.6 s, `reasoning_content` comes in its own field.
 - [x] Real `/triage` on Baseten (TestClient): DNS -> rb-07 high 6.1 s; AD lockout -> rb-02 high 3.7 s; VoIP -> escalate, no runbooks 2.8 s. Old Meta endpoint took 10 to 33 s.
-- [ ] Vercel env vars: set `LLM_BASE_URL`, `LLM_MODEL`, `LLM_API_KEY`, `LLM_REASONING_EFFORT`, then redeploy.
+- [x] Owner set Vercel Production env vars and redeployed (`runbookpilot-jw7zn22fq`). Live check: header `X-Meta-Model: meta-models/muse-spark-open-1026`; DNS -> rb-07 5.3 s, AD lockout -> rb-02 3.8 s, VoIP -> escalate 2.8 s.
 - [x] Committed `4d1aed8`, pushed main (`876bce9`). Vercel prod deploy `runbookpilot-dz2z3b5l5` Ready, site 200. Vercel LLM env vars are still the old Meta values (set 20h before); `LLM_REASONING_EFFORT` is missing.
 
 ## Next
