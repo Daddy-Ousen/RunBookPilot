@@ -43,9 +43,14 @@ export function connectorStatus(raw) {
 }
 
 export function modelName(raw) {
-  // "muse-spark-1.3" -> "Muse Spark 1.3"
-  if (!raw) return "Muse Spark 1.3";
+  // "meta-models/muse-spark-open-1026" -> "Muse Spark Open"; "muse-spark-1.3" -> "Muse Spark 1.3"
+  if (!raw) return "Muse Spark Open";
+  const id = String(raw).toLowerCase();
+  if (id.includes("muse-spark-open")) return "Muse Spark Open";
+  if (id.includes("muse-spark-1.3")) return "Muse Spark 1.3";
   return String(raw)
+    .split("/")
+    .pop()
     .split("-")
     .map((part) => (/^\d/.test(part) ? part : capital(part)))
     .join(" ");

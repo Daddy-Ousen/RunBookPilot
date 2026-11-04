@@ -674,3 +674,96 @@
 .notice-title svg {
   vertical-align: -3px;
 }
+
+/* Model picker: one real model, two shown as not available in the demo. */
+.model-picker {
+  position: relative;
+  display: inline-block;
+}
+
+.model-picker-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: 40px;
+  padding: 0 var(--sp-3);
+  border: 1.5px solid var(--line-strong);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-xs);
+  line-height: var(--lh-xs);
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.model-picker-btn:hover {
+  background: var(--accent-tint);
+}
+
+.model-picker-label {
+  color: var(--text-2);
+  font-weight: 700;
+}
+
+.model-picker-menu {
+  position: absolute;
+  z-index: 30;
+  min-width: 260px;
+  margin: 0;
+  padding: var(--sp-1);
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: var(--r-panel);
+  background: var(--surface);
+  box-shadow: var(--shadow-pop);
+}
+
+.model-picker[data-placement="down"] .model-picker-menu {
+  top: calc(100% + 6px);
+  right: 0;
+}
+
+.model-picker[data-placement="up"] .model-picker-menu {
+  position: static;
+  margin-top: var(--sp-2);
+  box-shadow: none;
+}
+
+.model-option {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 48px;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-input);
+  cursor: pointer;
+}
+
+.model-option:hover,
+.model-option:focus-visible {
+  background: var(--accent-tint);
+}
+
+.model-option-name {
+  font-size: var(--fs-sm, 14px);
+  font-weight: 800;
+  color: var(--text);
+}
+
+.model-option-note {
+  font-size: var(--fs-xs);
+  line-height: var(--lh-xs);
+  color: var(--text-2);
+}
+
+.model-option[aria-selected="true"] .model-option-note {
+  color: var(--accent-text);
+  font-weight: 700;
+}
+
+.model-option[aria-disabled="true"] .model-option-name {
+  color: var(--text-2);
+}

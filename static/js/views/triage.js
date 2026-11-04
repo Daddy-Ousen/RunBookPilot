@@ -3,7 +3,7 @@
 import { el, byId, clear, setText, show, badge, icon, ICONS } from "../dom.js";
 import { post, get, triageMeta } from "../api.js";
 import { state, on, emit, loadSession, saveSession } from "../store.js";
-import { priority, queueStatus, modelName, errorParts, verdict, age } from "../copy.js";
+import { priority, queueStatus, errorParts, verdict, age } from "../copy.js";
 import { renderResult, resetResult } from "./result.js";
 import { ensureIndex } from "./runbooks.js";
 
@@ -458,7 +458,6 @@ export async function submitTriage() {
 }
 
 function showResult(data, meta) {
-  document.querySelectorAll(".js-model-name").forEach((n) => setText(n, modelName(meta.metaModel)));
   showState("result");
   renderResult(ui.result, data, meta);
   const commands = Array.isArray(data.commands) ? data.commands : [];

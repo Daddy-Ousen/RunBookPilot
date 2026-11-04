@@ -3,6 +3,7 @@
 import { byId } from "./dom.js";
 import { initTheme } from "./theme.js";
 import { initToast } from "./toast.js";
+import { initModelPickers } from "./model-picker.js";
 import { initRouter, onRoute } from "./router.js";
 import { initRunbooks, onRunbooksShown } from "./views/runbooks.js";
 import { initTriage, onTriageShown } from "./views/triage.js";
@@ -47,6 +48,7 @@ function initSkipLink() {
 
 initTheme(byId("theme-toggle"));
 initToast(byId("toast-region"));
+initModelPickers();
 initSkipLink();
 initMenu();
 initRunbooks();

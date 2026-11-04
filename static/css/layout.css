@@ -248,9 +248,9 @@
   }
 }
 
-/* 1200 to 1599: not enough room for the model badge beside the pills.
+/* 1200 to 1399: not enough room for the model badge beside the pills.
    The model name is still in the result Details. */
-@media (min-width: 1200px) and (max-width: 1599px) {
+@media (min-width: 1200px) and (max-width: 1399px) {
   .topbar .model-badge {
     display: none;
   }
