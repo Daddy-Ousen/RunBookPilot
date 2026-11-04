@@ -103,7 +103,7 @@ Source plan: `UI_REDESIGN_PLAN.md` (repo root). Follow it phase by phase. Stop a
 
 ## Next
 - UI work is finished. Record the demo video (Standard mode; stop the stale server on port 8000 first if demoing locally). Submit by Nov 5, 08:00 Dhaka.
-- Optional, owner choice: fix `Clear-RecycleBin -Confirm` at `data/runbooks/02_ad_account_locked.md:22` (and the copy in `static/runbooks/`).
+- [x] Fixed wrong command: `Clear-RecycleBin -Confirm` -> `klist purge` in both runbook copies (2026-11-04). README model names now say Muse Spark Open on Baseten.
 - Optional: delete the Vercel protection bypass token the CLI made (Vercel > Settings > Deployment Protection).
 
 ## Model guide (sub-sessions)

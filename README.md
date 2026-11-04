@@ -1,9 +1,9 @@
 # RunbookPilot
 
 **Live Demo:** [https://runbookpilot.rhasan.online](https://runbookpilot.rhasan.online)  
-**Built for the Meta Global AI Developer Hackathon** — Powered by **Meta Muse Spark 1.3** (`muse-spark-1.3`) and **Meta Llama**.
+**Built for the Meta Global AI Developer Hackathon** — Powered by **Meta Muse Spark Open** (`meta-models/muse-spark-open-1026`, served on Baseten).
 
-RunbookPilot is a grounded, multimodal IT incident triage and runbook automation workbench for Windows Managed Service Providers (MSPs). An IT support engineer selects a pending ticket/RMM alert (or attaches a Windows error screenshot), and RunbookPilot retrieves matching Markdown runbooks via BM25L, synthesizes a grounded diagnosis and remediation plan using **Meta Muse Spark 1.3**, deterministically classifies every suggested PowerShell command by risk (`read_only` vs `needs_approval`), and provides closed-loop RMM diagnostic re-triage, PSA ticket writeback, and autonomous runbook generation for uncovered incidents.
+RunbookPilot is a grounded, multimodal IT incident triage and runbook automation workbench for Windows Managed Service Providers (MSPs). An IT support engineer selects a pending ticket/RMM alert (or attaches a Windows error screenshot), and RunbookPilot retrieves matching Markdown runbooks via BM25L, synthesizes a grounded diagnosis and remediation plan using **Meta Muse Spark Open**, deterministically classifies every suggested PowerShell command by risk (`read_only` vs `needs_approval`), and provides closed-loop RMM diagnostic re-triage, PSA ticket writeback, and autonomous runbook generation for uncovered incidents.
 
 **RunbookPilot NEVER executes any PowerShell or system command.** All commands are displayed as plain text or staged in a read-only RMM simulation queue for human review.
 
@@ -11,11 +11,11 @@ RunbookPilot is a grounded, multimodal IT incident triage and runbook automation
 
 ## Key Meta AI Hackathon Capabilities
 
-1. **Multimodal Error Screenshot Triage (`muse-spark-1.3` Native Vision)**:
+1. **Multimodal Error Screenshot Triage (Muse Spark Native Vision)**:
    - Technicians can attach or generate sample Windows error dialog screenshots (`data:image/png;base64,...`) alongside tickets in `POST /triage`.
-   - `app/llm.py` dispatches OpenAI-compatible multimodal `image_url` blocks + visual context to `muse-spark-1.3` to extract hex error codes (`0x800423f4`, `0x80070005`), Event IDs, and failing service names directly from screenshots.
+   - `app/llm.py` dispatches OpenAI-compatible multimodal `image_url` blocks + visual context to the Muse Spark model to extract hex error codes (`0x800423f4`, `0x80070005`), Event IDs, and failing service names directly from screenshots.
 2. **Closed-Loop Agentic RMM Re-Triage**:
-   - After queuing a `read_only` PowerShell diagnostic check via the RMM integration (`POST /integrations/rmm/dispatch`), technicians can click **"Re-run triage with this output"** to feed the diagnostic telemetry (`rmm_diagnostic_output`) back into `POST /triage` so `muse-spark-1.3` narrows the root cause and remediation steps.
+   - After queuing a `read_only` PowerShell diagnostic check via the RMM integration (`POST /integrations/rmm/dispatch`), technicians can click **"Re-run triage with this output"** to feed the diagnostic telemetry (`rmm_diagnostic_output`) back into `POST /triage` so Muse Spark narrows the root cause and remediation steps.
 3. **Autonomous Runbook Synthesis & Hot-Indexing (`POST /runbooks/draft` & `POST /runbooks/index`)**:
    - When an incident falls outside the 18-runbook corpus (`escalate=true`), technicians can click **"Draft a runbook"** to synthesize a structured Markdown runbook (`RunbookDraftResult`) with every PowerShell command deterministically classified via `app/safety.py`, then click **"Add this runbook and re-run triage"** to add it to the active BM25L index (`18 -> 19 runbooks`) and resolve the ticket immediately.
 4. **Interactive Safety Lab and Benchmark (`/#safety`, `/#benchmark`)**:
@@ -35,8 +35,8 @@ flowchart LR
     RL["Rate Limiter & 4000-Char Check"]
     BM25["BM25 Retriever (app/retrieval.py)"]
     RB[("18 Markdown Runbooks (data/runbooks/*.md)")]
-    LLM["Meta Llama Client (app/llm.py)"]
-    META["Meta Llama Endpoint (OpenAI-Compatible API)"]
+    LLM["Meta Model Client (app/llm.py)"]
+    META["Muse Spark Open on Baseten (OpenAI-Compatible API)"]
     SAFE["Deterministic Classifier (app/safety.py)"]
 
     UI -- "POST /triage (ticket)" --> API
@@ -89,7 +89,7 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 
-# 4. Create your local .env from .env.example and fill in your Meta Llama endpoint details
+# 4. Create your local .env from .env.example and fill in your Muse Spark endpoint details (Baseten)
 Copy-Item .env.example .env
 notepad .env
 
@@ -110,8 +110,8 @@ All LLM access is centralized in `app/llm.py`. Secrets are never hard-coded or l
 
 | Variable | Required | Default | Description |
 | :--- | :---: | :---: | :--- |
-| `LLM_BASE_URL` | Yes | — | OpenAI-compatible base URL serving a Meta model (e.g., `https://api.meta.ai/v1` for Muse Spark, or `https://api.together.xyz/v1` for Llama). |
-| `LLM_MODEL` | Yes | — | Meta model identifier (e.g., `muse-spark-1.3` or `meta-llama/Llama-3.3-70B-Instruct-Turbo`). Non-Meta models are rejected. |
+| `LLM_BASE_URL` | Yes | — | OpenAI-compatible base URL serving a Meta model (e.g., `https://inference.baseten.co/v1` for Muse Spark Open). |
+| `LLM_MODEL` | Yes | — | Meta model identifier (e.g., `meta-models/muse-spark-open-1026`). Non-Meta models are rejected. |
 | `LLM_API_KEY` | Yes | — | Bearer API key for the Meta model endpoint. |
 | `LLM_TIMEOUT_SECONDS` | No | `55.0` | Upstream HTTP timeout in seconds for each model request (sized under Vercel's 60s function limit). |
 | `LLM_REASONING_EFFORT` | No | — | Sent as `reasoning_effort` (`low`, `medium`, `high`, `xhigh`). Use with Baseten Muse Spark Open (`https://inference.baseten.co/v1`, model `meta-models/muse-spark-open-1026`) to keep replies under the timeout. |
@@ -176,7 +176,7 @@ All connectors operate in **staged/standby mode** (`live_sync_active=false`, `re
    - **`read_only` allowlist**: Single-line commands (or pipelines where *every* stage is `read_only`) using `Get-*`, `Test-*`, `Select-*`, `Measure-*`, or safe `Format-*` output cmdlets, plus `ipconfig` (read-only flags only), `nslookup`, `ping`, and `hostname`.
    - **Explicit rejections & default-deny (`needs_approval`)**: Blocks `Format-Volume`/`Format-Disk`/`Format-Partition`, pipes into `Invoke-Expression` (`iex`), `;` / `&&` / `||` / newline chaining, `$()` subexpressions, `()` parenthetical sub-commands, `{}` scriptblocks, backtick obfuscation, `&` call operators, `>`/`<` file redirection, local/UNC script paths, `-EncodedCommand`/`-enc`/`FromBase64String`, mutating switches (`-Repair`, `-OutFile`), and mutating verbs (`Remove-*`, `Set-*`, `Stop-*`, `Restart-*`, `Disable-*`, `Clear-*`, etc.). Everything not proven `read_only` defaults to `needs_approval`.
 3. **Strict Runbook Grounding & Validation**:
-   - The system prompt instructs the Meta Llama model to answer **only** from `<RUNBOOKS>`, treat `<TICKET>` as untrusted data, and set `escalate=true` when runbooks do not cover the ticket.
+   - The system prompt instructs the Meta model to answer **only** from `<RUNBOOKS>`, treat `<TICKET>` as untrusted data, and set `escalate=true` when runbooks do not cover the ticket.
    - Output is validated against Pydantic v2 (`TriageResult`) and checked to ensure `matched_runbooks` contains only retrieved runbook IDs, retrying **once** on malformed or invalid JSON.
 4. **UI Warnings & XSS Prevention**:
    - The UI shows an "Escalate to Tier 3" panel when `escalate=true`, and a "Changes the system. Needs approval." warning above every `needs_approval` command. Every command block says "Not run by RunbookPilot."
@@ -191,4 +191,4 @@ All connectors operate in **staged/standby mode** (`live_sync_active=false`, `re
 - **Lexical Retrieval Only**: BM25 matches exact and normalized tokens/tags rather than semantic embeddings; heavily paraphrased tickets with zero keyword overlap may miss retrieval and trigger escalation.
 - **Conservative Static Command Parser**: Because `app/safety.py` fails closed without invoking PowerShell's runtime AST, benign read-only commands that use scriptblocks (`Where-Object { ... }`) or parenthetical date expressions (`(Get-Date).AddDays(-1)`) are conservatively classified as `needs_approval`.
 - **Single-Process In-Memory State**: The BM25 index and sliding-window rate limiter live in process memory; editing runbook files requires restarting the server, and multi-worker deployments enforce rate limits per worker process.
-- **External Meta Model Dependency**: Live triage and full `scripts/eval.py` runs require network connectivity to a configured Meta Llama endpoint.
+- **External Meta Model Dependency**: Live triage and full `scripts/eval.py` runs require network connectivity to a configured Muse Spark endpoint.

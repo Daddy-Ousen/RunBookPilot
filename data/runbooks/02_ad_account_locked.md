@@ -19,7 +19,7 @@ Review recent `Event ID 4740` lockout events in the Domain Controller Security l
 Unlock the Active Directory user account after verifying user identity per service desk verification policy:
 - `Unlock-ADAccount -Identity user01`
 Clear cached credentials or force logoff of stale sessions if needed on the source workstation:
-- `Clear-RecycleBin -Confirm`
+- `klist purge`
 
 ## Escalation Rule
 Escalate immediately to Tier 2 Security Operations if lockouts recur from unknown external IPs, if multiple accounts lock out simultaneously (potential password-spray attack), or if a privileged administrator/service account is locked out.

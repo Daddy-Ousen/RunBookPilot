@@ -32,7 +32,7 @@
 - The empty state now has two "Paste a ticket" lines (hero in the ticket card + empty card title). Copy left as it was.
 
 ## Open owner choices
-- `Clear-RecycleBin -Confirm` is a wrong command in `data/runbooks/02_ad_account_locked.md:22` (and `static/runbooks/02_ad_account_locked.md`). It shows in the AD lockout demo.
+- (Closed 2026-11-04) Runbook 02 now uses `klist purge`. README updated to Muse Spark Open on Baseten.
 - Vercel CLI made a protection bypass token for the project. Delete it in Vercel if not wanted.
 
 ## Gotchas
