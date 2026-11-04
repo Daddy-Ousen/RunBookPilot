@@ -164,3 +164,8 @@ Source plan: `UI_REDESIGN_PLAN.md` (repo root). Follow it phase by phase. Stop a
 - Python Playwright now fails on this machine: Node driver "JavaScript heap out of memory" at launch, also outside the sandbox. The built-in browser pane works. Phase 5: headless Edge over CDP works (Node 24 has a built-in `WebSocket`, no extra package) and Lighthouse works with Edge (not Chrome). The scripts were in the session scratchpad, not in the repo.
 - The built-in browser denies `navigator.clipboard.writeText`. The UI now falls back to `execCommand("copy")`.
 - Error bodies are raw `{"detail": ...}`; no `retry_after` in the body. But 429 sends a `Retry-After` header (`app/main.py:262`), so the UI can show a wait time. Latency 5 to 11 s, no real stages.
+
+## Model picker + remove Claude from GitHub (2026-11-04)
+- [x] Model badge replaced by a picker (`static/js/model-picker.js`, CSS at end of `components.css`). Muse Spark Open in use; Muse Spark 1.3 and Muse Wonder say "Not available in demo". UI only; no request change. `modelName()` in `copy.js` maps `meta-models/muse-spark-open-1026` to "Muse Spark Open". Picker shows from 1400 px up in the top bar, and in the menu sheet below 768 px. pytest 106.
+- [x] Local history rewritten: all `Co-Authored-By: Claude` lines removed (`git filter-branch`, all branches). Old commits are in `.git/refs/original/`.
+- [ ] NOT DONE: force-push to GitHub was blocked by the permission classifier. Owner must run: `git push --force-with-lease=main:b22117a origin main` and `git push --force-with-lease=ui-redesign:<old sha> origin ui-redesign` (or delete the remote `ui-redesign` branch). Then redeploy check. GitHub may take a while to drop Claude from Contributors.
